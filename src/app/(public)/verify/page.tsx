@@ -16,9 +16,18 @@ import {
     QrCode
 } from "lucide-react"
 
+type VerifyResult = {
+    success: boolean
+    type?: string
+    name?: string
+    status?: string
+    expiry?: string
+    specialization?: string
+}
+
 export default function PublicVerifyPage() {
     const [loading, setLoading] = useState(false)
-    const [result, setResult] = useState<Record<string, unknown> | null>(null)
+    const [result, setResult] = useState<VerifyResult | null>(null)
     const [id, setId] = useState("")
 
     const handleVerify = async (e: React.FormEvent) => {

@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-export default function ProductDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ProductDetailsPage() {
     return (
         <div className="container mx-auto px-4 py-20">
             <Button variant="ghost" className="mb-8" asChild>
