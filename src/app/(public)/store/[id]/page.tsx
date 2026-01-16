@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-export default function ProductDetailsPage({ params: _params }: { params: { id: string } }) { // eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function ProductDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     return (
         <div className="container mx-auto px-4 py-20">
             <Button variant="ghost" className="mb-8" asChild>
