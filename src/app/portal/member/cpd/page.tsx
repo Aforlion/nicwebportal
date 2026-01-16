@@ -10,7 +10,6 @@ import {
     History,
     Award,
     CheckCircle2,
-    FileText,
     Search,
     ExternalLink
 } from "lucide-react"

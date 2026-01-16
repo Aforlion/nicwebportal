@@ -18,7 +18,7 @@ import {
 
 export default function PublicVerifyPage() {
     const [loading, setLoading] = useState(false)
-    const [result, setResult] = useState<any>(null)
+    const [result, setResult] = useState<Record<string, unknown> | null>(null)
     const [id, setId] = useState("")
 
     const handleVerify = async (e: React.FormEvent) => {

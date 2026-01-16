@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, Suspense } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { verifyTransaction } from "@/lib/payments/paystack"
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,30 +9,37 @@ import Link from "next/link"
 
 function VerifyContent() {
     const searchParams = useSearchParams()
-    const router = useRouter()
     const reference = searchParams.get("reference")
 
-    const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
-    const [errorMessage, setErrorMessage] = useState("")
+    // Initialize with error state if no reference
+    const [status, setStatus] = useState<"loading" | "success" | "error">(reference ? "loading" : "error")
+    const [errorMessage, setErrorMessage] = useState(reference ? "" : "No transaction reference found.")
 
     useEffect(() => {
+        // Skip effect if there's no reference (already handled in initial state)
         if (!reference) {
-            setStatus("error")
-            setErrorMessage("No transaction reference found.")
             return
         }
 
+        let isMounted = true
+
         const checkStatus = async () => {
             const result = await verifyTransaction(reference)
-            if (result.success && result.data.status === "success") {
-                setStatus("success")
-            } else {
-                setStatus("error")
-                setErrorMessage(result.error || "Payment verification failed.")
+            if (isMounted) {
+                if (result.success && result.data.status === "success") {
+                    setStatus("success")
+                } else {
+                    setStatus("error")
+                    setErrorMessage(result.error || "Payment verification failed.")
+                }
             }
         }
 
         checkStatus()
+
+        return () => {
+            isMounted = false
+        }
     }, [reference])
 
     if (status === "loading") {

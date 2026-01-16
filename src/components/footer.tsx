@@ -12,7 +12,7 @@ export function Footer() {
                             <span className="text-2xl font-bold tracking-tighter text-white">NIC</span>
                         </Link>
                         <p className="text-sm text-slate-400">
-                            The National Institute of Caregivers (NIC) is Nigeria's leading professional body for caregiving training, regulation, and advocacy.
+                            The National Institute of Caregivers (NIC) is Nigeria&apos;s leading professional body for caregiving training, regulation, and advocacy.
                         </p>
                         <div className="flex space-x-4">
                             <Link href="#" className="hover:text-accent transition-colors"><Facebook className="h-5 w-5" /></Link>

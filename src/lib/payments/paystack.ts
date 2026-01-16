@@ -16,7 +16,7 @@ if (!PAYSTACK_SECRET_KEY) {
 export async function initializeTransaction(
     email: string,
     amount: number,
-    metadata: any = {},
+    metadata: Record<string, unknown> = {},
     callbackUrl?: string
 ) {
     try {
@@ -41,9 +41,10 @@ export async function initializeTransaction(
         }
 
         return { success: true, authorization_url: data.data.authorization_url, reference: data.data.reference }
-    } catch (error: any) {
-        console.error("Paystack Initialization Error:", error)
-        return { success: false, error: error.message }
+    } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error))
+        console.error("Paystack Initialization Error:", err)
+        return { success: false, error: err.message }
     }
 }
 
@@ -67,8 +68,9 @@ export async function verifyTransaction(reference: string) {
         }
 
         return { success: true, data: data.data }
-    } catch (error: any) {
-        console.error("Paystack Verification Error:", error)
-        return { success: false, error: error.message }
+    } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error))
+        console.error("Paystack Verification Error:", err)
+        return { success: false, error: err.message }
     }
 }

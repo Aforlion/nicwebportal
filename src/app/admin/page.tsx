@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, GraduationCap, FileText, CreditCard, ArrowUpRight, ShieldCheck } from "lucide-react"
+import { Users, GraduationCap, FileText, CreditCard, ArrowUpRight, ShieldCheck, Search } from "lucide-react"
 
 const stats = [
     {
@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight text-secondary">Dashboard Overview</h1>
-                <p className="text-muted-foreground">Welcome back, Administrator. Here's what's happening at NIC today.</p>
+                <p className="text-muted-foreground">Welcome back, Administrator. Here&apos;s what&apos;s happening at NIC today.</p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

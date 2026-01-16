@@ -4,8 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
-    CreditCard,
-    History,
     CheckCircle2,
     Download,
     AlertTriangle,
