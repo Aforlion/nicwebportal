@@ -1,0 +1,351 @@
+Below are **website-ready, legally cautious** drafts for both **Terms of Use** and **Privacy Policy**, written to suit a **professional institute, registry, and digital platform** like NIC.
+
+These are **not marketing texts** — they are structured to reduce liability, support verification systems, and cover portals (students, members, facilities).
+
+You can publish them as `/terms` and `/privacy`.
+
+---
+
+# NATIONAL INSTITUTE OF CAREGIVERS (NIC)
+
+## TERMS OF USE
+
+**Effective Date:** [Insert Date]
+**Last Updated:** [Insert Date]
+
+---
+
+## 1. INTRODUCTION
+
+Welcome to the website and digital platforms of the **National Institute of Caregivers (NIC)** (“NIC”, “we”, “us”, or “our”).
+
+These Terms of Use govern access to and use of:
+
+* NIC website;
+* Student, member, facility, and administrative portals;
+* Digital services, content, and products offered by NIC.
+
+By accessing or using any NIC platform, you agree to be bound by these Terms.
+
+If you do not agree, you must discontinue use immediately.
+
+---
+
+## 2. ELIGIBILITY
+
+You may use NIC platforms if you:
+
+* Are at least 18 years old, or
+* Are accessing the platform under lawful authority (e.g., student enrolment with consent).
+
+Facilities and organizations must be legally registered entities.
+
+---
+
+## 3. SCOPE OF SERVICES
+
+NIC provides, among others:
+
+* Professional training and certification;
+* Membership services;
+* Caregiver and facility verification;
+* Accreditation and inspection services;
+* Digital educational products;
+* Advocacy, research, and informational content.
+
+NIC reserves the right to modify, suspend, or discontinue any service at its discretion.
+
+---
+
+## 4. USER ACCOUNTS
+
+### 4.1 Account Responsibility
+
+Users are responsible for:
+
+* Maintaining confidentiality of login credentials;
+* All activities conducted under their account;
+* Providing accurate and complete information.
+
+### 4.2 Account Suspension
+
+NIC may suspend or terminate accounts where:
+
+* False or misleading information is provided;
+* Platform misuse occurs;
+* Legal or policy violations are detected.
+
+---
+
+## 5. PROFESSIONAL DISCLAIMER
+
+1. NIC accreditation, certification, or listing:
+
+   * Does **not** replace statutory licenses issued by government authorities;
+   * Does **not** guarantee outcomes, performance, or service quality.
+2. NIC does not provide medical, legal, or clinical advice through its platforms.
+3. Users are encouraged to conduct independent assessments when selecting care services.
+
+---
+
+## 6. VERIFICATION & REGISTRY USE
+
+* Public verification tools are provided for informational purposes only.
+* NIC shall not be liable for reliance placed solely on registry results.
+* Misrepresentation of NIC certification or accreditation is strictly prohibited.
+
+---
+
+## 7. PAYMENTS & REFUNDS
+
+* Fees paid for training, membership, accreditation, or digital products are subject to NIC’s published payment terms.
+* Unless otherwise stated, **fees are non-refundable**.
+* NIC may revise fees with prior notice.
+
+---
+
+## 8. INTELLECTUAL PROPERTY
+
+All content on NIC platforms, including:
+
+* Texts
+* Logos
+* Training materials
+* Videos
+* Documents
+
+are the intellectual property of NIC or its licensors and may not be copied, distributed, or reused without written permission.
+
+---
+
+## 9. PROHIBITED USE
+
+Users must not:
+
+* Submit false information;
+* Attempt unauthorized access;
+* Interfere with system security;
+* Use NIC branding without authorization;
+* Engage in unlawful or unethical conduct.
+
+---
+
+## 10. LIMITATION OF LIABILITY
+
+To the maximum extent permitted by law:
+
+* NIC shall not be liable for indirect, incidental, or consequential damages;
+* NIC is not responsible for actions or omissions of caregivers or facilities;
+* Use of NIC platforms is at the user’s own risk.
+
+---
+
+## 11. TERMINATION
+
+NIC reserves the right to:
+
+* Suspend or terminate access without notice for violations;
+* Remove content or listings deemed non-compliant.
+
+---
+
+## 12. GOVERNING LAW
+
+These Terms shall be governed by the laws of the **Federal Republic of Nigeria**.
+
+---
+
+## 13. CONTACT
+
+For enquiries regarding these Terms:
+
+**National Institute of Caregivers (NIC)**
+Email: [info@nicnigeria.com](mailto:info@nicnigeria.com)
+Website: [www.nicnigeria.org](http://www.nicnigeria.org)
+
+---
+
+---
+
+# NATIONAL INSTITUTE OF CAREGIVERS (NIC)
+
+## PRIVACY POLICY
+
+**Effective Date:** [Insert Date]
+**Last Updated:** [Insert Date]
+
+---
+
+## 1. INTRODUCTION
+
+NIC is committed to protecting the privacy and personal data of users in accordance with:
+
+* Nigeria Data Protection Act (NDPA)
+* Applicable international best practices
+
+This Privacy Policy explains how NIC collects, uses, stores, and protects personal information.
+
+---
+
+## 2. INFORMATION WE COLLECT
+
+NIC may collect the following categories of data:
+
+### 2.1 Personal Information
+
+* Full name
+* Email address
+* Phone number
+* Address
+* Identification documents
+* Photographs (for ID verification)
+
+### 2.2 Professional Information
+
+* Qualifications
+* Certifications
+* Employment history
+* Facility details
+* Accreditation records
+
+### 2.3 Technical Information
+
+* IP address
+* Browser type
+* Device information
+* Usage logs
+
+---
+
+## 3. HOW WE COLLECT INFORMATION
+
+Information is collected through:
+
+* Online forms
+* Portal registrations
+* Accreditation applications
+* Training enrolments
+* Inspections and audits
+* Website analytics tools
+
+---
+
+## 4. PURPOSE OF DATA PROCESSING
+
+NIC processes personal data for:
+
+* Training and certification administration;
+* Membership management;
+* Facility accreditation and inspection;
+* Verification and registry services;
+* Compliance monitoring;
+* Communication and support;
+* Legal and regulatory obligations.
+
+---
+
+## 5. LEGAL BASIS FOR PROCESSING
+
+NIC processes data based on:
+
+* User consent;
+* Contractual necessity;
+* Legal obligations;
+* Legitimate institutional interests.
+
+---
+
+## 6. DATA SHARING & DISCLOSURE
+
+NIC may share data with:
+
+* Authorized inspectors or assessors;
+* Regulatory or law enforcement agencies (where required);
+* Service providers supporting NIC operations.
+
+NIC does **not** sell personal data to third parties.
+
+---
+
+## 7. PUBLIC REGISTRY DISCLOSURE
+
+Certain professional or facility information may be made publicly available via NIC verification tools, including:
+
+* Name
+* Accreditation status
+* Certification validity
+
+Sensitive personal data shall not be publicly disclosed.
+
+---
+
+## 8. DATA SECURITY
+
+NIC implements appropriate:
+
+* Technical safeguards
+* Administrative controls
+* Access restrictions
+
+to protect personal data from unauthorized access, loss, or misuse.
+
+---
+
+## 9. DATA RETENTION
+
+Personal data shall be retained:
+
+* As long as necessary for institutional purposes;
+* As required by law;
+* For audit, compliance, or dispute resolution.
+
+---
+
+## 10. USER RIGHTS
+
+Users have the right to:
+
+* Access their personal data;
+* Request corrections;
+* Withdraw consent (subject to legal obligations);
+* Request deletion where applicable.
+
+Requests may be submitted via NIC contact channels.
+
+---
+
+## 11. COOKIES
+
+NIC may use cookies to:
+
+* Improve user experience;
+* Analyze website traffic;
+* Enhance platform functionality.
+
+Users may adjust browser settings to manage cookies.
+
+---
+
+## 12. THIRD-PARTY LINKS
+
+NIC platforms may contain links to third-party websites. NIC is not responsible for their privacy practices.
+
+---
+
+## 13. POLICY UPDATES
+
+NIC may update this Privacy Policy periodically. Updates will be published on the website.
+
+---
+
+## 14. CONTACT INFORMATION
+
+For privacy-related enquiries or requests:
+
+**National Institute of Caregivers (NIC)**
+Email: [info@nicnigeria.com](mailto:info@nicnigeria.com)
+Website: [www.nicnigeria.org](http://www.nicnigeria.org)
+
+---
+
+### © National Institute of Caregivers, Nigeria. All rights reserved.

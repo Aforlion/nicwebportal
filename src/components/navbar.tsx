@@ -15,7 +15,15 @@ import {
 
 const navItems = [
     { title: "Home", href: "/" },
-    { title: "About NIC", href: "/about" },
+    {
+        title: "About NIC",
+        href: "/about",
+        children: [
+            { title: "About Us", href: "/about" },
+            { title: "Regulatory Framework", href: "/regulatory" },
+            { title: "Contact Us", href: "/contact" },
+        ]
+    },
     {
         title: "Programs",
         href: "/programs",

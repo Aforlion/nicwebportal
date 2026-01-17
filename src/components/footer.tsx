@@ -5,7 +5,7 @@ export function Footer() {
     return (
         <footer className="border-t bg-secondary text-secondary-foreground">
             <div className="container mx-auto px-4 py-16">
-                <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-5">
                     <div className="space-y-4">
                         <Link href="/" className="flex items-center space-x-2">
                             <ShieldCheck className="h-8 w-8 text-accent" />
@@ -48,6 +48,16 @@ export function Footer() {
                                 <Mail className="h-4 w-4 text-accent" />
                                 info@nicnigeria.com
                             </li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 className="mb-6 text-lg font-bold text-white">Regulatory</h3>
+                        <ul className="space-y-4 text-sm text-slate-400">
+                            <li><Link href="/regulatory/regulatory-framework" className="hover:text-white transition-colors">Regulatory Framework</Link></li>
+                            <li><Link href="/regulatory/code-of-ethics-facility" className="hover:text-white transition-colors">Code of Ethics</Link></li>
+                            <li><Link href="/regulatory/terms-and-privacy" className="hover:text-white transition-colors">Terms & Privacy</Link></li>
+                            <li><Link href="/regulatory" className="hover:text-white transition-colors">All Frameworks</Link></li>
                         </ul>
                     </div>
 
