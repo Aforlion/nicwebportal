@@ -12,13 +12,15 @@ import {
     LogOut,
     CreditCard,
     User,
+    Users,
     ShieldCheck,
-    FileText
+    FileText,
+    History
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface PortalSidebarProps {
-    role: 'student' | 'member'
+    role: 'student' | 'member' | 'facility'
 }
 
 export function PortalSidebar({ role }: PortalSidebarProps) {
@@ -41,7 +43,15 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
         { title: "ID Card", href: "/portal/member/id-card", icon: ShieldCheck },
     ]
 
-    const navItems = role === 'student' ? studentNavItems : memberNavItems
+    const facilityNavItems = [
+        { title: "Dashboard", href: "/portal/facility", icon: LayoutDashboard },
+        { title: "Staff Directory", href: "/portal/facility/staff", icon: Users },
+        { title: "Link Caregiver", href: "/portal/facility/link", icon: ShieldCheck },
+        { title: "Inspections", href: "/portal/facility/inspections", icon: History },
+        { title: "Certificates", href: "/portal/facility/certificates", icon: Award },
+    ]
+
+    const navItems = role === 'student' ? studentNavItems : (role === 'member' ? memberNavItems : facilityNavItems)
 
     return (
         <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-background transition-transform">

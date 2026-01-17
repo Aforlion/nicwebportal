@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { createClient } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,23 +36,58 @@ export default function PublicVerifyPage() {
         setLoading(true)
         setResult(null)
 
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500))
+        try {
+            const supabase = createClient()
+            const activeTab = document.querySelector('[data-state="active"][role="tab"]')?.getAttribute('value')
 
-        // Mock result for demonstration
-        if (id.toUpperCase() === "NIC-MEM-5502") {
-            setResult({
-                success: true,
-                type: "Caregiver",
-                name: "Grace Obi",
-                status: "Active / Licensed",
-                expiry: "March 2025",
-                specialization: "Dementia Care",
-            })
-        } else {
+            if (activeTab === 'caregiver') {
+                // Search for caregiver
+                const { data, error } = await supabase
+                    .from('memberships')
+                    .select('*, profiles(full_name)')
+                    .or(`nic_id.eq."${id}",member_id.eq."${id}"`)
+                    .single()
+
+                if (data) {
+                    setResult({
+                        success: true,
+                        type: "Caregiver",
+                        name: data.profiles.full_name,
+                        status: data.compliance_status || data.status,
+                        expiry: new Date(data.expiry_date).toLocaleDateString(),
+                        specialization: data.category
+                    })
+                } else {
+                    setResult({ success: false, type: "Caregiver" })
+                }
+            } else {
+                // Search for facility
+                const { data, error } = await supabase
+                    .from('facilities')
+                    .select('*')
+                    .or(`registration_number.eq."${id}",name.ilike."%${id}%"`)
+                    .eq('status', 'active')
+                    .limit(1)
+                    .single()
+
+                if (data) {
+                    setResult({
+                        success: true,
+                        type: "Facility",
+                        name: data.name,
+                        status: data.status,
+                        expiry: "Permanent"
+                    })
+                } else {
+                    setResult({ success: false, type: "Facility" })
+                }
+            }
+        } catch (err) {
+            console.error("Verification error:", err)
             setResult({ success: false })
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     return (
@@ -176,10 +212,62 @@ export default function PublicVerifyPage() {
                                     <CardTitle>Verify Care Facility</CardTitle>
                                     <CardDescription>Search for registered Elder Care homes, Training centres, or Agencies.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="py-12 text-center text-muted-foreground">
-                                    <Building2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                                    <p>Facility verification index is currently being migrated.</p>
-                                    <p className="text-sm mt-2">Please contact support for official status letters.</p>
+                                <CardContent>
+                                    <form onSubmit={handleVerify} className="space-y-4">
+                                        <div className="relative">
+                                            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                                            <Input
+                                                placeholder="e.g., NIC-FAC-1234 or Business Name"
+                                                className="pl-12 h-14 text-lg"
+                                                value={id}
+                                                onChange={(e) => setId(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        <Button type="submit" className="w-full h-14 text-lg bg-secondary text-white" disabled={loading}>
+                                            {loading ? (
+                                                <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Verifying...</>
+                                            ) : (
+                                                "Lookup Facility"
+                                            )}
+                                        </Button>
+                                    </form>
+
+                                    {result && result.type === 'Facility' && (
+                                        <div className="mt-8 animate-in fade-in slide-in-from-top-4 duration-300">
+                                            {result.success ? (
+                                                <div className="rounded-2xl border-2 border-secondary/10 bg-secondary/5 p-6">
+                                                    <div className="flex items-start gap-4">
+                                                        <ShieldCheck className="h-8 w-8 text-secondary shrink-0" />
+                                                        <div className="space-y-4 flex-grow">
+                                                            <div>
+                                                                <h3 className="text-xl font-bold text-secondary leading-none">Registered Institution</h3>
+                                                                <p className="text-muted-foreground text-sm mt-1">This facility is officially recognized by NIC.</p>
+                                                            </div>
+                                                            <div className="grid gap-4 sm:grid-cols-2 text-sm">
+                                                                <div className="bg-white p-3 rounded-lg border">
+                                                                    <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-wider">Facility Name</p>
+                                                                    <p className="text-secondary font-bold text-base">{result.name}</p>
+                                                                </div>
+                                                                <div className="bg-white p-3 rounded-lg border">
+                                                                    <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-wider">Registration Status</p>
+                                                                    <p className={`font-bold text-base ${result.status === 'active' ? 'text-emerald-600' : 'text-orange-600'}`}>
+                                                                        {result.status?.toUpperCase()}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="rounded-2xl border-2 border-destructive/10 bg-destructive/5 p-6 text-center">
+                                                    <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                                                    <h3 className="text-xl font-bold text-destructive">Facility Not Found</h3>
+                                                    <p className="text-muted-foreground mt-2">No record exists for **{id}**.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </TabsContent>

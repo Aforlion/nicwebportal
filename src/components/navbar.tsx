@@ -25,7 +25,14 @@ const navItems = [
             { title: "Specialty Care", href: "/programs/specialty" },
         ],
     },
-    { title: "Membership", href: "/membership" },
+    {
+        title: "Join NIC",
+        href: "/join",
+        children: [
+            { title: "Individual Membership", href: "/join" },
+            { title: "Institutional Registration", href: "/join/facility" },
+        ],
+    },
     { title: "Verify", href: "/verify" },
     { title: "Store", href: "/store" },
 ]

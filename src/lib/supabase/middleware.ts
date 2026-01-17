@@ -57,7 +57,8 @@ export async function updateSession(request: NextRequest) {
             .single()
 
         // Redirect non-admin users away from admin routes
-        if (profile?.role !== 'admin') {
+        const isAdmin = ['admin', 'super_admin', 'registry_officer', 'inspector', 'auditor'].includes(profile?.role || '')
+        if (!isAdmin) {
             return NextResponse.redirect(new URL('/portal/member', request.url))
         }
     }
