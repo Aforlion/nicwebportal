@@ -20,10 +20,11 @@ const adminNavItems = [
     { title: "Overview", href: "/admin", icon: LayoutDashboard },
     { title: "Students", href: "/admin/students", icon: GraduationCap },
     { title: "Members", href: "/admin/members", icon: Users },
+    { title: "CPD Review", href: "/admin/cpd-review", icon: GraduationCap },
+    { title: "Registry", href: "/admin/registry/caregivers", icon: Search },
     { title: "Programs", href: "/admin/programs", icon: FileText },
     { title: "Payments", href: "/admin/payments", icon: CreditCard },
     { title: "Inspections", href: "/admin/inspections", icon: ShieldCheck },
-    { title: "Registry", href: "/admin/registry", icon: Search },
     { title: "Reports", href: "/admin/reports", icon: BarChart3 },
 ]
 
