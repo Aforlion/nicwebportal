@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS facilities (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure status column exists if table was previously created without it
+ALTER TABLE facilities ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending';
+
+
 -- 2. Create Facility Staff Table (Links Caregivers to Facilities)
 CREATE TABLE IF NOT EXISTS facility_staff (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
