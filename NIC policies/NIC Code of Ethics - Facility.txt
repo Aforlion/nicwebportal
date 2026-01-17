@@ -1,23 +1,15 @@
-# 2. NATIONAL INSTITUTE OF CAREGIVERS (NIC)
+# NIC CODE OF ETHICS
 
-## CODE OF ETHICS
+### **Professional Standards for Caregivers & Care Facilities**
 
-### *(For Caregivers & Care Facilities)*
-
-**Effective Date:** [Insert Date]
+**Effective Date:** January 2026
 **Issued by:** National Institute of Caregivers (NIC)
 
 ---
 
 ## 1. PURPOSE
 
-This Code of Ethics establishes the ethical principles, professional conduct standards, and responsibilities governing caregivers and care facilities affiliated with NIC.
-
-Compliance with this Code is mandatory for:
-
-* NIC-certified caregivers
-* NIC members
-* NIC-accredited care facilities
+This Code of Ethics establishes the ethical principles, professional conduct standards, and responsibilities governing caregivers and care facilities affiliated with NIC. Compliance with this Code is mandatory for all NIC-certified caregivers, members, and accredited facilities.
 
 ---
 
@@ -25,13 +17,13 @@ Compliance with this Code is mandatory for:
 
 All caregivers and facilities shall uphold the following principles:
 
-1. **Respect for Human Dignity**
-2. **Compassion and Empathy**
-3. **Integrity and Honesty**
-4. **Professional Competence**
-5. **Accountability**
-6. **Confidentiality**
-7. **Non-Discrimination**
+1. **Respect for Human Dignity**: Recognizing the inherent worth of every individual.
+2. **Compassion and Empathy**: Providing care with kindness and emotional understanding.
+3. **Integrity and Honesty**: Being truthful and professional in all interactions.
+4. **Professional Competence**: Maintaining high standards of skill and knowledge.
+5. **Accountability**: Taking responsibility for one's actions and oversight.
+6. **Confidentiality**: Protecting the private information of care recipients.
+7. **Non-Discrimination**: Treating all persons equally regardless of background.
 
 ---
 
@@ -39,12 +31,12 @@ All caregivers and facilities shall uphold the following principles:
 
 Caregivers and facilities shall:
 
-* Treat all clients with dignity and respect
-* Protect clients from abuse, neglect, and exploitation
-* Respect privacy and confidentiality
-* Promote independence where possible
-* Obtain informed consent where applicable
-* Act in the best interests of the client at all times
+* Treat all clients with dignity and respect.
+* Protect clients from abuse, neglect, and exploitation.
+* Respect privacy and confidentiality.
+* Promote independence where possible.
+* Obtain informed consent where applicable.
+* Act in the best interests of the client at all times.
 
 ---
 
@@ -52,26 +44,25 @@ Caregivers and facilities shall:
 
 Caregivers shall:
 
-* Perform duties within their competence
-* Maintain professional boundaries
-* Avoid conflicts of interest
-* Refrain from substance abuse
-* Maintain accurate records
-* Comply with lawful instructions and policies
+* Perform duties within their competence.
+* Maintain professional boundaries.
+* Avoid conflicts of interest.
+* Refrain from substance abuse.
+* Maintain accurate records.
+* Comply with lawful instructions and policies.
 
 ---
 
 ## 5. PROHIBITED CONDUCT
 
-The following are strictly prohibited:
+The following are strictly prohibited and subject to immediate sanction:
 
-* Physical, emotional, sexual, or financial abuse
-* Neglect or abandonment
-* Falsification of records
-* Exploitation of clients
-* Discrimination on any grounds
-* Harassment or intimidation
-* Misrepresentation of qualifications
+* Physical, emotional, sexual, or financial abuse.
+* Neglect or abandonment of care recipients.
+* Falsification of professional records.
+* Exploitation of clients or their families.
+* Harassment or intimidation in the care environment.
+* Misrepresentation of qualifications.
 
 ---
 
@@ -79,55 +70,31 @@ The following are strictly prohibited:
 
 Care facilities shall:
 
-* Ensure safe and humane living conditions
-* Employ qualified and vetted staff
-* Provide adequate supervision
-* Support ethical decision-making
-* Encourage reporting of unethical conduct
-* Protect whistleblowers from retaliation
+* Ensure safe and humane living conditions.
+* Employ qualified and vetted staff.
+* Provide adequate supervision of care activities.
+* Support ethical decision-making processes.
+* Encourage reporting of unethical conduct.
+* Protect whistleblowers from retaliation.
 
 ---
 
 ## 7. CONFIDENTIALITY & DATA PROTECTION
 
-* Personal and medical information must be kept confidential
-* Information shall only be disclosed where legally required or consented to
-* Digital records must be securely managed
+* Personal and medical information must be kept confidential.
+* Information shall only be disclosed where legally required or consented to.
+* Digital records must be securely managed and protected.
 
 ---
 
-## 8. REPORTING ETHICAL BREACHES
-
-* Ethical breaches must be reported to facility management or NIC
-* NIC shall investigate reported breaches
-* Retaliation against whistleblowers is prohibited
-
----
-
-## 9. DISCIPLINARY ACTIONS
+## 8. DISCIPLINARY ACTIONS
 
 Violations of this Code may result in:
 
-* Warnings
-* Mandatory retraining
-* Suspension of certification or accreditation
-* Revocation
-* Referral to authorities
+1. Formal Warnings
+2. Mandatory retraining or ethics coaching
+3. Suspension of certification or accreditation
+4. Permanent Revocation of NIC affiliation
+5. Referral to relevant law enforcement authorities
 
----
-
-## 10. CONTINUING PROFESSIONAL DEVELOPMENT
-
-Caregivers are expected to:
-
-* Engage in continuous learning
-* Maintain competence
-* Participate in NIC CPD programs
-
----
-
-## 11. ENFORCEMENT & INTERPRETATION
-
-* Compliance with this Code is a condition of NIC affiliation
-* NIC’s interpretation of this Code shall prevail
-* This Code may be amended as necessary
+### © National Institute of Caregivers (NIC). All Rights Reserved.

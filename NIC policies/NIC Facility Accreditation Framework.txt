@@ -1,10 +1,3 @@
-Perfect. Below is **formal, defensible legal policy language** suitable for **public website publication**.
-This is written in a tone that works for regulators, lawyers, partners, and courts — not marketing.
-
-You can publish this under **“Accreditation Policy”** or **“Facility Accreditation Framework”** on the NIC website.
-
----
-
 # NATIONAL INSTITUTE OF CAREGIVERS (NIC)
 
 ## **Care Facility Accreditation Policy**
@@ -172,8 +165,8 @@ The accreditation process shall include the following stages:
 All enquiries regarding this policy or the accreditation process should be directed to:
 
 **National Institute of Caregivers (NIC)**
-Email: [info@nicnigeria.com](mailto:info@nicnigeria.com)
-Website: [www.nicnigeria.org](http://www.nicnigeria.org)
+Email: info@nicnigeria.com
+Website:http://www.nicnigeria.org
 
 ---
 

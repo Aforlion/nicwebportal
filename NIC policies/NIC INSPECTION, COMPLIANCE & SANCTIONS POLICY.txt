@@ -1,12 +1,13 @@
-# 3. NIC INSPECTION, COMPLIANCE & SANCTIONS POLICY
+# NIC INSPECTION, COMPLIANCE & SANCTIONS POLICY
 
-**Effective Date:** [Insert Date]
+**Effective Date:** January 2026
+**Policy Number:** NIC-POL-ICS-001
 
 ---
 
 ## 1. PURPOSE
 
-This Policy establishes the framework for inspections, compliance enforcement, and sanctions applicable to caregivers and care facilities under NIC oversight.
+This Policy establishes the framework for inspections, compliance enforcement, and administrative sanctions applicable to caregivers and care facilities under official NIC oversight in Nigeria. It ensures that excellence is maintained across all accredited entities.
 
 ---
 
@@ -14,73 +15,57 @@ This Policy establishes the framework for inspections, compliance enforcement, a
 
 NIC inspectors are authorized to:
 
-* Conduct facility inspections;
-* Review documentation;
-* Interview staff;
-* Assess care practices.
+* Conduct scheduled and unannounced facility inspections.
+* Review institutional and care documentation.
+* Interview caregivers, management, and support staff.
+* Directly assess caregiving practices and environmental safety.
 
 ---
 
 ## 3. COMPLIANCE RATINGS
 
-Facilities may be classified as:
+Following an inspection, facilities shall be classified into one of the following categories:
 
-* **Compliant**
-* **Conditionally Compliant**
-* **Non-Compliant**
-* **Suspended**
+* **Compliant**: Meets or exceeds all core NIC standards.
+* **Conditionally Compliant**: Meets major standards but requires specific minor corrective actions.
+* **Non-Compliant**: Fails to meet significant professional or safety standards.
+* **Suspended**: Active operations are restricted due to critical failures.
 
 ---
 
-## 4. SANCTIONS
+## 4. ADMINISTRATIVE SANCTIONS
 
-NIC may impose sanctions including:
+Where non-compliance is identified, NIC may impose sanctions including:
 
-1. Written warnings;
-2. Corrective action plans;
-3. Conditional accreditation;
-4. Suspension;
-5. Revocation;
-6. Public disclosure of status.
+1. **Written Warnings**: Official notification of standards breach.
+2. **Corrective Action Plans**: Mandatory steps to remediate identified gaps.
+3. **Conditional Accreditation**: Temporary status pending improvement.
+4. **Administrative Suspension**: Temporary removal from the public registry.
+5. **Revocation**: Permanent removal of accreditation and NIC affiliation.
+6. **Public Disclosure**: Publication of compliance status and sanctions.
 
 ---
 
 ## 5. URGENT ENFORCEMENT
 
-NIC may immediately suspend accreditation where:
+NIC reserves the right to immediately suspend accreditation or certification where:
 
-* Client safety is at risk;
-* Abuse or neglect is suspected;
-* Criminal conduct is indicated.
+* Client safety is deemed to be at immediate risk.
+* Professional abuse, neglect, or exploitation is suspected.
+* Criminal conduct or severe professional misconduct is indicated.
 
 ---
 
-## 6. APPEALS
+## 6. APPEALS PROCESS
 
-1. Affected entities may submit a written appeal within a defined timeframe.
-2. NIC’s appeal decision shall be final.
+1. Affected entities or individuals may submit a written appeal within 14 days of a sanction notice.
+2. Appeals will be reviewed by the NIC Regulatory Committee.
+3. The final decision of the Committee shall be binding.
 
 ---
 
 ## 7. COOPERATION WITH AUTHORITIES
 
-NIC may refer matters to:
+NIC maintains a policy of full cooperation with Nigerian regulatory agencies and law enforcement. We may refer matters involving criminal conduct or severe regulatory breaches to the appropriate national bodies.
 
-* Regulatory agencies
-* Law enforcement
-* Judicial bodies
-
-where required by law or public interest.
-
----
-
-## 8. LIMITATION OF LIABILITY
-
-NIC is not responsible for losses arising from enforcement actions taken in good faith.
-
----
-
-## 9. POLICY REVIEW
-
-NIC reserves the right to amend this Policy as necessary.
-
+### © National Institute of Caregivers (NIC). All Rights Reserved.
