@@ -68,7 +68,7 @@ export default function ContactPage() {
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-secondary">Headquarters</h3>
-                                            <p className="text-muted-foreground">Abuja Business District, FCT, Nigeria</p>
+                                            <p className="text-muted-foreground">Suite 3D, Shishen Plaza, Off Ibrahim Biya Road, Garki District, Abuja.</p>
                                         </div>
                                     </div>
 
@@ -78,7 +78,8 @@ export default function ContactPage() {
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-secondary">Phone Support</h3>
-                                            <p className="text-muted-foreground">+234 (0) 000 0000 000</p>
+                                            <p className="text-muted-foreground">(+234) 907 984 553</p>
+                                            <p className="text-muted-foreground">(+234) 813 028 9626</p>
                                             <p className="text-sm text-muted-foreground italic">Available Mon-Fri, 9am - 5pm</p>
                                         </div>
                                     </div>
@@ -89,8 +90,7 @@ export default function ContactPage() {
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-secondary">Email Enquiries</h3>
-                                            <p className="text-muted-foreground">info@nic.org.ng</p>
-                                            <p className="text-muted-foreground">support@nic.org.ng</p>
+                                            <p className="text-muted-foreground">info@nicnigeria.com</p>
                                         </div>
                                     </div>
 
@@ -110,7 +110,7 @@ export default function ContactPage() {
                             <div className="rounded-2xl border bg-accent/5 p-8">
                                 <h3 className="mb-2 font-bold text-secondary">Partnership Enquiries</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    Interested in partnering with the National Institute of Caregivers? Please send a formal proposal to <span className="font-medium text-primary">partnerships@nic.org.ng</span>
+                                    Interested in partnering with the National Institute of Caregivers? Please send a formal proposal to <span className="font-medium text-primary">info@nicnigeria.com</span>
                                 </p>
                             </div>
                         </div>

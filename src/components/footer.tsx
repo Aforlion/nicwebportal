@@ -36,17 +36,17 @@ export function Footer() {
                     <div>
                         <h3 className="mb-6 text-lg font-bold text-white">Contact Info</h3>
                         <ul className="space-y-4 text-sm text-slate-400">
-                            <li className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4 text-accent" />
-                                Abuja, Nigeria
+                            <li className="flex items-start gap-2">
+                                <MapPin className="h-4 w-4 text-accent mt-1 flex-shrink-0" />
+                                <span className="text-xs">Suite 3D, Shishen Plaza, Off Ibrahim Biya Road, Garki District, Abuja.</span>
                             </li>
                             <li className="flex items-center gap-2">
                                 <Phone className="h-4 w-4 text-accent" />
-                                +234 (0) 000 0000 000
+                                (+234) 907 984 553
                             </li>
                             <li className="flex items-center gap-2">
                                 <Mail className="h-4 w-4 text-accent" />
-                                info@nic.org.ng
+                                info@nicnigeria.com
                             </li>
                         </ul>
                     </div>

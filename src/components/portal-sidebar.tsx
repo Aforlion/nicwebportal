@@ -12,7 +12,8 @@ import {
     LogOut,
     CreditCard,
     User,
-    ShieldCheck
+    ShieldCheck,
+    FileText
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -32,8 +33,9 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
     ]
 
     const memberNavItems = [
-        { title: "Member Panel", href: "/portal/member", icon: LayoutDashboard },
+        { title: "Dashboard", href: "/portal/member", icon: LayoutDashboard },
         { title: "Profile", href: "/portal/member/profile", icon: User },
+        { title: "Documents", href: "/portal/member/documents", icon: FileText },
         { title: "CPD Records", href: "/portal/member/cpd", icon: GraduationCap },
         { title: "Payments", href: "/portal/member/payments", icon: CreditCard },
         { title: "ID Card", href: "/portal/member/id-card", icon: ShieldCheck },

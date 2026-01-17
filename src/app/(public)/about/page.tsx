@@ -25,7 +25,7 @@ export default function AboutPage() {
                             </div>
                             <h2 className="text-3xl font-bold text-secondary">Our Mission</h2>
                             <p className="text-lg text-muted-foreground">
-                                To create a regulated and professional caregiving environment in Nigeria through standardized training, certification, and continuous professional development, ensuring the highest quality of care for all citizens.
+                                To raise the standards in caregiving, increase awareness of the critical role caregivers play in society, and promote policies that support and empower them.
                             </p>
                         </div>
                         <div className="flex flex-col gap-6 rounded-2xl border bg-background p-8 shadow-sm">
@@ -34,7 +34,7 @@ export default function AboutPage() {
                             </div>
                             <h2 className="text-3xl font-bold text-secondary">Our Vision</h2>
                             <p className="text-lg text-muted-foreground">
-                                To be the leading authority and reference point for excellence in caregiving throughout Nigeria and a model for professional care standards across the African continent.
+                                To train trainers in the care industry to provide the best-needed care services to the vulnerable across all demographics. We aim to raise standards to ensure senior citizens receive the dignity and care they deserve.
                             </p>
                         </div>
                     </div>
@@ -73,13 +73,52 @@ export default function AboutPage() {
                 </div>
             </section>
 
-            {/* Leadership Placeholder */}
+            {/* Core Values */}
+            <section className="bg-primary/5 py-20">
+                <div className="container mx-auto px-4">
+                    <h2 className="mb-12 text-center text-3xl font-bold text-secondary">Our Core Values</h2>
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {[
+                            { title: "Integrity", desc: "Honesty and strong moral principles in all our dealings." },
+                            { title: "Professionalism", desc: "Excellence and competence in caregiving practice." },
+                            { title: "Teamwork", desc: "Collaborative effort to achieve the best care outcomes." },
+                            { title: "Caregiving", desc: "Dedicated support for the vulnerable and needy." },
+                            { title: "Service", desc: "Commitment to serving humanity with diligence." },
+                            { title: "Empathy", desc: "Understanding and sharing the feelings of those under care." },
+                        ].map((value) => (
+                            <div key={value.title} className="rounded-xl border bg-background p-6 text-center">
+                                <h3 className="mb-2 text-xl font-bold text-primary">{value.title}</h3>
+                                <p className="text-muted-foreground">{value.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Leadership Section */}
             <section className="py-20">
-                <div className="container mx-auto px-4 text-center">
-                    <h2 className="mb-12 text-3xl font-bold text-secondary">Governing Council & Management</h2>
-                    <div className="mx-auto max-w-4xl rounded-2xl border border-dashed p-12 text-muted-foreground">
-                        <Users className="mx-auto mb-4 h-12 w-12 opacity-20" />
-                        <p>Institutional leadership details and profiles are currently being updated.</p>
+                <div className="container mx-auto px-4">
+                    <h2 className="mb-12 text-center text-3xl font-bold text-secondary">Governing Council & Management</h2>
+                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+                        {[
+                            { name: "Victor Olusan", role: "President", desc: "Economist and ACA certified caregiver." },
+                            { name: "Mohammed Kazeem Oladimeji", role: "Vice President", desc: "Administrative expert and certified caregiver." },
+                            { name: "Alimot E. Afe", role: "Secretary", desc: "Lawyer and peace & conflict resolution focus." },
+                            { name: "Abraham P. Olanrewaju", role: "P.R.O/Strategy", desc: "Media and publicity expert." },
+                            { name: "Zainab Gafar Babatunde", role: "Training Director", desc: "Registered Nurse and Midwife (RN, RM)." },
+                            { name: "Barr. Godwin Okuja", role: "Legal Adviser", desc: "Principal Partner at Okuja & Associates." },
+                            { name: "Dr. Mrs. Gladys Olufunke Etim", role: "Executive Director", desc: "Experienced organization leader." },
+                            { name: "Desmond Onyemechi Okocha", role: "Director", desc: "PhD in Mass Communication." },
+                        ].map((member) => (
+                            <div key={member.name} className="flex flex-col items-center rounded-2xl border bg-background p-6 text-center shadow-sm">
+                                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary/10">
+                                    <Users className="h-8 w-8 text-secondary" />
+                                </div>
+                                <h3 className="text-lg font-bold text-secondary">{member.name}</h3>
+                                <p className="mb-2 text-sm font-medium text-primary">{member.role}</p>
+                                <p className="text-xs text-muted-foreground">{member.desc}</p>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>

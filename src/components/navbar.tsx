@@ -74,11 +74,14 @@ export function Navbar() {
                                             </NavigationMenuContent>
                                         </>
                                     ) : (
-                                        <Link href={item.href} legacyBehavior passHref>
-                                            <NavigationMenuLink className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-accent/10 hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50">
+                                        <NavigationMenuLink asChild>
+                                            <Link
+                                                href={item.href}
+                                                className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-accent/10 hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+                                            >
                                                 {item.title}
-                                            </NavigationMenuLink>
-                                        </Link>
+                                            </Link>
+                                        </NavigationMenuLink>
                                     )}
                                 </NavigationMenuItem>
                             ))}

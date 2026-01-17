@@ -7,22 +7,22 @@ export async function updateSession(request: NextRequest) {
     })
 
     const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-        cookies: {
-            getAll() {
-                return request.cookies.getAll()
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() {
+                    return request.cookies.getAll()
+                },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) => {
+                        request.cookies.set(name, value)
+                        supabaseResponse.cookies.set(name, value, options)
+                    })
+                },
             },
-            setAll(cookiesToSet) {
-                cookiesToSet.forEach(({ name, value, options }) => {
-                    request.cookies.set(name, value)
-                    supabaseResponse.cookies.set(name, value, options)
-                })
-            },
-        },
-    }
-)
+        }
+    )
 
     // Do not run on static files or API routes
     if (
@@ -34,7 +34,33 @@ export async function updateSession(request: NextRequest) {
     }
 
     // Refresh session if expired - required for Server Components
-    await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Protected routes - require authentication
+    const isPortalRoute = request.nextUrl.pathname.startsWith('/portal')
+    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+
+    // Redirect to login if accessing protected routes without authentication
+    if ((isPortalRoute || isAdminRoute) && !user) {
+        const redirectUrl = new URL('/login', request.url)
+        redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
+        return NextResponse.redirect(redirectUrl)
+    }
+
+    // Role-based access control for admin routes
+    if (isAdminRoute && user) {
+        // Get user profile to check role
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        // Redirect non-admin users away from admin routes
+        if (profile?.role !== 'admin') {
+            return NextResponse.redirect(new URL('/portal/member', request.url))
+        }
+    }
 
     return supabaseResponse
 }

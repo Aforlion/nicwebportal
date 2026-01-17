@@ -6,31 +6,31 @@ import { GraduationCap, ShieldCheck, Megaphone, Activity } from "lucide-react"
 const mandates = [
     {
         title: "Training & Education",
-        description: "Providing world-class technical training for various caregiving specialties, including HCA and Dementia care.",
+        description: "Standardizing caregiver training with international best practices across Nigeria.",
         icon: GraduationCap,
         color: "text-blue-600",
         bg: "bg-blue-50",
     },
     {
-        title: "Regulation & Standards",
-        description: "Setting national standards and conducting inspections to ensure safety and quality in care facilities.",
-        icon: ShieldCheck,
-        color: "text-primary",
-        bg: "bg-primary/10",
-    },
-    {
-        title: "Advocacy & Voice",
-        description: "Speaking for caregivers at the national level and influencing policy for the Nigerian care industry.",
+        title: "Advocacy & Policies",
+        description: "Promoting policies that support, empower, and increase awareness for the role of caregivers.",
         icon: Megaphone,
         color: "text-accent",
         bg: "bg-accent/10",
     },
     {
-        title: "Professional Growth",
-        description: "Support for career development through CPD, certification, and professional membership networks.",
+        title: "Standardized Care",
+        description: "Providing the best-needed care services to the vulnerable across all demographics.",
         icon: Activity,
         color: "text-emerald-600",
         bg: "bg-emerald-50",
+    },
+    {
+        title: "Professional Dignity",
+        description: "Ensuring senior citizens and the vulnerable receive the dignity and care they deserve.",
+        icon: ShieldCheck,
+        color: "text-primary",
+        bg: "bg-primary/10",
     },
 ]
 

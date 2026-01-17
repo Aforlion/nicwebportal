@@ -29,7 +29,7 @@ export function Hero() {
                             Professionalizing <span className="text-primary">Care</span> across Nigeria
                         </h1>
                         <p className="mb-8 max-w-[600px] text-lg text-muted-foreground md:text-xl">
-                            The National Institute of Caregivers (NIC) is dedicated to training, certifying, and regulating care professionals to ensure excellence and safety in the care industry.
+                            The National Institute of Caregivers (NIC) is the apex professional body in Nigeria dedicated to supporting and advocating for caregivers providing care to the elderly, physically challenged, and those with chronic illnesses or special needs.
                         </p>
                         <div className="flex flex-col gap-4 sm:flex-row">
                             <Button size="lg" className="h-12 bg-primary px-8 text-white hover:bg-primary/90" asChild>
