@@ -120,6 +120,16 @@ export default function AdminFacilitiesPage() {
         f.email?.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'active': return 'Fully Compliant'
+            case 'pending': return 'Awaiting Inspection'
+            case 'suspended': return 'Suspended'
+            case 'revoked': return 'Non-Compliant'
+            default: return status.toUpperCase()
+        }
+    }
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'active': return 'bg-emerald-500'
@@ -274,7 +284,7 @@ export default function AdminFacilitiesPage() {
                                             </div>
                                         </td>
                                         <td className="p-4">
-                                            <Badge className={getStatusColor(f.status)}>{f.status}</Badge>
+                                            <Badge className={getStatusColor(f.status)}>{getStatusLabel(f.status)}</Badge>
                                         </td>
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end gap-2">

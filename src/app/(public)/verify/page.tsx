@@ -24,6 +24,9 @@ type VerifyResult = {
     status?: string
     expiry?: string
     specialization?: string
+    affiliation?: string
+    complianceCategory?: string
+    lastInspection?: string
 }
 
 export default function PublicVerifyPage() {
@@ -49,13 +52,24 @@ export default function PublicVerifyPage() {
                     .single()
 
                 if (data) {
+                    // Fetch affiliation separately to keep it clean
+                    const { data: staffData } = await supabase
+                        .from('facility_staff')
+                        .select('facilities(name)')
+                        .eq('membership_id', data.id)
+                        .eq('is_active', true)
+                        .maybeSingle()
+
+                    const affiliation = (staffData?.facilities as any)?.name || "Independent / Self-Employed"
+
                     setResult({
                         success: true,
                         type: "Caregiver",
                         name: data.profiles.full_name,
                         status: data.compliance_status || data.status,
                         expiry: new Date(data.expiry_date).toLocaleDateString(),
-                        specialization: data.category
+                        specialization: data.category,
+                        affiliation: affiliation
                     })
                 } else {
                     setResult({ success: false, type: "Caregiver" })
@@ -71,12 +85,20 @@ export default function PublicVerifyPage() {
                     .single()
 
                 if (data) {
+                    const score = data.compliance_score || 0
+                    let category = "Pending Assessment"
+                    if (score >= 85) category = "Fully Compliant"
+                    else if (score >= 70) category = "Conditionally Compliant"
+                    else if (score > 0) category = "Non-Compliant"
+
                     setResult({
                         success: true,
                         type: "Facility",
                         name: data.name,
                         status: data.status,
-                        expiry: "Permanent"
+                        expiry: "Permanent",
+                        complianceCategory: category,
+                        lastInspection: data.last_inspection_date ? new Date(data.last_inspection_date).toLocaleDateString() : "N/A"
                     })
                 } else {
                     setResult({ success: false, type: "Facility" })
@@ -166,15 +188,15 @@ export default function PublicVerifyPage() {
                                                                     <p className="text-secondary font-bold text-base">{result.name}</p>
                                                                 </div>
                                                                 <div className="bg-white/50 p-3 rounded-lg border border-emerald-100">
-                                                                    <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">Status</p>
-                                                                    <p className="text-emerald-600 font-bold text-base">{result.status}</p>
+                                                                    <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">Institutional Affiliation</p>
+                                                                    <p className="text-secondary font-bold text-base">{result.affiliation}</p>
                                                                 </div>
                                                                 <div className="bg-white/50 p-3 rounded-lg border border-emerald-100">
                                                                     <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">Specialization</p>
                                                                     <p className="text-secondary font-bold text-base">{result.specialization}</p>
                                                                 </div>
                                                                 <div className="bg-white/50 p-3 rounded-lg border border-emerald-100">
-                                                                    <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">Expiry Date</p>
+                                                                    <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">Registry Valid Until</p>
                                                                     <p className="text-secondary font-bold text-base">{result.expiry}</p>
                                                                 </div>
                                                             </div>
@@ -250,9 +272,15 @@ export default function PublicVerifyPage() {
                                                                     <p className="text-secondary font-bold text-base">{result.name}</p>
                                                                 </div>
                                                                 <div className="bg-white p-3 rounded-lg border">
-                                                                    <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-wider">Registration Status</p>
-                                                                    <p className={`font-bold text-base ${result.status === 'active' ? 'text-emerald-600' : 'text-orange-600'}`}>
-                                                                        {result.status?.toUpperCase()}
+                                                                    <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-wider">Compliance Category</p>
+                                                                    <p className={`font-black text-base ${result.complianceCategory === 'Fully Compliant' ? 'text-emerald-600' : 'text-orange-600'}`}>
+                                                                        {result.complianceCategory}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="bg-white p-3 rounded-lg border">
+                                                                    <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-wider">Last Inspection</p>
+                                                                    <p className="text-secondary font-bold text-base">
+                                                                        {result.lastInspection}
                                                                     </p>
                                                                 </div>
                                                             </div>

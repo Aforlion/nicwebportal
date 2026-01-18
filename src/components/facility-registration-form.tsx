@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import Textarea from "@/components/ui/textarea";
 import { Building2, Mail, Phone, MapPin, Users, ShieldCheck, CheckCircle2, AlertCircle } from "lucide-react"
 
 const FACILITY_TYPES = [
@@ -27,6 +27,7 @@ export function FacilityRegistrationForm() {
     const [formData, setFormData] = useState({
         facilityName: "",
         regNumber: "",
+        tin: "",
         facilityType: "nursing_home",
         email: "",
         phone: "",
@@ -76,6 +77,7 @@ export function FacilityRegistrationForm() {
                 .insert({
                     name: formData.facilityName,
                     registration_number: formData.regNumber,
+                    tin: formData.tin,
                     facility_type: formData.facilityType,
                     email: formData.email,
                     phone: formData.phone,
@@ -161,12 +163,23 @@ export function FacilityRegistrationForm() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="regNumber">Business Registration Number (RC/BN)</Label>
+                                <Label htmlFor="regNumber">CAC Registration Number (RC/BN)</Label>
                                 <Input
                                     id="regNumber"
                                     name="regNumber"
                                     placeholder="e.g., RC 1234567"
                                     value={formData.regNumber}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="tin">Tax Identification Number (TIN)</Label>
+                                <Input
+                                    id="tin"
+                                    name="tin"
+                                    placeholder="e.g., 12345678-0001"
+                                    value={formData.tin}
                                     onChange={handleChange}
                                     required
                                 />
