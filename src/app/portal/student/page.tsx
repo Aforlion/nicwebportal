@@ -4,49 +4,55 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { PlayCircle, Clock, Award, ArrowRight, ShieldCheck, BookOpen } from "lucide-react"
 import Link from "next/link"
+import { getStudentDashboardData } from "@/actions/get-student-progress"
 
-const enrolledCourses = [
-    {
-        id: "hca-01",
-        title: "Healthcare Assistant (HCA) - Foundation",
-        instructor: "Dr. Sarah Ahmed",
-        progress: 65,
-        nextLesson: "Module 4: Infection Control",
-        status: "Active",
-    },
-    {
-        id: "dementia-02",
-        title: "Dementia Care Specialist",
-        instructor: "Prof. Benson Ibe",
-        progress: 20,
-        nextLesson: "Module 2: Cognitive Psychology",
-        status: "In Progress",
-    },
-]
+export default async function StudentDashboard() {
+    const { enrollments, recent } = await getStudentDashboardData()
 
-export default function StudentDashboard() {
     return (
         <div className="space-y-8">
             {/* Welcome Header */}
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-secondary">Welcome back, John!</h1>
-                    <p className="text-muted-foreground">You have 2 courses in progress and 1 upcoming assignment.</p>
+                    <h1 className="text-3xl font-bold text-secondary">Welcome back!</h1>
+                    <p className="text-muted-foreground">
+                        You have {enrollments.filter((e: any) => e.status === 'active').length} courses in progress.
+                    </p>
                 </div>
-                <Button className="bg-primary" asChild>
-                    <Link href="/portal/student/courses">
-                        <PlayCircle className="mr-2 h-4 w-4" />
-                        Continue Learning
-                    </Link>
-                </Button>
+                {recent && (
+                    <Button className="bg-primary" asChild>
+                        <Link href={`/portal/student/courses/${(Array.isArray(recent.course) ? recent.course[0] : recent.course)?.id}`}>
+                            <PlayCircle className="mr-2 h-4 w-4" />
+                            Continue Learning
+                        </Link>
+                    </Button>
+                )}
             </div>
 
             {/* Stats Overview */}
             <div className="grid gap-6 md:grid-cols-3">
                 {[
-                    { title: "Completed Modules", value: "14", icon: BookOpen, color: "text-blue-600", bg: "bg-blue-50" },
-                    { title: "Learning Hours", value: "48h", icon: Clock, color: "text-primary", bg: "bg-primary/10" },
-                    { title: "CPD Points", value: "125", icon: Award, color: "text-accent", bg: "bg-accent/10" },
+                    {
+                        title: "Enrolled Courses",
+                        value: enrollments.length.toString(),
+                        icon: BookOpen,
+                        color: "text-blue-600",
+                        bg: "bg-blue-50"
+                    },
+                    {
+                        title: "Completion Rate",
+                        value: `${Math.round(enrollments.reduce((acc: number, curr: any) => acc + (curr.progress || 0), 0) / (enrollments.length || 1))}%`,
+                        icon: Clock,
+                        color: "text-primary",
+                        bg: "bg-primary/10"
+                    },
+                    {
+                        title: "Certificates",
+                        value: enrollments.filter((e: any) => e.status === 'completed').length.toString(),
+                        icon: Award,
+                        color: "text-accent",
+                        bg: "bg-accent/10"
+                    },
                 ].map((stat) => (
                     <Card key={stat.title}>
                         <CardContent className="flex items-center gap-4 p-6">
@@ -67,52 +73,61 @@ export default function StudentDashboard() {
                 <div className="lg:col-span-2 space-y-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold text-secondary">Current Courses</h2>
-                        <Link href="/portal/student/courses" className="text-sm font-medium text-primary hover:underline flex items-center">
-                            View All <ArrowRight className="ml-1 h-3 w-3" />
+                        <Link href="/programs" className="text-sm font-medium text-primary hover:underline flex items-center">
+                            Browse Catalog <ArrowRight className="ml-1 h-3 w-3" />
                         </Link>
                     </div>
 
                     <div className="grid gap-6">
-                        {enrolledCourses.map((course) => (
-                            <Card key={course.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                                <CardContent className="p-0">
-                                    <div className="flex flex-col sm:flex-row">
-                                        <div className="sm:w-48 bg-muted/30 p-6 flex items-center justify-center">
-                                            <BookOpen className="h-12 w-12 text-muted-foreground/40" />
-                                        </div>
-                                        <div className="flex-grow p-6">
-                                            <div className="mb-4 flex items-start justify-between">
-                                                <div>
-                                                    <Badge className="mb-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
-                                                        {course.status}
-                                                    </Badge>
-                                                    <h3 className="text-lg font-bold text-secondary line-clamp-1">{course.title}</h3>
-                                                    <p className="text-sm text-muted-foreground">Instructor: {course.instructor}</p>
-                                                </div>
-                                                <Button variant="ghost" size="icon" className="shrink-0" asChild>
-                                                    <Link href={`/portal/student/courses/${course.id}`}>
-                                                        <ArrowRight className="h-5 w-5" />
-                                                    </Link>
-                                                </Button>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="font-medium text-secondary">{course.progress}% Complete</span>
-                                                    <span className="text-muted-foreground">3 modules left</span>
-                                                </div>
-                                                <Progress value={course.progress} className="h-2" />
-                                            </div>
-
-                                            <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 p-2 rounded">
-                                                <PlayCircle className="h-3 w-3" />
-                                                Next: {course.nextLesson}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardContent>
+                        {enrollments.length === 0 ? (
+                            <Card className="p-8 text-center bg-muted/20 border-dashed">
+                                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                                <h3 className="text-lg font-semibold text-secondary">No courses yet</h3>
+                                <p className="text-muted-foreground mb-4">Start your learning journey today.</p>
+                                <Button variant="outline" asChild>
+                                    <Link href="/programs">Browse Courses</Link>
+                                </Button>
                             </Card>
-                        ))}
+                        ) : (
+                            enrollments.map((enrollment: any) => (
+                                <Card key={enrollment.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                                    <CardContent className="p-0">
+                                        <div className="flex flex-col sm:flex-row">
+                                            <div className="sm:w-48 bg-muted/30 p-6 flex items-center justify-center relative">
+                                                {enrollment.course?.thumbnail_url ? (
+                                                    <img src={enrollment.course.thumbnail_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80" />
+                                                ) : (
+                                                    <BookOpen className="h-12 w-12 text-muted-foreground/40" />
+                                                )}
+                                            </div>
+                                            <div className="flex-grow p-6">
+                                                <div className="mb-4 flex items-start justify-between">
+                                                    <div>
+                                                        <Badge className={`mb-2 ${enrollment.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-emerald-100 text-emerald-700'} hover:bg-emerald-100`}>
+                                                            {enrollment.status === 'active' ? 'In Progress' : enrollment.status}
+                                                        </Badge>
+                                                        <h3 className="text-lg font-bold text-secondary line-clamp-1">{enrollment.course?.title}</h3>
+                                                        <p className="text-sm text-muted-foreground">{enrollment.course?.level || "Certification"}</p>
+                                                    </div>
+                                                    <Button variant="ghost" size="icon" className="shrink-0" asChild>
+                                                        <Link href={`/portal/student/courses/${enrollment.course?.id}`}>
+                                                            <ArrowRight className="h-5 w-5" />
+                                                        </Link>
+                                                    </Button>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="font-medium text-secondary">{enrollment.progress || 0}% Complete</span>
+                                                    </div>
+                                                    <Progress value={enrollment.progress || 0} className="h-2" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))
+                        )}
                     </div>
                 </div>
 

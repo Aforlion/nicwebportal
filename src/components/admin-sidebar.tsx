@@ -13,7 +13,8 @@ import {
     LogOut,
     FileText,
     CreditCard,
-    BarChart3
+    BarChart3,
+    BookOpen
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -24,7 +25,7 @@ const adminNavItems = [
     { title: "CPD Review", href: "/admin/cpd-review", icon: GraduationCap },
     { title: "Caregivers", href: "/admin/registry/caregivers", icon: Search },
     { title: "Facilities", href: "/admin/registry/facilities", icon: Building2 },
-    { title: "Programs", href: "/admin/programs", icon: FileText },
+    { title: "Training (LMS)", href: "/admin/training", icon: BookOpen },
     { title: "Payments", href: "/admin/payments", icon: CreditCard },
     { title: "Inspections", href: "/admin/inspections", icon: ShieldCheck },
     { title: "Reports", href: "/admin/reports", icon: BarChart3 },

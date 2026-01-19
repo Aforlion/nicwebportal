@@ -1,43 +1,13 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Clock, GraduationCap, Laptop, Users } from "lucide-react"
+import { Clock, GraduationCap, Laptop, Users, BookOpen } from "lucide-react"
 import Link from "next/link"
+import { getPublishedCourses } from "@/actions/get-courses"
 
-const programs = [
-    {
-        id: "hca",
-        title: "Healthcare Assistant (HCA)",
-        description: "The foundational program for professional caregivers. Covers basic care, hygiene, safety, and patient communication.",
-        duration: "12 Weeks",
-        mode: "Blended",
-        price: "₦75,000",
-        features: ["Certification", "Practical Internship", "Employment Support"],
-        category: "Foundational",
-    },
-    {
-        id: "specialty-care",
-        title: "Specialty Care Certification",
-        description: "Expert training for Parkinson's Disease, Alzheimer's (Cognitive Rehab), and Diabetes Care management.",
-        duration: "10 Weeks",
-        mode: "Blended",
-        price: "Contact Us",
-        features: ["Specialized Support", "Cognitive Rehab", "Diabetes Care"],
-        category: "Specialty",
-    },
-    {
-        id: "personal-care",
-        title: "Personal Care Assistant",
-        description: "Maintaining dignity through hygiene, bathing, and grooming assistance for the vulnerable.",
-        duration: "4 Weeks",
-        mode: "Physical",
-        price: "₦45,000",
-        features: ["Activities of Daily Living", "Dignity Focus", "Hands-on Training"],
-        category: "Foundational",
-    },
-]
+export default async function ProgramsPage() {
+    const programs = await getPublishedCourses()
 
-export default function ProgramsPage() {
     return (
         <div className="pb-20">
             {/* Header */}
@@ -55,52 +25,64 @@ export default function ProgramsPage() {
             {/* Program Grid */}
             <section className="py-20">
                 <div className="container mx-auto px-4">
-                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                        {programs.map((program) => (
-                            <Card key={program.id} className="flex flex-col overflow-hidden transition-all hover:shadow-lg">
-                                <CardHeader className="pb-4">
-                                    <div className="mb-2">
-                                        <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
-                                            {program.category}
-                                        </Badge>
-                                    </div>
-                                    <CardTitle className="text-2xl text-secondary">{program.title}</CardTitle>
-                                    <CardDescription className="min-h-[60px]">{program.description}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex-grow space-y-4">
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
-                                        <div className="flex items-center gap-2 text-muted-foreground">
-                                            <Clock className="h-4 w-4" />
-                                            {program.duration}
-                                        </div>
-                                        <div className="flex items-center gap-2 text-muted-foreground">
-                                            <Laptop className="h-4 w-4" />
-                                            {program.mode}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        {program.features.map((feature) => (
-                                            <div key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <GraduationCap className="h-4 w-4 text-accent" />
-                                                {feature}
+                    {programs.length === 0 ? (
+                        <div className="text-center py-20 bg-muted/20 rounded-xl">
+                            <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+                            <h3 className="text-xl font-semibold text-secondary">No Courses Available Yet</h3>
+                            <p className="text-muted-foreground mt-2">New training programs are being added. Check back soon!</p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                            {programs.map((program: any) => (
+                                <Card key={program.id} className="flex flex-col overflow-hidden transition-all hover:shadow-lg">
+                                    <div className="aspect-video w-full bg-slate-100 relative">
+                                        {/* Placeholder for thumbnail if not present */}
+                                        {program.thumbnail_url ? (
+                                            <img src={program.thumbnail_url} alt={program.title} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40">
+                                                <GraduationCap size={48} />
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
-                                </CardContent>
-                                <CardFooter className="flex flex-col gap-4 border-t bg-muted/20 pt-6">
-                                    <div className="flex w-full items-center justify-between">
-                                        <span className="text-xl font-bold text-secondary">{program.price}</span>
-                                        <Button variant="link" className="p-0 text-primary" asChild>
-                                            <Link href={`/programs/${program.id}`}>View Details</Link>
+                                    <CardHeader className="pb-4">
+                                        <div className="mb-2">
+                                            <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                                                {program.level || "Certification"}
+                                            </Badge>
+                                        </div>
+                                        <CardTitle className="text-xl text-secondary line-clamp-2">{program.title}</CardTitle>
+                                        <CardDescription className="line-clamp-3 min-h-[60px]">{program.description}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="flex-grow space-y-4">
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Clock className="h-4 w-4" />
+                                                {program.duration_hours ? `${program.duration_hours} Hours` : 'Self-paced'}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Laptop className="h-4 w-4" />
+                                                Online
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="flex flex-col gap-4 border-t bg-muted/20 pt-6">
+                                        <div className="flex w-full items-center justify-between">
+                                            <span className="text-xl font-bold text-secondary">
+                                                {program.price > 0 ? `₦${program.price.toLocaleString()}` : "Free"}
+                                            </span>
+                                            <Button variant="link" className="p-0 text-primary" asChild>
+                                                <Link href={`/programs/${program.slug}`}>View Syllabus</Link>
+                                            </Button>
+                                        </div>
+                                        <Button className="w-full bg-primary" asChild>
+                                            <Link href={`/portal/student/enroll/${program.id}`}>Enroll Now</Link>
                                         </Button>
-                                    </div>
-                                    <Button className="w-full bg-primary" asChild>
-                                        <Link href={`/enrol/${program.id}`}>Enroll Now</Link>
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </section>
 
