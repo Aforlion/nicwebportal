@@ -21,6 +21,7 @@ import { toast } from "sonner"
 import dynamic from "next/dynamic"
 
 const PaystackPaymentHandler = dynamic(() => import("@/components/paystack-payment-handler"), { ssr: false })
+import { savePendingRegistrationAction } from "@/lib/actions/registration"
 
 const MEMBERSHIP_CATEGORIES = [
     { id: "student", name: "Student Member", fee: 5000, description: "For enrolled students" },
@@ -372,10 +373,27 @@ export function MemberRegistrationForm() {
                             <PaystackPaymentHandler
                                 email={formData.email}
                                 amount={selectedCategory?.fee || 0}
-                                onSuccess={async () => {
-                                    toast.success("Payment successful! Finalizing registration...")
-                                    // Future: Implement account creation and file upload logic here
+                                useRedirect={true}
+                                callbackUrl={`${window.location.origin}/payment/callback`}
+                                onBefore={async () => {
+                                    const res = await savePendingRegistrationAction({
+                                        email: formData.email,
+                                        formData: formData,
+                                        registrationType: 'individual'
+                                    })
+                                    if (res.success) {
+                                        return { success: true, metadata: { pending_id: res.id } }
+                                    }
+                                    return { success: false, error: res.error }
                                 }}
+                                metadata={{
+                                    registration_type: 'individual',
+                                    category: formData.category,
+                                    full_name: formData.fullName,
+                                    phone: formData.phone
+                                }}
+                                buttonText={`Pay ₦${(selectedCategory?.fee || 0).toLocaleString()} & Register`}
+                                showIcon={true}
                             />
                         )}
                     </div>

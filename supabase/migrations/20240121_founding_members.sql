@@ -1,5 +1,9 @@
--- Add is_founding flag to memberships
+-- Add capitalization and payment tracking to memberships
 ALTER TABLE memberships ADD COLUMN IF NOT EXISTS is_founding BOOLEAN DEFAULT FALSE;
+ALTER TABLE memberships ADD COLUMN IF NOT EXISTS paid_recapitalization BOOLEAN DEFAULT FALSE;
+ALTER TABLE memberships ADD COLUMN IF NOT EXISTS recapitalization_amount DECIMAL(12, 2) DEFAULT 0;
+ALTER TABLE memberships ADD COLUMN IF NOT EXISTS last_payment_reference TEXT;
+ALTER TABLE memberships ADD COLUMN IF NOT EXISTS last_payment_date TIMESTAMPTZ;
 
 -- Create membership_invitations table
 CREATE TABLE IF NOT EXISTS membership_invitations (
@@ -10,6 +14,10 @@ CREATE TABLE IF NOT EXISTS membership_invitations (
     token TEXT NOT NULL UNIQUE,
     expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '30 days'),
     is_used BOOLEAN DEFAULT FALSE,
+    paid_at TIMESTAMPTZ,
+    payment_reference TEXT,
+    payment_amount DECIMAL(12, 2),
+    paid_recapitalization BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

@@ -22,6 +22,7 @@ import { usePaystackPayment } from "react-paystack"
 import dynamic from "next/dynamic"
 
 const PaystackPaymentHandler = dynamic(() => import("@/components/paystack-payment-handler"), { ssr: false })
+import { toast } from "sonner"
 
 // Note: Paystack keys should be in .env. We'll use a placeholder for now.
 const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_placeholder"
@@ -44,6 +45,8 @@ function FoundingOnboardingFlow() {
         idCard: null
     })
     const [uploading, setUploading] = useState(false)
+    const [includeRecapitalization, setIncludeRecapitalization] = useState(true)
+    const paymentAmount = includeRecapitalization ? 112000 : 12000
 
     useEffect(() => {
         if (!token) {
@@ -51,8 +54,21 @@ function FoundingOnboardingFlow() {
             setLoading(false)
             return
         }
+
+        // Recover state from sessionStorage if returning from payment
+        const savedPass = sessionStorage.getItem(`founding_pass_${token}`)
+        if (savedPass) setPassword(savedPass)
+
+        const queryStep = searchParams.get('step')
+        const paid = searchParams.get('paid')
+        if (queryStep) setStep(parseInt(queryStep))
+        if (paid === 'true') {
+            // If already paid, move ahead
+            toast.success("Payment confirmed!")
+        }
+
         fetchInvitation()
-    }, [token])
+    }, [token, searchParams])
 
     const fetchInvitation = async () => {
         const supabase = createClient()
@@ -68,6 +84,9 @@ function FoundingOnboardingFlow() {
             setError("This invitation is invalid, expired, or has already been used.")
         } else {
             setInvitation(data)
+            if (data.paid_at) {
+                setStep(3)
+            }
         }
         setLoading(false)
     }
@@ -75,9 +94,11 @@ function FoundingOnboardingFlow() {
     const handleAccountSetup = async (e: React.FormEvent) => {
         e.preventDefault()
         if (password !== confirmPassword) {
-            alert("Passwords do not match")
+            toast.error("Passwords do not match")
             return
         }
+        // Save password temporarily to recover after redirect
+        sessionStorage.setItem(`founding_pass_${token}`, password)
         setStep(2) // Move to Payment
     }
 
@@ -138,7 +159,11 @@ function FoundingOnboardingFlow() {
                 user_id: authData.user.id,
                 category: invitation.category,
                 is_founding: true,
-                is_active: true, // Activated by payment
+                is_active: true,
+                paid_recapitalization: invitation.paid_recapitalization,
+                recapitalization_amount: invitation.paid_recapitalization ? 100000 : 0,
+                last_payment_reference: invitation.payment_reference,
+                last_payment_date: invitation.paid_at,
                 expiry_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
             })
 
@@ -147,7 +172,7 @@ function FoundingOnboardingFlow() {
 
             setStep(4) // Success
         } catch (err: any) {
-            alert(err.message || "An error occurred during final setup.")
+            toast.error(err.message || "An error occurred during final setup.")
         } finally {
             setUploading(false)
         }
@@ -245,27 +270,65 @@ function FoundingOnboardingFlow() {
                                 <CreditCard className="h-10 w-10 text-emerald-600" />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-bold text-secondary">Yearly Membership Dues</h2>
-                                <p className="text-muted-foreground mt-2">As a founding member, your annual professional dues are set at <span className="font-bold text-secondary">₦12,000</span>.</p>
+                                <h2 className="text-2xl font-bold text-secondary">Membership Fees</h2>
+                                <p className="text-muted-foreground mt-2">Annual dues are required for all members. You can also choose to support our recapitalization goal.</p>
                             </div>
-                            <div className="p-6 bg-slate-50 rounded-2xl border border-dashed text-left">
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-medium">Founding Membership</span>
-                                    <span className="font-bold">₦12,000</span>
+
+                            <div className="space-y-4">
+                                {/* Mandatory Annual Dues */}
+                                <div className="p-6 rounded-2xl border-2 border-emerald-100 bg-emerald-50/20 text-left">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-bold text-secondary text-lg">Annual Professional Dues</span>
+                                        <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center">
+                                            <CheckCircle2 className="h-4 w-4 text-white" />
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground mb-3">Mandatory yearly professional membership renewal fee.</p>
+                                    <span className="text-xl font-bold text-secondary">₦12,000</span>
                                 </div>
-                                <div className="flex justify-between items-center text-xs text-muted-foreground">
-                                    <span>Validity</span>
-                                    <span>12 Months</span>
+
+                                {/* Optional Recapitalization Fee */}
+                                <div
+                                    onClick={() => setIncludeRecapitalization(!includeRecapitalization)}
+                                    className={`p-6 rounded-2xl border-2 cursor-pointer transition-all text-left ${includeRecapitalization ? "border-primary bg-primary/5" : "border-slate-100 hover:border-slate-200"}`}
+                                >
+                                    <div className="flex justify-between items-center mb-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-secondary text-lg">Recapitalization Fee</span>
+                                            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-bold">Optional</span>
+                                        </div>
+                                        <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${includeRecapitalization ? "border-primary" : "border-slate-300"}`}>
+                                            {includeRecapitalization && <div className="h-2.5 w-2.5 rounded-full bg-primary" />}
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground mb-3">A one-time contribution toward the institute's national recapitalization initiative.</p>
+                                    <span className="text-xl font-bold text-primary">₦100,000</span>
                                 </div>
                             </div>
-                            <PaystackPaymentHandler
-                                email={invitation.email}
-                                amount={12000}
-                                onSuccess={handlePaymentSuccess}
-                            />
-                            <p className="text-xs text-muted-foreground px-8">
-                                Secure payment gateway provided by Paystack. Your financial data is never stored on our servers.
-                            </p>
+
+                            <div className="pt-4 border-t border-dashed text-left">
+                                <div className="flex justify-between items-center mb-6 px-2">
+                                    <span className="text-lg font-medium">Total to Pay</span>
+                                    <span className="text-3xl font-extrabold text-secondary">₦{paymentAmount.toLocaleString()}</span>
+                                </div>
+                                <PaystackPaymentHandler
+                                    email={invitation.email}
+                                    amount={paymentAmount}
+                                    useRedirect={true}
+                                    callbackUrl={`${window.location.host.includes('localhost') ? 'http://' : 'https://'}${window.location.host}/payment/callback`}
+                                    metadata={{
+                                        registration_type: 'founding',
+                                        token: token,
+                                        full_name: invitation.full_name
+                                    }}
+                                    onSuccess={handlePaymentSuccess}
+                                    className="w-full bg-primary h-14 text-lg"
+                                    buttonText={`Pay ₦${paymentAmount.toLocaleString()}`}
+                                />
+                                <p className="text-xs text-muted-foreground mt-4 px-8 text-center">
+                                    Secure payment gateway provided by Paystack. Your financial data is never stored on our servers.
+                                </p>
+                            </div>
                         </CardContent>
                     )}
 
@@ -349,7 +412,7 @@ function FoundingOnboardingFlow() {
                     By completing this onboarding, you agree to the National Institute of Caregivers professional code of conduct and data protection policies.
                 </p>
             </div>
-        </div>
+        </div >
     )
 }
 
