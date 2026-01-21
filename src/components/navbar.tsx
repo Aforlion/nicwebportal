@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Menu, X, ShieldCheck, User } from "lucide-react"
+import Image from "next/image"
+import { Menu, X, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     NavigationMenu,
@@ -53,8 +54,14 @@ export function Navbar() {
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 <div className="flex items-center gap-2">
                     <Link href="/" className="flex items-center space-x-2">
-                        <span className="text-2xl font-bold tracking-tighter text-primary flex items-center gap-1">
-                            <ShieldCheck className="h-8 w-8 text-accent" />
+                        <Image
+                            src="/logo.jpg"
+                            alt="NIC Logo"
+                            width={40}
+                            height={40}
+                            className="h-10 w-auto rounded"
+                        />
+                        <span className="text-2xl font-bold tracking-tighter text-primary">
                             NIC
                         </span>
                     </Link>

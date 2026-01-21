@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { createClient } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,7 +9,6 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
     Search,
-    ShieldCheck,
     CheckCircle2,
     XCircle,
     Calendar,
@@ -109,7 +109,7 @@ export default function VerifyMemberPage() {
             {/* Header */}
             <section className="bg-primary py-20 text-white">
                 <div className="container mx-auto px-4 text-center">
-                    <ShieldCheck className="mx-auto mb-6 h-16 w-16 text-accent" />
+                    <Image src="/logo.jpg" alt="NIC" width={64} height={64} className="mx-auto mb-6 h-20 w-auto rounded bg-white p-1" />
                     <h1 className="mb-6 text-4xl font-extrabold tracking-tight md:text-5xl">
                         National Caregiver Registry
                     </h1>
@@ -193,7 +193,7 @@ export default function VerifyMemberPage() {
                             {/* Info Notice */}
                             <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
                                 <p className="flex items-start gap-2">
-                                    <ShieldCheck className="h-5 w-5 flex-shrink-0 text-primary mt-0.5" />
+                                    <Image src="/logo.jpg" alt="NIC" width={20} height={20} className="h-5 w-auto rounded mt-0.5" />
                                     <span>
                                         This verification tool is provided for employers, families, and the public to confirm
                                         the professional credentials of NIC-certified caregivers.

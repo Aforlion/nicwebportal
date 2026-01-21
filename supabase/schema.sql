@@ -71,11 +71,19 @@ CREATE TABLE facilities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_id UUID REFERENCES profiles(id),
   name TEXT NOT NULL,
+  registration_number TEXT UNIQUE,
+  facility_type TEXT, 
+  email TEXT UNIQUE,
+  phone TEXT,
   address TEXT NOT NULL,
-  contact_email TEXT,
-  contact_phone TEXT,
+  state TEXT,
+  city TEXT,
+  capacity INTEGER,
+  tin TEXT,
+  status TEXT DEFAULT 'pending',
   compliance_status compliance_status DEFAULT 'under_review',
-  registered_at TIMESTAMPTZ DEFAULT NOW()
+  registered_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- INSPECTIONS

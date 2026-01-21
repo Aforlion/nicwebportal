@@ -3,12 +3,13 @@
 import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { createClient } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ShieldCheck, Mail, Lock, AlertCircle } from "lucide-react"
+import { Mail, Lock, AlertCircle } from "lucide-react"
 
 function LoginForm() {
     const router = useRouter()
@@ -59,8 +60,8 @@ function LoginForm() {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-4 text-center">
-                    <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <ShieldCheck className="h-8 w-8 text-primary" />
+                    <div className="mx-auto h-20 w-20 rounded-full bg-primary/5 flex items-center justify-center p-3">
+                        <Image src="/logo.jpg" alt="NIC Logo" width={64} height={64} className="h-full w-auto" />
                     </div>
                     <div>
                         <CardTitle className="text-2xl">Welcome Back</CardTitle>
@@ -142,7 +143,7 @@ export default function LoginPage() {
         <Suspense fallback={
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <ShieldCheck className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse" />
+                    <Image src="/logo.jpg" alt="Logo" width={48} height={48} className="mx-auto mb-4 animate-pulse rounded" />
                     <p className="text-muted-foreground">Loading...</p>
                 </div>
             </div>

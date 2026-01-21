@@ -14,8 +14,24 @@ import {
     Eye,
     CheckCircle2,
     XCircle,
-    Clock
+    Clock,
+    UserPlus,
+    Mail,
+    Copy,
+    ExternalLink
 } from "lucide-react"
+import { NIC_FOUNDERS } from "@/constants/founders"
+import { createClient } from "@/lib/supabase"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 const members = [
     { id: 1, name: "Grace Obi", memberID: "NIC-MEM-5502", category: "Full Member", status: "Active", joinDate: "March 2024", email: "grace.obi@example.com" },
@@ -50,10 +66,21 @@ export default function AdminMembersPage() {
                     <h1 className="text-3xl font-bold text-secondary">Member Management</h1>
                     <p className="text-muted-foreground">View and manage all NIC members</p>
                 </div>
-                <Button className="bg-primary">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export Members
-                </Button>
+                <div className="flex gap-4">
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button className="bg-accent text-secondary hover:bg-accent/90">
+                                <UserPlus className="mr-2 h-4 w-4" />
+                                Invite Founder
+                            </Button>
+                        </DialogTrigger>
+                        <InviteFounderModal />
+                    </Dialog>
+                    <Button variant="outline">
+                        <Download className="mr-2 h-4 w-4" />
+                        Export Members
+                    </Button>
+                </div>
             </div>
 
             {/* Stats Cards */}
@@ -192,5 +219,111 @@ export default function AdminMembersPage() {
                 </CardContent>
             </Card>
         </div>
+    )
+}
+
+function InviteFounderModal() {
+    const [email, setEmail] = useState("")
+    const [selectedFounder, setSelectedFounder] = useState("")
+    const [loading, setLoading] = useState(false)
+    const [inviteLink, setInviteLink] = useState("")
+
+    const handleInvite = async () => {
+        setLoading(true)
+        try {
+            const supabase = createClient()
+            const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+
+            const { error } = await supabase
+                .from('membership_invitations')
+                .insert({
+                    email,
+                    full_name: selectedFounder,
+                    token,
+                    category: 'full'
+                })
+
+            if (error) throw error
+
+            const link = `${window.location.origin}/onboard/founding?token=${token}`
+            setInviteLink(link)
+        } catch (err: any) {
+            alert(err.message || "Failed to create invitation")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Invite Founding Member</DialogTitle>
+                <DialogDescription>
+                    Select a founder from the official list and provide their email to generate an onboarding link.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="founder">Select Founder Name</Label>
+                    <select
+                        id="founder"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={selectedFounder}
+                        onChange={(e) => setSelectedFounder(e.target.value)}
+                    >
+                        <option value="">-- Choose Founder --</option>
+                        {NIC_FOUNDERS.map(name => (
+                            <option key={name} value={name}>{name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                        id="email"
+                        type="email"
+                        placeholder="founder@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                </div>
+
+                {inviteLink && (
+                    <div className="mt-4 p-4 bg-muted rounded-lg border space-y-2">
+                        <Label className="text-xs uppercase text-muted-foreground">Onboarding Link</Label>
+                        <div className="flex gap-2">
+                            <Input value={inviteLink} readOnly className="bg-white" />
+                            <Button size="icon" variant="outline" onClick={() => {
+                                navigator.clipboard.writeText(inviteLink)
+                            }}>
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                            Send this link to the founder to complete their registration, pay dues, and upload KYC.
+                        </p>
+                    </div>
+                )}
+            </div>
+            <DialogFooter>
+                {!inviteLink ? (
+                    <Button
+                        onClick={handleInvite}
+                        disabled={loading || !email || !selectedFounder}
+                        className="w-full bg-primary"
+                    >
+                        {loading ? "Generating..." : "Generate Invitation Link"}
+                    </Button>
+                ) : (
+                    <Button variant="outline" className="w-full" onClick={() => {
+                        setInviteLink("")
+                        setEmail("")
+                        setSelectedFounder("")
+                    }}>
+                        Create Another
+                    </Button>
+                )}
+            </DialogFooter>
+        </DialogContent>
     )
 }

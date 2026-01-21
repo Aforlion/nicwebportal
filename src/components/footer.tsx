@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { ShieldCheck, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react"
+import Image from "next/image"
+import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react"
 
 export function Footer() {
     return (
@@ -8,7 +9,13 @@ export function Footer() {
                 <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-5">
                     <div className="space-y-4">
                         <Link href="/" className="flex items-center space-x-2">
-                            <ShieldCheck className="h-8 w-8 text-accent" />
+                            <Image
+                                src="/logo.jpg"
+                                alt="NIC Logo"
+                                width={32}
+                                height={32}
+                                className="h-8 w-auto rounded bg-white p-0.5"
+                            />
                             <span className="text-2xl font-bold tracking-tighter text-white">NIC</span>
                         </Link>
                         <p className="text-sm text-slate-400">
@@ -38,11 +45,11 @@ export function Footer() {
                         <ul className="space-y-4 text-sm text-slate-400">
                             <li className="flex items-start gap-2">
                                 <MapPin className="h-4 w-4 text-accent mt-1 flex-shrink-0" />
-                                <span className="text-xs">Suite 3D, Shishen Plaza, Off Ibrahim Biya Road, Garki District, Abuja.</span>
+                                <span className="text-xs">Suit S9, 2nd Floor, Ocean Center, Gudu District, FCT, Abuja.</span>
                             </li>
                             <li className="flex items-center gap-2">
                                 <Phone className="h-4 w-4 text-accent" />
-                                (+234) 907 984 553
+                                08034753055
                             </li>
                             <li className="flex items-center gap-2">
                                 <Mail className="h-4 w-4 text-accent" />

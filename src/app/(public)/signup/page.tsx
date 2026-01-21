@@ -3,12 +3,13 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { createClient } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ShieldCheck, Mail, Lock, User, Phone, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Mail, Lock, User, Phone, AlertCircle, CheckCircle2 } from "lucide-react"
 
 export default function SignupPage() {
     const router = useRouter()
@@ -108,8 +109,8 @@ export default function SignupPage() {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-4 text-center">
-                    <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <ShieldCheck className="h-8 w-8 text-primary" />
+                    <div className="mx-auto h-20 w-20 rounded-full bg-primary/5 flex items-center justify-center p-3">
+                        <Image src="/logo.jpg" alt="NIC Logo" width={64} height={64} className="h-full w-auto" />
                     </div>
                     <div>
                         <CardTitle className="text-2xl">Create Account</CardTitle>

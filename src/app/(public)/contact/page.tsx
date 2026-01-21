@@ -68,7 +68,7 @@ export default function ContactPage() {
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-secondary">Headquarters</h3>
-                                            <p className="text-muted-foreground">Suite 3D, Shishen Plaza, Off Ibrahim Biya Road, Garki District, Abuja.</p>
+                                            <p className="text-muted-foreground">Suit S9, 2nd Floor, Ocean Center, Gudu District, FCT, Abuja.</p>
                                         </div>
                                     </div>
 
@@ -78,7 +78,7 @@ export default function ContactPage() {
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-secondary">Phone Support</h3>
-                                            <p className="text-muted-foreground">(+234) 907 984 553</p>
+                                            <p className="text-muted-foreground">08034753055</p>
                                             <p className="text-muted-foreground">(+234) 813 028 9626</p>
                                             <p className="text-sm text-muted-foreground italic">Available Mon-Fri, 9am - 5pm</p>
                                         </div>

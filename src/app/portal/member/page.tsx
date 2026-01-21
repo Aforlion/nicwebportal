@@ -11,6 +11,7 @@ import {
     ArrowUpRight
 } from "lucide-react"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase"
 
 export default function MemberDashboard() {
     return (
@@ -25,11 +26,16 @@ export default function MemberDashboard() {
                         <CardContent className="p-8 relative">
                             <div className="flex justify-between items-start mb-12">
                                 <div>
-                                    <Badge className="bg-accent text-secondary font-bold hover:bg-accent border-none mb-2 px-3">
-                                        FULL MEMBER (MNIC)
-                                    </Badge>
+                                    <div className="flex gap-2 mb-2">
+                                        <Badge className="bg-accent text-secondary font-bold hover:bg-accent border-none px-3">
+                                            FULL MEMBER (MNIC)
+                                        </Badge>
+                                        <Badge className="bg-amber-400 text-secondary font-black hover:bg-amber-500 border-none px-3 animate-pulse">
+                                            FOUNDING MEMBER
+                                        </Badge>
+                                    </div>
                                     <h1 className="text-3xl font-bold">Grace Obi</h1>
-                                    <p className="text-slate-300">National ID: NIC-MEM-5502</p>
+                                    <p className="text-slate-300">National ID: NIC-FND-5502</p>
                                 </div>
                                 <div className="h-20 w-20 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20">
                                     <ShieldCheck className="h-12 w-12 text-accent" />

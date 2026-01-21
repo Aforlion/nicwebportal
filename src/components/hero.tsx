@@ -2,8 +2,9 @@
 
 import { motion } from "framer-motion"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { ShieldCheck, GraduationCap, Search } from "lucide-react"
+import { GraduationCap, Search } from "lucide-react"
 
 export function Hero() {
     return (
@@ -22,7 +23,7 @@ export function Hero() {
                         transition={{ duration: 0.6, ease: "easeOut" }}
                     >
                         <div className="mb-6 inline-flex items-center rounded-full bg-accent/10 px-4 py-1.5 text-sm font-medium text-accent">
-                            <ShieldCheck className="mr-2 h-4 w-4" />
+                            <Image src="/logo.jpg" alt="NIC" width={16} height={16} className="mr-2 h-4 w-4 rounded-full" />
                             The Official Regulatory Body for Caregivers
                         </div>
                         <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-secondary md:text-5xlg lg:text-6xl">
@@ -58,8 +59,8 @@ export function Hero() {
                                 {/* Visual Placeholder for institutional feeling */}
                                 <div className="flex flex-col gap-6">
                                     <div className="flex items-center gap-4 rounded-lg bg-white p-4 shadow-sm">
-                                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                            <ShieldCheck className="h-6 w-6 text-primary" />
+                                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center p-2">
+                                            <Image src="/logo.jpg" alt="Logo" width={32} height={32} className="h-full w-auto" />
                                         </div>
                                         <div>
                                             <h4 className="font-semibold text-secondary">National Registry</h4>

@@ -25,8 +25,8 @@ export default function MemberProfilePage() {
     const [profileData, setProfileData] = useState({
         fullName: "Grace Obi",
         email: "grace.obi@example.com",
-        phone: "+234 907 984 553",
-        address: "Suite 3D, Shishen Plaza, Off Ibrahim Biya Road, Garki District, Abuja",
+        phone: "08034753055",
+        address: "Suit S9, 2nd Floor, Ocean Center, Gudu District, FCT, Abuja",
         dateOfBirth: "1990-05-15",
         gender: "female",
         qualification: "HCA Certificate, BSc Nursing",

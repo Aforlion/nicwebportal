@@ -68,8 +68,9 @@ export function FacilityRegistrationForm() {
             if (authError) throw authError
             if (!authData.user) throw new Error("Failed to create user account")
 
-            // 2. Create the profile (Supabase triggers usually handle this, but we'll ensure it)
-            // Note: In our current setup, we need to make sure the profile exists
+            // 2. Profile creation is now handled by a database trigger on auth.users
+            // we'll wait a brief moment to ensure the trigger has finished
+            await new Promise(resolve => setTimeout(resolve, 500))
 
             // 3. Create the facility record
             const { error: facilityError } = await supabase

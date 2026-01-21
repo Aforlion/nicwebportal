@@ -16,6 +16,11 @@ import {
     ArrowLeft,
     Upload
 } from "lucide-react"
+import { createClient } from "@/lib/supabase"
+import { toast } from "sonner"
+import dynamic from "next/dynamic"
+
+const PaystackPaymentHandler = dynamic(() => import("@/components/paystack-payment-handler"), { ssr: false })
 
 const MEMBERSHIP_CATEGORIES = [
     { id: "student", name: "Student Member", fee: 5000, description: "For enrolled students" },
@@ -45,6 +50,21 @@ export function MemberRegistrationForm() {
         qualification: "",
         experience: "",
     })
+
+    const [files, setFiles] = useState<{
+        passport: File | null;
+        certificate: File | null;
+        idCard: File | null;
+    }>({
+        passport: null,
+        certificate: null,
+        idCard: null,
+    })
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, key: keyof typeof files) => {
+        const selectedFile = e.target.files?.[0] || null
+        setFiles(prev => ({ ...prev, [key]: selectedFile }))
+    }
 
     const handleNext = () => {
         if (currentStep < STEPS.length) {
@@ -226,36 +246,69 @@ export function MemberRegistrationForm() {
                             <div className="space-y-2">
                                 <Label>Passport Photograph *</Label>
                                 <div className="flex items-center justify-center w-full">
-                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50">
+                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors">
                                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                                            <p className="text-sm text-muted-foreground">Click to upload passport photo</p>
+                                            <Upload className={`w-8 h-8 mb-2 ${files.passport ? "text-primary" : "text-muted-foreground"}`} />
+                                            <p className="text-sm text-muted-foreground">
+                                                {files.passport ? (
+                                                    <span className="text-primary font-medium">Selected: {files.passport.name}</span>
+                                                ) : (
+                                                    "Click to upload passport photo"
+                                                )}
+                                            </p>
                                         </div>
-                                        <input type="file" className="hidden" accept="image/*" />
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={(e) => handleFileChange(e, 'passport')}
+                                        />
                                     </label>
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <Label>Professional Certificate *</Label>
                                 <div className="flex items-center justify-center w-full">
-                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50">
+                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors">
                                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                                            <p className="text-sm text-muted-foreground">Upload HCA or relevant certificate</p>
+                                            <Upload className={`w-8 h-8 mb-2 ${files.certificate ? "text-primary" : "text-muted-foreground"}`} />
+                                            <p className="text-sm text-muted-foreground">
+                                                {files.certificate ? (
+                                                    <span className="text-primary font-medium">Selected: {files.certificate.name}</span>
+                                                ) : (
+                                                    "Upload HCA or relevant certificate"
+                                                )}
+                                            </p>
                                         </div>
-                                        <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" />
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            onChange={(e) => handleFileChange(e, 'certificate')}
+                                        />
                                     </label>
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <Label>Valid ID Card *</Label>
                                 <div className="flex items-center justify-center w-full">
-                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50">
+                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors">
                                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                                            <p className="text-sm text-muted-foreground">Upload National ID, Driver's License, or Passport</p>
+                                            <Upload className={`w-8 h-8 mb-2 ${files.idCard ? "text-primary" : "text-muted-foreground"}`} />
+                                            <p className="text-sm text-muted-foreground">
+                                                {files.idCard ? (
+                                                    <span className="text-primary font-medium">Selected: {files.idCard.name}</span>
+                                                ) : (
+                                                    "Upload National ID, Driver's License, or Passport"
+                                                )}
+                                            </p>
                                         </div>
-                                        <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" />
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            onChange={(e) => handleFileChange(e, 'idCard')}
+                                        />
                                     </label>
                                 </div>
                             </div>
@@ -316,10 +369,14 @@ export function MemberRegistrationForm() {
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         ) : (
-                            <Button className="bg-primary">
-                                <CreditCard className="mr-2 h-4 w-4" />
-                                Proceed to Payment
-                            </Button>
+                            <PaystackPaymentHandler
+                                email={formData.email}
+                                amount={selectedCategory?.fee || 0}
+                                onSuccess={async () => {
+                                    toast.success("Payment successful! Finalizing registration...")
+                                    // Future: Implement account creation and file upload logic here
+                                }}
+                            />
                         )}
                     </div>
                 </CardContent>
@@ -327,3 +384,4 @@ export function MemberRegistrationForm() {
         </div>
     )
 }
+

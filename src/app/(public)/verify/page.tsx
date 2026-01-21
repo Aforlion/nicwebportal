@@ -2,12 +2,12 @@
 
 import { useState } from "react"
 import { createClient } from "@/lib/supabase"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-    ShieldCheck,
     Search,
     UserCheck,
     Building2,
@@ -117,7 +117,7 @@ export default function PublicVerifyPage() {
             {/* Header */}
             <section className="bg-secondary py-20 text-white">
                 <div className="container mx-auto px-4 text-center">
-                    <ShieldCheck className="mx-auto mb-6 h-12 w-12 text-accent" />
+                    <Image src="/logo.jpg" alt="NIC" width={64} height={64} className="mx-auto mb-6 h-16 w-auto rounded bg-white p-1" />
                     <h1 className="mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">
                         National Verification Portal
                     </h1>
@@ -260,7 +260,7 @@ export default function PublicVerifyPage() {
                                             {result.success ? (
                                                 <div className="rounded-2xl border-2 border-secondary/10 bg-secondary/5 p-6">
                                                     <div className="flex items-start gap-4">
-                                                        <ShieldCheck className="h-8 w-8 text-secondary shrink-0" />
+                                                        <Image src="/logo.jpg" alt="Logo" width={32} height={32} className="h-8 w-8 rounded" />
                                                         <div className="space-y-4 flex-grow">
                                                             <div>
                                                                 <h3 className="text-xl font-bold text-secondary leading-none">Registered Institution</h3>
@@ -303,7 +303,7 @@ export default function PublicVerifyPage() {
 
                     <div className="mt-12 p-6 bg-accent/5 rounded-2xl border border-accent/10">
                         <h4 className="font-bold text-secondary flex items-center gap-2">
-                            <ShieldCheck className="h-4 w-4 text-accent" />
+                            <Image src="/logo.jpg" alt="Logo" width={16} height={16} className="h-4 w-4 rounded" />
                             Information Security
                         </h4>
                         <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
