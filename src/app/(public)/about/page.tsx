@@ -1,4 +1,6 @@
-import { ShieldCheck, Target, Eye, Award, Users } from "lucide-react"
+import { ShieldCheck, Target, Eye, Award, Users, Crown } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default function AboutPage() {
     return (
@@ -92,6 +94,24 @@ export default function AboutPage() {
                             </div>
                         ))}
                     </div>
+                </div>
+            </section>
+
+            {/* Founding Members CTA */}
+            <section className="py-16 bg-amber-50/50 border-y border-amber-100">
+                <div className="container mx-auto px-4 text-center">
+                    <div className="mx-auto w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                        <Crown className="h-6 w-6 text-amber-600" />
+                    </div>
+                    <h2 className="mb-4 text-3xl font-bold text-secondary">Our Founding Members</h2>
+                    <p className="mb-8 max-w-2xl mx-auto text-lg text-muted-foreground">
+                        NIC stands on the shoulders of giants. We honor the distinguished professionals who laid the cornerstone of this institute and supported our recapitalization.
+                    </p>
+                    <Link href="/about/founding-members">
+                        <Button size="lg" className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-8 shadow-lg shadow-amber-600/20">
+                            View Founding Members Roll of Honor
+                        </Button>
+                    </Link>
                 </div>
             </section>
 
