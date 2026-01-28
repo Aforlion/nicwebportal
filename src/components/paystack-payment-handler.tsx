@@ -55,6 +55,12 @@ export default function PaystackPaymentHandler({
     const initializeInlinePayment = usePaystackPayment(config)
 
     const handlePayment = async () => {
+        if (!config.publicKey) {
+            toast.error("Configuration Error: Paystack Public Key is missing.")
+            console.error("Paystack Public Key is missing! Check NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY env var.")
+            return
+        }
+
         if (!email) {
             toast.error("Please provide an email address.")
             return

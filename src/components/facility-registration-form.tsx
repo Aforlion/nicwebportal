@@ -68,9 +68,22 @@ export function FacilityRegistrationForm() {
             if (authError) throw authError
             if (!authData.user) throw new Error("Failed to create user account")
 
-            // 2. Profile creation is now handled by a database trigger on auth.users
-            // we'll wait a brief moment to ensure the trigger has finished
-            await new Promise(resolve => setTimeout(resolve, 500))
+            // 2. Create Profile Manually (More robust than triggers)
+            // We ignore error if it already exists (handled by DB constraint or trigger if active)
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .upsert({
+                    id: authData.user.id,
+                    full_name: formData.ownerFullName,
+                    email: formData.ownerEmail,
+                    role: 'member',
+                    phone: formData.phone
+                })
+
+            if (profileError) {
+                console.warn("Manual profile creation warning (might exist):", profileError)
+                // We don't throw here strictly, in case the trigger DID work or race condition
+            }
 
             // 3. Create the facility record
             const { error: facilityError } = await supabase
