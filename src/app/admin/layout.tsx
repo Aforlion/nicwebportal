@@ -1,4 +1,5 @@
 import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminHeader } from "@/components/admin-header";
 
 export default function AdminLayout({
     children,
@@ -6,13 +7,16 @@ export default function AdminLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <div className="flex min-h-screen bg-background text-foreground">
+        <div className="flex min-h-screen bg-slate-50/50 text-foreground">
             <AdminSidebar />
-            <main className="flex-grow pl-64">
-                <div className="container mx-auto p-8">
-                    {children}
-                </div>
-            </main>
+            <div className="flex-1 md:pl-64 flex flex-col min-h-screen transition-all duration-300">
+                <AdminHeader />
+                <main className="flex-1 p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="container mx-auto max-w-7xl space-y-8">
+                        {children}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 }

@@ -61,153 +61,156 @@ export default function AdminMembersPage() {
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-secondary">Member Management</h1>
-                    <p className="text-muted-foreground">View and manage all NIC members</p>
+                    <h1 className="text-3xl font-bold text-slate-900 font-serif">Member Management</h1>
+                    <p className="text-slate-500">View and manage all NIC members</p>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-3">
                     <Dialog>
                         <DialogTrigger asChild>
-                            <Button className="bg-accent text-secondary hover:bg-accent/90">
+                            <Button className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
                                 <UserPlus className="mr-2 h-4 w-4" />
                                 Invite Founder
                             </Button>
                         </DialogTrigger>
                         <InviteFounderModal />
                     </Dialog>
-                    <Button variant="outline">
+                    <Button variant="outline" className="bg-white border-slate-200">
                         <Download className="mr-2 h-4 w-4" />
-                        Export Members
+                        Export
                     </Button>
                 </div>
             </div>
 
             {/* Stats Cards */}
             <div className="grid gap-6 md:grid-cols-4">
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Total Members</p>
-                                <p className="text-3xl font-bold text-secondary">1,247</p>
-                            </div>
-                            <Users className="h-8 w-8 text-primary" />
+                <Card className="border-none shadow-sm bg-white">
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Members</p>
+                            <p className="text-3xl font-bold text-slate-900 mt-1">1,247</p>
+                        </div>
+                        <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
+                            <Users className="h-6 w-6 text-blue-600" />
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Active</p>
-                                <p className="text-3xl font-bold text-emerald-600">1,189</p>
-                            </div>
-                            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+                <Card className="border-none shadow-sm bg-white">
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Active</p>
+                            <p className="text-3xl font-bold text-emerald-600 mt-1">1,189</p>
+                        </div>
+                        <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center">
+                            <CheckCircle2 className="h-6 w-6 text-emerald-600" />
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                                <p className="text-3xl font-bold text-amber-600">42</p>
-                            </div>
-                            <Clock className="h-8 w-8 text-amber-600" />
+                <Card className="border-none shadow-sm bg-white">
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Pending</p>
+                            <p className="text-3xl font-bold text-amber-600 mt-1">42</p>
+                        </div>
+                        <div className="h-12 w-12 rounded-full bg-amber-50 flex items-center justify-center">
+                            <Clock className="h-6 w-6 text-amber-600" />
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Suspended</p>
-                                <p className="text-3xl font-bold text-red-600">16</p>
-                            </div>
-                            <XCircle className="h-8 w-8 text-red-600" />
+                <Card className="border-none shadow-sm bg-white">
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Suspended</p>
+                            <p className="text-3xl font-bold text-red-600 mt-1">16</p>
+                        </div>
+                        <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center">
+                            <XCircle className="h-6 w-6 text-red-600" />
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Filters */}
-            <Card>
-                <CardContent className="p-6">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            {/* Filters & Table */}
+            <Card className="border-none shadow-sm overflow-hidden bg-white">
+                <CardContent className="p-0">
+                    <div className="p-6 border-b border-slate-100 flex flex-col gap-4 md:flex-row md:items-center bg-slate-50/50">
+                        <div className="relative flex-1 max-w-md">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                             <Input
                                 placeholder="Search by name, email, or member ID..."
-                                className="pl-10"
+                                className="pl-10 bg-white border-slate-200"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="flex h-10 w-full md:w-40 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                        >
-                            <option value="all">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="pending">Pending</option>
-                            <option value="suspended">Suspended</option>
-                        </select>
-                        <select
-                            value={categoryFilter}
-                            onChange={(e) => setCategoryFilter(e.target.value)}
-                            className="flex h-10 w-full md:w-48 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                        >
-                            <option value="all">All Categories</option>
-                            <option value="student">Student</option>
-                            <option value="associate">Associate</option>
-                            <option value="full">Full Member</option>
-                            <option value="trainer">Trainer</option>
-                            <option value="institutional">Institutional</option>
-                        </select>
+                        <div className="flex gap-3">
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            >
+                                <option value="all">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="pending">Pending</option>
+                                <option value="suspended">Suspended</option>
+                            </select>
+                            <select
+                                value={categoryFilter}
+                                onChange={(e) => setCategoryFilter(e.target.value)}
+                                className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            >
+                                <option value="all">All Categories</option>
+                                <option value="student">Student</option>
+                                <option value="associate">Associate</option>
+                                <option value="full">Full Member</option>
+                                <option value="trainer">Trainer</option>
+                                <option value="institutional">Institutional</option>
+                            </select>
+                        </div>
                     </div>
-                </CardContent>
-            </Card>
 
-            {/* Members Table */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>All Members</CardTitle>
-                    <CardDescription>Complete list of registered members</CardDescription>
-                </CardHeader>
-                <CardContent>
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b text-muted-foreground">
-                                    <th className="py-4 text-left font-medium">Member</th>
-                                    <th className="py-4 text-left font-medium">Member ID</th>
-                                    <th className="py-4 text-left font-medium">Category</th>
-                                    <th className="py-4 text-left font-medium">Status</th>
-                                    <th className="py-4 text-left font-medium">Joined</th>
-                                    <th className="py-4 text-right font-medium">Actions</th>
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-xs">
+                                <tr>
+                                    <th className="px-6 py-4 font-bold tracking-wider">Member</th>
+                                    <th className="px-6 py-4 font-bold tracking-wider">ID / Category</th>
+                                    <th className="px-6 py-4 font-bold tracking-wider">Status</th>
+                                    <th className="px-6 py-4 font-bold tracking-wider">Joined Date</th>
+                                    <th className="px-6 py-4 text-right font-bold tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y">
+                            <tbody className="divide-y divide-slate-100">
                                 {members.map((member) => (
-                                    <tr key={member.id} className="group hover:bg-muted/30">
-                                        <td className="py-4">
-                                            <div>
-                                                <p className="font-medium text-secondary">{member.name}</p>
-                                                <p className="text-xs text-muted-foreground">{member.email}</p>
+                                    <tr key={member.id} className="group hover:bg-slate-50/80 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold ${member.id % 2 === 0 ? "bg-amber-100 text-amber-700" : "bg-primary/10 text-primary"
+                                                    }`}>
+                                                    {member.name.split(" ").map(n => n[0]).join("").substring(0, 2)}
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-slate-900">{member.name}</p>
+                                                    <p className="text-xs text-slate-500">{member.email}</p>
+                                                </div>
                                             </div>
                                         </td>
-                                        <td className="py-4 font-mono text-xs">{member.memberID}</td>
-                                        <td className="py-4">
-                                            <Badge variant="outline">{member.category}</Badge>
+                                        <td className="px-6 py-4">
+                                            <p className="font-mono text-xs font-medium text-slate-600">{member.memberID}</p>
+                                            <Badge variant="outline" className="mt-1 font-normal text-xs bg-slate-50 border-slate-200 text-slate-600">
+                                                {member.category}
+                                            </Badge>
                                         </td>
-                                        <td className="py-4">{getStatusBadge(member.status)}</td>
-                                        <td className="py-4 text-muted-foreground">{member.joinDate}</td>
-                                        <td className="py-4">
-                                            <div className="flex justify-end gap-2">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <td className="px-6 py-4">{getStatusBadge(member.status)}</td>
+                                        <td className="px-6 py-4 text-slate-500 font-medium">{member.joinDate}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex justify-end gap-2 opacity-100 group-hover:opacity-100 transition-opacity">
+                                                <Button variant="ghost" size="sm" className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10">
                                                     <Eye className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="sm" className="h-8 w-8 text-slate-400 hover:text-amber-600 hover:bg-amber-50">
+                                                    <Mail className="h-4 w-4" />
                                                 </Button>
                                             </div>
                                         </td>

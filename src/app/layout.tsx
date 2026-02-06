@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { CookieConsent } from "@/components/cookie-consent";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -12,6 +13,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "NIC | National Institute of Caregivers",
   description: "The professional body for caregivers in Nigeria - Training, Certification, and Regulation.",
+  icons: {
+    icon: "/logo.jpg",
+    apple: "/logo.jpg",
+  },
 };
 
 export default function RootLayout({
@@ -27,6 +32,7 @@ export default function RootLayout({
         <GoogleAnalytics ga_id="G-BQTQWF4DVY" />
         {children}
         <CookieConsent />
+        <Toaster position="top-right" />
       </body>
     </html>
   );

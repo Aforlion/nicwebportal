@@ -1,5 +1,6 @@
 import { Hero } from "@/components/hero"
 import { MandateSection } from "@/components/mandate-section"
+import Link from "next/link"
 
 export default function Home() {
   return (
@@ -15,12 +16,16 @@ export default function Home() {
             Join thousands of professionals already certified by the National Institute of Caregivers. Start your journey today and help us provide the dignity and care our citizens deserve.
           </p>
           <div className="flex justify-center gap-4">
-            <button className="bg-white text-primary rounded-md px-8 py-3 font-bold hover:bg-opacity-90 transition-colors">
-              Enrol Now
-            </button>
-            <button className="bg-transparent border-2 border-white text-white rounded-md px-8 py-3 font-bold hover:bg-white hover:text-primary transition-colors">
-              Learn More
-            </button>
+            <Link href="/programs">
+              <button className="bg-white text-primary rounded-md px-8 py-3 font-bold hover:bg-opacity-90 transition-colors">
+                Enrol Now
+              </button>
+            </Link>
+            <Link href="/about">
+              <button className="bg-transparent border-2 border-white text-white rounded-md px-8 py-3 font-bold hover:bg-white hover:text-primary transition-colors">
+                Learn More
+              </button>
+            </Link>
           </div>
         </div>
       </section>

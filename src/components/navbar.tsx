@@ -43,7 +43,16 @@ const navItems = [
         ],
     },
     { title: "Verify", href: "/verify" },
-    { title: "Store", href: "/store" },
+    {
+        title: "Resources",
+        href: "/store",
+        children: [
+            { title: "Digital Store", href: "/store" },
+            { title: "Advocacy & Research", href: "/advocacy" },
+            { title: "Media Gallery", href: "/gallery" },
+            { title: "News & Events", href: "/news" },
+        ]
+    },
 ]
 
 export function Navbar() {

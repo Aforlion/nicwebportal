@@ -5,8 +5,9 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getCourseBySlug } from "@/actions/get-courses"
 
-export default async function CoursePage({ params }: { params: { slug: string } }) {
-    const course = await getCourseBySlug(params.slug)
+export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params
+    const course = await getCourseBySlug(slug)
 
     if (!course) {
         notFound()
