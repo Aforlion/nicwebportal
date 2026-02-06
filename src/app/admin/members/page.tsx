@@ -134,21 +134,21 @@ export default function AdminMembersPage() {
             {/* Filters & Table */}
             <Card className="border-none shadow-sm overflow-hidden bg-white">
                 <CardContent className="p-0">
-                    <div className="p-6 border-b border-slate-100 flex flex-col gap-4 md:flex-row md:items-center bg-slate-50/50">
-                        <div className="relative flex-1 max-w-md">
+                    <div className="p-6 border-b border-slate-100 flex flex-col gap-4 lg:flex-row lg:items-center bg-slate-50/50">
+                        <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                             <Input
                                 placeholder="Search by name, email, or member ID..."
-                                className="pl-10 bg-white border-slate-200"
+                                className="pl-10 bg-white border-slate-200 w-full"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                             <select
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
-                                className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                             >
                                 <option value="all">All Status</option>
                                 <option value="active">Active</option>
@@ -158,7 +158,7 @@ export default function AdminMembersPage() {
                             <select
                                 value={categoryFilter}
                                 onChange={(e) => setCategoryFilter(e.target.value)}
-                                className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                             >
                                 <option value="all">All Categories</option>
                                 <option value="student">Student</option>
@@ -170,7 +170,46 @@ export default function AdminMembersPage() {
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    {/* Mobile View: Cards */}
+                    <div className="md:hidden divide-y divide-slate-100">
+                        {members.map((member) => (
+                            <div key={member.id} className="p-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold ${member.id % 2 === 0 ? "bg-amber-100 text-amber-700" : "bg-primary/10 text-primary"}`}>
+                                            {member.name.split(" ").map(n => n[0]).join("").substring(0, 2)}
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-slate-900">{member.name}</p>
+                                            <p className="text-xs text-slate-500">{member.memberID}</p>
+                                        </div>
+                                    </div>
+                                    {getStatusBadge(member.status)}
+                                </div>
+                                <div className="flex items-center justify-between text-xs pt-2">
+                                    <div className="space-y-1">
+                                        <p className="text-slate-400 font-bold uppercase tracking-wider">Category</p>
+                                        <p className="font-medium text-slate-700">{member.category}</p>
+                                    </div>
+                                    <div className="text-right space-y-1">
+                                        <p className="text-slate-400 font-bold uppercase tracking-wider">Joined</p>
+                                        <p className="font-medium text-slate-700">{member.joinDate}</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2 pt-2">
+                                    <Button variant="outline" size="sm" className="flex-1 gap-2 h-9">
+                                        <Eye className="h-4 w-4" /> View Profile
+                                    </Button>
+                                    <Button variant="outline" size="sm" className="flex-1 gap-2 h-9">
+                                        <Mail className="h-4 w-4" /> Message
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Desktop View: Table */}
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-sm text-left">
                             <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-xs">
                                 <tr>

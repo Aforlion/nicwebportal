@@ -63,31 +63,33 @@ export default async function AdminTrainingPage() {
                         <div className="space-y-4">
                             {courses.map((course: any) => (
                                 <div key={course.id} className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border rounded-lg hover:bg-muted/30 transition-colors">
-                                    <div className="flex items-start gap-4 w-full">
-                                        <div className="h-16 w-24 bg-muted rounded-md overflow-hidden flex-shrink-0 relative">
+                                    <div className="flex items-start gap-4 w-full min-w-0">
+                                        <div className="h-14 w-20 sm:h-16 sm:w-24 bg-muted rounded-md overflow-hidden flex-shrink-0 relative">
                                             {course.thumbnail_url ? (
                                                 <img src={course.thumbnail_url} alt="" className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                                                    <BookOpen className="text-slate-400 h-6 w-6" />
+                                                    <BookOpen className="text-slate-400 h-5 w-5 sm:h-6 sm:w-6" />
                                                 </div>
                                             )}
                                         </div>
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h3 className="font-semibold text-lg">{course.title}</h3>
-                                                <Badge variant={course.is_published ? "default" : "secondary"} className={course.is_published ? "bg-green-600" : ""}>
-                                                    {course.is_published ? "Published" : "Draft"}
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                <h3 className="font-semibold text-base sm:text-lg truncate">{course.title}</h3>
+                                                <Badge variant={course.is_published ? "default" : "secondary"} className={`text-[10px] sm:text-xs h-5 ${course.is_published ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-1.5 py-0 font-bold" : ""}`}>
+                                                    {course.is_published ? "PUBLISHED" : "DRAFT"}
                                                 </Badge>
                                             </div>
-                                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                            <div className="flex items-center gap-3 text-[10px] sm:text-xs text-muted-foreground">
                                                 <span className="flex items-center gap-1">
-                                                    <Users className="h-3 w-3" /> {course.enrollmentCount} Enrolled
+                                                    <Users className="h-3 w-3" /> {course.enrollmentCount}
                                                 </span>
                                                 <span>•</span>
-                                                <span>{course.level || "General"}</span>
+                                                <span className="truncate">{course.level || "General"}</span>
                                                 <span>•</span>
-                                                <span>{course.price > 0 ? `₦${course.price.toLocaleString()}` : "Free"}</span>
+                                                <span className="font-bold text-secondary">
+                                                    {course.price > 0 ? `₦${course.price.toLocaleString()}` : "Free"}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>

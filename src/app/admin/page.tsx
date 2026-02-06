@@ -92,19 +92,17 @@ export default function AdminDashboardPage() {
                 ))}
             </div>
 
+            {/* Recent Activity */}
             <div className="grid gap-6 lg:grid-cols-3">
-                {/* Recent Activity */}
-                <Card className="col-span-1 lg:col-span-2 border-none shadow-sm overflow-hidden">
-                    <CardHeader className="bg-white border-b border-slate-50">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-lg font-bold text-slate-800">Recent Activity</CardTitle>
-                                <CardDescription>Latest registrations and payments</CardDescription>
-                            </div>
-                            <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5">
-                                View All
-                            </Button>
+                <Card className="col-span-1 lg:col-span-2 border-none shadow-sm overflow-hidden order-2 lg:order-1">
+                    <CardHeader className="bg-white border-b border-slate-50 flex flex-row items-center justify-between py-4">
+                        <div>
+                            <CardTitle className="text-lg font-bold text-slate-800">Recent Activity</CardTitle>
+                            <CardDescription className="hidden sm:block">Latest registrations and payments</CardDescription>
                         </div>
+                        <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5">
+                            View All
+                        </Button>
                     </CardHeader>
                     <CardContent className="p-0">
                         <div className="divide-y divide-slate-50">

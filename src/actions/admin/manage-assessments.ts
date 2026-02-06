@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
+import { requireAdmin } from "@/lib/auth"
+import { AssessmentSchema } from "@/lib/validations"
 
 export async function getAssessment(lessonId: string) {
     const cookieStore = await cookies()
@@ -25,17 +27,19 @@ export async function saveAssessment(lessonId: string, formData: FormData) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
-    const title = formData.get('title') as string
-    const description = formData.get('description') as string
-    const passing_score = parseInt(formData.get('passing_score') as string) || 70
-    const questionsJson = formData.get('questions') as string
+    // Strict Admin Check
+    await requireAdmin()
 
-    let questions = []
-    try {
-        questions = JSON.parse(questionsJson)
-    } catch (e) {
-        return { error: 'Invalid question data' }
+    // Validate Input
+    const rawData = {
+        title: formData.get('title') as string,
+        description: formData.get('description') as string,
+        passing_score: parseInt(formData.get('passing_score') as string) || 70,
+        questions: JSON.parse(formData.get('questions') as string || '[]'),
     }
+
+    const validatedData = AssessmentSchema.parse(rawData)
+    const { title, description, passing_score, questions } = validatedData
 
     // Check if assessment exists
     const { data: existing } = await supabase
@@ -50,11 +54,8 @@ export async function saveAssessment(lessonId: string, formData: FormData) {
         const { error: updateError } = await supabase
             .from('assessments')
             .update({
-                title,
-                description,
-                passing_score,
-                questions,
-                updated_at: new Date().toISOString() // Assuming schema has this or auto-updates
+                ...validatedData,
+                updated_at: new Date().toISOString()
             })
             .eq('id', existing.id)
         error = updateError
@@ -63,11 +64,8 @@ export async function saveAssessment(lessonId: string, formData: FormData) {
             .from('assessments')
             .insert({
                 lesson_id: lessonId,
-                title,
-                type: 'quiz', // Default for now
-                description,
-                passing_score,
-                questions
+                ...validatedData,
+                type: 'quiz'
             })
         error = insertError
     }

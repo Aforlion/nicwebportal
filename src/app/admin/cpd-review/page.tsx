@@ -104,72 +104,113 @@ export default function AdminCPDReviewPage() {
                     <CardTitle>Pending CPD Submissions</CardTitle>
                     <CardDescription>Review and approve member professional development activities</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
+                <CardContent className="p-0">
+                    {/* Mobile View */}
+                    <div className="md:hidden divide-y divide-slate-100">
+                        {cpdSubmissions.map((submission) => (
+                            <div key={submission.id} className="p-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-bold text-secondary text-base">{submission.memberName}</p>
+                                        <p className="text-xs font-mono text-muted-foreground">{submission.memberID}</p>
+                                    </div>
+                                    {submission.status === "Pending" ? (
+                                        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none px-2 py-0.5 text-[10px] font-bold">PENDING</Badge>
+                                    ) : (
+                                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0.5 text-[10px] font-bold">APPROVED</Badge>
+                                    )}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-slate-700">{submission.activity}</p>
+                                    <p className="text-xs text-muted-foreground">{submission.provider} • {submission.date}</p>
+                                </div>
+                                <div className="flex items-center justify-between pt-2 border-t mt-2">
+                                    <span className="text-xs font-bold text-primary">{submission.points} CPD Points</span>
+                                    <div className="flex gap-2">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                        {submission.status === "Pending" && (
+                                            <>
+                                                <Button size="icon" className="h-8 w-8 bg-emerald-600 hover:bg-emerald-700" onClick={() => handleApprove(submission.id)}>
+                                                    <CheckCircle2 className="h-4 w-4" />
+                                                </Button>
+                                                <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleReject(submission.id)}>
+                                                    <XCircle className="h-4 w-4" />
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Desktop View */}
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="border-b text-muted-foreground">
-                                    <th className="py-4 text-left font-medium">Member</th>
-                                    <th className="py-4 text-left font-medium">Activity</th>
-                                    <th className="py-4 text-left font-medium">Provider</th>
-                                    <th className="py-4 text-center font-medium">Points</th>
-                                    <th className="py-4 text-left font-medium">Date</th>
-                                    <th className="py-4 text-left font-medium">Status</th>
-                                    <th className="py-4 text-right font-medium">Actions</th>
+                                <tr className="border-b bg-muted/50 text-muted-foreground uppercase font-bold text-xs">
+                                    <th className="px-6 py-4 text-left tracking-wider">Member</th>
+                                    <th className="px-6 py-4 text-left tracking-wider">Activity</th>
+                                    <th className="px-6 py-4 text-left tracking-wider">Provider</th>
+                                    <th className="px-6 py-4 text-center tracking-wider">Points</th>
+                                    <th className="px-6 py-4 text-left tracking-wider">Date</th>
+                                    <th className="px-6 py-4 text-left tracking-wider">Status</th>
+                                    <th className="px-6 py-4 text-right tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y">
+                            <tbody className="divide-y divide-slate-100">
                                 {cpdSubmissions.map((submission) => (
-                                    <tr key={submission.id} className="group hover:bg-muted/30">
-                                        <td className="py-4">
+                                    <tr key={submission.id} className="group hover:bg-slate-50/80 transition-colors">
+                                        <td className="px-6 py-4">
                                             <div>
-                                                <p className="font-medium text-secondary">{submission.memberName}</p>
+                                                <p className="font-bold text-secondary">{submission.memberName}</p>
                                                 <p className="text-xs font-mono text-muted-foreground">{submission.memberID}</p>
                                             </div>
                                         </td>
-                                        <td className="py-4">
-                                            <p className="font-medium">{submission.activity}</p>
+                                        <td className="px-6 py-4">
+                                            <p className="font-medium text-slate-700">{submission.activity}</p>
                                             {submission.certificate && (
-                                                <Badge variant="outline" className="mt-1 text-xs">Has Certificate</Badge>
+                                                <Badge variant="outline" className="mt-1 text-[10px] font-normal border-slate-200 text-slate-500">Has Certificate</Badge>
                                             )}
                                         </td>
-                                        <td className="py-4 text-muted-foreground">{submission.provider}</td>
-                                        <td className="py-4 text-center font-bold text-primary">{submission.points}</td>
-                                        <td className="py-4 text-muted-foreground">{submission.date}</td>
-                                        <td className="py-4">
+                                        <td className="px-6 py-4 text-slate-500">{submission.provider}</td>
+                                        <td className="px-6 py-4 text-center font-bold text-primary">{submission.points}</td>
+                                        <td className="px-6 py-4 text-slate-500">{submission.date}</td>
+                                        <td className="px-6 py-4">
                                             {submission.status === "Pending" ? (
-                                                <Badge className="bg-amber-500 hover:bg-amber-600">
+                                                <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none">
                                                     <Clock className="mr-1 h-3 w-3" />
                                                     Pending
                                                 </Badge>
                                             ) : (
-                                                <Badge className="bg-emerald-500 hover:bg-emerald-600">
+                                                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none">
                                                     <CheckCircle2 className="mr-1 h-3 w-3" />
                                                     Approved
                                                 </Badge>
                                             )}
                                         </td>
-                                        <td className="py-4">
+                                        <td className="px-6 py-4">
                                             <div className="flex justify-end gap-2">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/5">
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
                                                 {submission.status === "Pending" && (
                                                     <>
                                                         <Button
                                                             size="sm"
-                                                            className="bg-emerald-600 hover:bg-emerald-700"
+                                                            className="bg-emerald-600 hover:bg-emerald-700 h-8"
                                                             onClick={() => handleApprove(submission.id)}
                                                         >
-                                                            <CheckCircle2 className="mr-1 h-3 w-3" />
                                                             Approve
                                                         </Button>
                                                         <Button
                                                             size="sm"
                                                             variant="destructive"
+                                                            className="h-8"
                                                             onClick={() => handleReject(submission.id)}
                                                         >
-                                                            <XCircle className="mr-1 h-3 w-3" />
                                                             Reject
                                                         </Button>
                                                     </>

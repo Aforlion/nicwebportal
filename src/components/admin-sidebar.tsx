@@ -89,10 +89,15 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
                         <span>Settings</span>
                     </Link>
                     <button
-                        className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-slate-400 transition-colors hover:bg-destructive/20 hover:text-destructive"
-                        onClick={() => console.log("Logout triggered")}
+                        className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-slate-400 transition-colors hover:bg-destructive/20 hover:text-destructive group"
+                        onClick={async () => {
+                            const { createClient } = await import('@/lib/supabase')
+                            const supabase = createClient()
+                            await supabase.auth.signOut()
+                            window.location.href = '/login'
+                        }}
                     >
-                        <LogOut className="h-5 w-5" />
+                        <LogOut className="h-5 w-5 group-hover:rotate-12 transition-transform" />
                         <span>Logout</span>
                     </button>
                 </div>

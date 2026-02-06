@@ -79,98 +79,157 @@ export default function AdminRegistryPage() {
                 <p className="text-muted-foreground">Search, verify, and manage professional licenses across Nigeria.</p>
             </div>
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="relative max-w-sm flex-grow">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="relative flex-1 max-w-lg">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder="Search by Name or ID..."
-                        className="pl-10"
+                        className="pl-10 w-full bg-white"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline">
+                    <Button variant="outline" className="flex-1 sm:flex-none">
                         <Filter className="mr-2 h-4 w-4" />
                         Filter
                     </Button>
-                    <Button variant="outline">
+                    <Button variant="outline" className="flex-1 sm:flex-none">
                         <Download className="mr-2 h-4 w-4" />
-                        Export CSV
+                        Export
                     </Button>
                 </div>
             </div>
 
-            <Card>
+            <Card className="border-none shadow-sm overflow-hidden">
                 <CardContent className="p-0">
-                    <div className="overflow-x-auto">
+                    {/* Mobile View */}
+                    <div className="md:hidden divide-y">
+                        {filteredData.map((item) => (
+                            <div key={item.id} className="p-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                            {item.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-secondary">{item.name}</p>
+                                            <p className="text-xs text-muted-foreground font-mono">{item.id}</p>
+                                        </div>
+                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem><Eye className="mr-2 h-4 w-4" /> View</DropdownMenuItem>
+                                            <DropdownMenuItem><ShieldCheck className="mr-2 h-4 w-4" /> Verify</DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="space-y-1">
+                                        <p className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Type</p>
+                                        <p className="font-medium text-secondary">{item.type}</p>
+                                    </div>
+                                    <div className="space-y-1 text-right">
+                                        <p className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Status</p>
+                                        <div className="flex justify-end">{
+                                            item.status === 'Active' ? (
+                                                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-1.5 py-0">ACTIVE</Badge>
+                                            ) : (
+                                                <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-none px-1.5 py-0">{item.status.toUpperCase()}</Badge>
+                                            )
+                                        }</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Desktop View */}
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-sm text-left">
                             <thead>
-                                <tr className="border-b bg-muted/50 text-muted-foreground">
-                                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">Caregiver / ID</th>
-                                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">License Type</th>
-                                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">Specialization</th>
-                                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">Status</th>
-                                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">Expiry</th>
-                                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px] text-right">Actions</th>
+                                <tr className="border-b bg-muted/50 text-muted-foreground text-xs font-bold">
+                                    <th className="px-6 py-4 uppercase tracking-wider">Caregiver / ID</th>
+                                    <th className="px-6 py-4 uppercase tracking-wider">License Type</th>
+                                    <th className="px-6 py-4 uppercase tracking-wider">Specialization</th>
+                                    <th className="px-6 py-4 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-4 uppercase tracking-wider">Expiry</th>
+                                    <th className="px-6 py-4 uppercase tracking-wider text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {filteredData.map((item) => (
-                                    <tr key={item.id} className="group hover:bg-muted/30">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                                    {item.name.charAt(0)}
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-secondary">{item.name}</p>
-                                                    <p className="text-xs text-muted-foreground font-mono">{item.id}</p>
-                                                </div>
+                                {filteredData.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Search className="h-10 w-10 text-slate-200" />
+                                                <p>No caregivers found matching "{search}"</p>
+                                                <Button variant="link" onClick={() => setSearch("")} className="text-primary h-auto p-0">Clear search</Button>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 font-medium text-secondary">{item.type}</td>
-                                        <td className="px-6 py-4 font-medium text-secondary">{item.specialization}</td>
-                                        <td className="px-6 py-4">
-                                            {item.status === 'Active' ? (
-                                                <Badge className="bg-emerald-100 text-emerald-700 border-none">
-                                                    <CheckCircle2 className="mr-1 h-3 w-3" /> ACTIVE
-                                                </Badge>
-                                            ) : item.status === 'Suspended' ? (
-                                                <Badge variant="destructive" className="bg-destructive/10 text-destructive border-none">
-                                                    <XCircle className="mr-1 h-3 w-3" /> SUSPENDED
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none">
-                                                    <AlertCircle className="mr-1 h-3 w-3" /> INACTIVE
-                                                </Badge>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-muted-foreground font-medium">{item.expiry}</td>
-                                        <td className="px-6 py-4 text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem>
-                                                        <Eye className="mr-2 h-4 w-4" /> View Full Profile
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem>
-                                                        <ShieldCheck className="mr-2 h-4 w-4" /> Verify Credentials
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="text-destructive">
-                                                        <AlertCircle className="mr-2 h-4 w-4" /> Suspend License
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    filteredData.map((item) => (
+                                        <tr key={item.id} className="group hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                                        {item.name.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-secondary">{item.name}</p>
+                                                        <p className="text-xs text-muted-foreground font-mono">{item.id}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 font-medium text-secondary">{item.type}</td>
+                                            <td className="px-6 py-4 font-medium text-secondary">{item.specialization}</td>
+                                            <td className="px-6 py-4">
+                                                {item.status === 'Active' ? (
+                                                    <Badge className="bg-emerald-100 text-emerald-700 border-none hover:bg-emerald-100">
+                                                        <CheckCircle2 className="mr-1 h-3 w-3" /> ACTIVE
+                                                    </Badge>
+                                                ) : item.status === 'Suspended' ? (
+                                                    <Badge variant="destructive" className="bg-destructive/10 text-destructive border-none hover:bg-destructive/10">
+                                                        <XCircle className="mr-1 h-3 w-3" /> SUSPENDED
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none hover:bg-slate-200">
+                                                        <AlertCircle className="mr-1 h-3 w-3" /> INACTIVE
+                                                    </Badge>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 text-muted-foreground font-medium">{item.expiry}</td>
+                                            <td className="px-6 py-4 text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuItem>
+                                                            <Eye className="mr-2 h-4 w-4" /> View Profile
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem>
+                                                            <ShieldCheck className="mr-2 h-4 w-4" /> Verify Credentials
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem className="text-destructive">
+                                                            <AlertCircle className="mr-2 h-4 w-4" /> Suspend
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -209,6 +268,6 @@ export default function AdminRegistryPage() {
                     </CardContent>
                 </Card>
             </div>
-        </div>
+        </div >
     )
 }

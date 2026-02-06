@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
+import { requireAdmin } from "@/lib/auth"
+import { ModuleSchema, LessonSchema } from "@/lib/validations"
 
 // --- Modules ---
 
@@ -10,7 +12,17 @@ export async function createModule(courseId: string, formData: FormData) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
-    const title = formData.get('title') as string
+    // Strict Admin Check
+    await requireAdmin()
+
+    const rawData = {
+        course_id: courseId,
+        title: formData.get('title') as string,
+        sort_order: 0, // Placeholder, calculated below
+    }
+
+    const validatedData = ModuleSchema.omit({ sort_order: true }).parse(rawData)
+    const { title } = validatedData
 
     // Get current max sort order
     const { data: existingModules, error: fetchError } = await supabase
@@ -43,6 +55,9 @@ export async function deleteModule(courseId: string, moduleId: string) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
+    // Strict Admin Check
+    await requireAdmin()
+
     const { error } = await supabase
         .from('modules')
         .delete()
@@ -63,7 +78,18 @@ export async function createLesson(courseId: string, moduleId: string, formData:
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
-    const title = formData.get('title') as string
+    // Strict Admin Check
+    await requireAdmin()
+
+    const rawData = {
+        module_id: moduleId,
+        title: formData.get('title') as string,
+        duration_minutes: 0, // Default
+        sort_order: 0, // Calculated below
+    }
+
+    const validatedData = LessonSchema.omit({ sort_order: true }).partial({ duration_minutes: true }).parse(rawData)
+    const { title } = validatedData
 
     // Get current max sort order
     const { data: existingLessons } = await supabase
@@ -109,6 +135,9 @@ export async function deleteLesson(courseId: string, lessonId: string) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
+    // Strict Admin Check
+    await requireAdmin()
+
     const { error } = await supabase
         .from('lessons')
         .delete()
@@ -127,19 +156,23 @@ export async function updateLesson(courseId: string, lessonId: string, formData:
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
-    const title = formData.get('title') as string
-    const video_url = formData.get('video_url') as string
-    const duration_minutes = parseInt(formData.get('duration_minutes') as string) || 0
-    const is_preview = formData.get('is_preview') === 'on'
-    const content = formData.get('content') as string
+    // Strict Admin Check
+    await requireAdmin()
+
+    const rawData = {
+        module_id: '00000000-0000-0000-0000-000000000000', // Dummy as we are updating existing
+        title: formData.get('title') as string,
+        video_url: formData.get('video_url') as string,
+        duration_minutes: parseInt(formData.get('duration_minutes') as string) || 0,
+        is_preview: formData.get('is_preview') === 'on',
+        content: formData.get('content') as string,
+    }
+
+    const validatedData = LessonSchema.omit({ module_id: true, sort_order: true }).partial().parse(rawData)
 
     // Only update fields that are present, or just update all
     const updates = {
-        title,
-        video_url,
-        duration_minutes,
-        is_preview,
-        content,
+        ...validatedData,
         updated_at: new Date().toISOString()
     }
 

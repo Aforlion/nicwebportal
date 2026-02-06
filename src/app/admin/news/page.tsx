@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import Textarea from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { format } from "date-fns"
 import {
@@ -233,25 +233,25 @@ export default function AdminNewsPage() {
                     ) : (
                         items.map((item) => (
                             <Card key={item.id} className="group transition-all hover:border-primary/50">
-                                <CardContent className="flex items-center gap-6 p-6">
-                                    <div className={`p-4 rounded-xl ${item.type === 'event' ? 'bg-amber-50 text-amber-600' : 'bg-primary/5 text-primary'}`}>
-                                        {item.type === 'event' ? <Calendar /> : <Newspaper />}
+                                <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 p-4 sm:p-6">
+                                    <div className={`p-3 sm:p-4 rounded-xl shrink-0 ${item.type === 'event' ? 'bg-amber-50 text-amber-600' : 'bg-primary/5 text-primary'}`}>
+                                        {item.type === 'event' ? <Calendar className="h-5 w-5 sm:h-6 sm:w-6" /> : <Newspaper className="h-5 w-5 sm:h-6 sm:w-6" />}
                                     </div>
-                                    <div className="flex-grow">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+                                    <div className="flex-grow min-w-0">
+                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground whitespace-nowrap">
                                                 {format(new Date(item.published_at), 'MMM dd, yyyy')}
                                             </span>
-                                            <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded ${item.type === 'event' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                            <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded whitespace-nowrap ${item.type === 'event' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
                                                 {item.type}
                                             </span>
                                         </div>
-                                        <h3 className="text-xl font-bold text-secondary group-hover:text-primary transition-colors">{item.title}</h3>
+                                        <h3 className="text-lg sm:text-xl font-bold text-secondary group-hover:text-primary transition-colors truncate">{item.title}</h3>
                                         <p className="text-sm text-muted-foreground line-clamp-1">{item.excerpt || item.content}</p>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <Button variant="ghost" size="icon" onClick={() => startEdit(item)}><Edit size={16} /></Button>
-                                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteItem(item.id)}><Trash2 size={16} /></Button>
+                                    <div className="flex gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-3 sm:pt-0">
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => startEdit(item)}><Edit size={16} /></Button>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 sm:h-9 sm:w-9 text-destructive" onClick={() => deleteItem(item.id)}><Trash2 size={16} /></Button>
                                     </div>
                                 </CardContent>
                             </Card>

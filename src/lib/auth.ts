@@ -32,7 +32,9 @@ export async function requireAuth() {
 
 export async function requireAdmin() {
     const profile = await getUserProfile()
-    if (!profile || profile.role !== 'admin') {
+    const adminRoles = ['admin', 'super_admin', 'registry_officer', 'inspector', 'auditor']
+
+    if (!profile || !adminRoles.includes(profile.role)) {
         redirect('/portal/member')
     }
     return profile
