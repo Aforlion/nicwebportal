@@ -4,8 +4,8 @@ export const CourseSchema = z.object({
     title: z.string().min(3).max(100),
     description: z.string().min(10).optional(),
     price: z.number().min(0),
-    level: z.enum(['Beginner', 'Intermediate', 'Advanced', 'Professional', 'General']),
-    duration_hours: z.number().min(1),
+    level: z.enum(['Beginner', 'Intermediate', 'Advanced', 'Professional', 'General', 'Foundation', 'Certification', 'Specialty']),
+    duration_hours: z.number().min(0),
     is_published: z.boolean().default(false),
 })
 

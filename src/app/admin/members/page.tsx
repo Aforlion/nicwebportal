@@ -18,7 +18,8 @@ import {
     UserPlus,
     Mail,
     Copy,
-    ExternalLink
+    ExternalLink,
+    Loader2
 } from "lucide-react"
 import { NIC_FOUNDERS } from "@/constants/founders"
 import { createClient } from "@/lib/supabase"
@@ -33,18 +34,51 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 
-const members = [
-    { id: 1, name: "Grace Obi", memberID: "NIC-MEM-5502", category: "Full Member", status: "Active", joinDate: "March 2024", email: "grace.obi@example.com" },
-    { id: 2, name: "John Adebayo", memberID: "NIC-MEM-5503", category: "Associate", status: "Active", joinDate: "Feb 2024", email: "john.a@example.com" },
-    { id: 3, name: "Sarah Nwosu", memberID: "NIC-MEM-5504", category: "Student", status: "Pending", joinDate: "Jan 2024", email: "sarah.n@example.com" },
-    { id: 4, name: "Michael Okafor", memberID: "NIC-MEM-5505", category: "Trainer", status: "Active", joinDate: "Dec 2023", email: "michael.o@example.com" },
-    { id: 5, name: "Blessing Eze", memberID: "NIC-MEM-5506", category: "Full Member", status: "Suspended", joinDate: "Nov 2023", email: "blessing.e@example.com" },
-]
+import { getMembers } from "@/actions/admin/get-members"
+import { useEffect } from "react"
+import { toast } from "sonner"
+import { format } from "date-fns"
 
 export default function AdminMembersPage() {
+    const [members, setMembers] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
     const [categoryFilter, setCategoryFilter] = useState("all")
+
+    useEffect(() => {
+        loadMembers()
+    }, [])
+
+    async function loadMembers() {
+        setLoading(true)
+        const result = await getMembers()
+        if (result.error) {
+            toast.error(result.error)
+        } else {
+            setMembers(result.members || [])
+        }
+        setLoading(false)
+    }
+
+    const filteredMembers = members.filter(member => {
+        const matchesSearch =
+            member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            member.memberID.toLowerCase().includes(searchQuery.toLowerCase())
+
+        const matchesStatus = statusFilter === "all" || member.status.toLowerCase() === statusFilter.toLowerCase()
+        const matchesCategory = categoryFilter === "all" || member.category.toLowerCase() === categoryFilter.toLowerCase()
+
+        return matchesSearch && matchesStatus && matchesCategory
+    })
+
+    const stats = {
+        total: members.length,
+        active: members.filter(m => m.status.toLowerCase() === 'active').length,
+        pending: members.filter(m => m.status.toLowerCase() === 'pending').length,
+        suspended: members.filter(m => m.status.toLowerCase() === 'suspended').length
+    }
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -89,7 +123,7 @@ export default function AdminMembersPage() {
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Members</p>
-                            <p className="text-3xl font-bold text-slate-900 mt-1">1,247</p>
+                            <p className="text-3xl font-bold text-slate-900 mt-1">{stats.total}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
                             <Users className="h-6 w-6 text-blue-600" />
@@ -100,7 +134,7 @@ export default function AdminMembersPage() {
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Active</p>
-                            <p className="text-3xl font-bold text-emerald-600 mt-1">1,189</p>
+                            <p className="text-3xl font-bold text-emerald-600 mt-1">{stats.active}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center">
                             <CheckCircle2 className="h-6 w-6 text-emerald-600" />
@@ -111,7 +145,7 @@ export default function AdminMembersPage() {
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Pending</p>
-                            <p className="text-3xl font-bold text-amber-600 mt-1">42</p>
+                            <p className="text-3xl font-bold text-amber-600 mt-1">{stats.pending}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-amber-50 flex items-center justify-center">
                             <Clock className="h-6 w-6 text-amber-600" />
@@ -122,7 +156,7 @@ export default function AdminMembersPage() {
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Suspended</p>
-                            <p className="text-3xl font-bold text-red-600 mt-1">16</p>
+                            <p className="text-3xl font-bold text-red-600 mt-1">{stats.suspended}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center">
                             <XCircle className="h-6 w-6 text-red-600" />
@@ -170,94 +204,104 @@ export default function AdminMembersPage() {
                         </div>
                     </div>
 
-                    {/* Mobile View: Cards */}
-                    <div className="md:hidden divide-y divide-slate-100">
-                        {members.map((member) => (
-                            <div key={member.id} className="p-4 space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold ${member.id % 2 === 0 ? "bg-amber-100 text-amber-700" : "bg-primary/10 text-primary"}`}>
-                                            {member.name.split(" ").map(n => n[0]).join("").substring(0, 2)}
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold text-slate-900">{member.name}</p>
-                                            <p className="text-xs text-slate-500">{member.memberID}</p>
-                                        </div>
-                                    </div>
-                                    {getStatusBadge(member.status)}
-                                </div>
-                                <div className="flex items-center justify-between text-xs pt-2">
-                                    <div className="space-y-1">
-                                        <p className="text-slate-400 font-bold uppercase tracking-wider">Category</p>
-                                        <p className="font-medium text-slate-700">{member.category}</p>
-                                    </div>
-                                    <div className="text-right space-y-1">
-                                        <p className="text-slate-400 font-bold uppercase tracking-wider">Joined</p>
-                                        <p className="font-medium text-slate-700">{member.joinDate}</p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2 pt-2">
-                                    <Button variant="outline" size="sm" className="flex-1 gap-2 h-9">
-                                        <Eye className="h-4 w-4" /> View Profile
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="flex-1 gap-2 h-9">
-                                        <Mail className="h-4 w-4" /> Message
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Desktop View: Table */}
-                    <div className="hidden md:block overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-xs">
-                                <tr>
-                                    <th className="px-6 py-4 font-bold tracking-wider">Member</th>
-                                    <th className="px-6 py-4 font-bold tracking-wider">ID / Category</th>
-                                    <th className="px-6 py-4 font-bold tracking-wider">Status</th>
-                                    <th className="px-6 py-4 font-bold tracking-wider">Joined Date</th>
-                                    <th className="px-6 py-4 text-right font-bold tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {members.map((member) => (
-                                    <tr key={member.id} className="group hover:bg-slate-50/80 transition-colors">
-                                        <td className="px-6 py-4">
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                            <Loader2 className="h-8 w-8 animate-spin mb-2" />
+                            <p>Loading members...</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Mobile View: Cards */}
+                            <div className="md:hidden divide-y divide-slate-100">
+                                {filteredMembers.map((member) => (
+                                    <div key={member.id} className="p-4 space-y-3">
+                                        <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold ${member.id % 2 === 0 ? "bg-amber-100 text-amber-700" : "bg-primary/10 text-primary"
-                                                    }`}>
-                                                    {member.name.split(" ").map(n => n[0]).join("").substring(0, 2)}
+                                                <div className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold bg-primary/10 text-primary">
+                                                    {member.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
                                                 </div>
                                                 <div>
                                                     <p className="font-semibold text-slate-900">{member.name}</p>
-                                                    <p className="text-xs text-slate-500">{member.email}</p>
+                                                    <p className="text-xs text-slate-500">{member.memberID}</p>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <p className="font-mono text-xs font-medium text-slate-600">{member.memberID}</p>
-                                            <Badge variant="outline" className="mt-1 font-normal text-xs bg-slate-50 border-slate-200 text-slate-600">
-                                                {member.category}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-6 py-4">{getStatusBadge(member.status)}</td>
-                                        <td className="px-6 py-4 text-slate-500 font-medium">{member.joinDate}</td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex justify-end gap-2 opacity-100 group-hover:opacity-100 transition-opacity">
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10">
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 text-slate-400 hover:text-amber-600 hover:bg-amber-50">
-                                                    <Mail className="h-4 w-4" />
-                                                </Button>
+                                            {getStatusBadge(member.status)}
+                                        </div>
+                                        <div className="flex items-center justify-between text-xs pt-2">
+                                            <div className="space-y-1">
+                                                <p className="text-slate-400 font-bold uppercase tracking-wider">Category</p>
+                                                <p className="font-medium text-slate-700 capitalize">{member.category}</p>
                                             </div>
-                                        </td>
-                                    </tr>
+                                            <div className="text-right space-y-1">
+                                                <p className="text-slate-400 font-bold uppercase tracking-wider">Joined</p>
+                                                <p className="font-medium text-slate-700">{format(new Date(member.joinDate), 'MMM yyyy')}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 pt-2">
+                                            <Button variant="outline" size="sm" className="flex-1 gap-2 h-9">
+                                                <Eye className="h-4 w-4" /> View Profile
+                                            </Button>
+                                            <Button variant="outline" size="sm" className="flex-1 gap-2 h-9">
+                                                <Mail className="h-4 w-4" /> Message
+                                            </Button>
+                                        </div>
+                                    </div>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            </div>
+
+                            {/* Desktop View: Table */}
+                            <div className="hidden md:block overflow-x-auto">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-xs">
+                                        <tr>
+                                            <th className="px-6 py-4 font-bold tracking-wider">Member</th>
+                                            <th className="px-6 py-4 font-bold tracking-wider">ID / Category</th>
+                                            <th className="px-6 py-4 font-bold tracking-wider">Status</th>
+                                            <th className="px-6 py-4 font-bold tracking-wider">Joined Date</th>
+                                            <th className="px-6 py-4 text-right font-bold tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {filteredMembers.map((member) => (
+                                            <tr key={member.id} className="group hover:bg-slate-50/80 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold bg-primary/10 text-primary">
+                                                            {member.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold text-slate-900">{member.name}</p>
+                                                            <p className="text-xs text-slate-500">{member.email}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <p className="font-mono text-xs font-medium text-slate-600">{member.memberID}</p>
+                                                    <Badge variant="outline" className="mt-1 font-normal text-xs bg-slate-50 border-slate-200 text-slate-600 capitalize">
+                                                        {member.category}
+                                                    </Badge>
+                                                </td>
+                                                <td className="px-6 py-4">{getStatusBadge(member.status)}</td>
+                                                <td className="px-6 py-4 text-slate-500 font-medium">
+                                                    {format(new Date(member.joinDate), 'MMM d, yyyy')}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex justify-end gap-2 opacity-100 group-hover:opacity-100 transition-opacity">
+                                                        <Button variant="ghost" size="sm" className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10">
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="sm" className="h-8 w-8 text-slate-400 hover:text-amber-600 hover:bg-amber-50">
+                                                            <Mail className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
                 </CardContent>
             </Card>
         </div>

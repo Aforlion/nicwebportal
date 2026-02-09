@@ -47,13 +47,13 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
 
     return (
         <aside className={cn("fixed left-0 top-0 z-40 h-screen w-64 border-r bg-secondary text-secondary-foreground transition-transform hidden md:block", className)}>
-            <div className="flex h-full flex-col px-3 py-4">
-                <div className="mb-10 flex items-center gap-2 px-4">
+            <div className="flex h-full flex-col px-3 py-4 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                <div className="mb-10 flex items-center gap-2 px-4 flex-shrink-0">
                     <Image src="/logo.jpg" alt="NIC Logo" width={32} height={32} className="h-8 w-8 rounded bg-white p-0.5" />
                     <span className="text-2xl font-bold tracking-tighter text-white">NIC Admin</span>
                 </div>
 
-                <ul className="space-y-2 font-medium">
+                <ul className="space-y-2 font-medium flex-1">
                     {adminNavItems.map((item) => {
                         const isActive = pathname === item.href
                         return (
@@ -79,7 +79,7 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
                     })}
                 </ul>
 
-                <div className="mt-auto space-y-2 border-t border-slate-700 pt-4 font-medium">
+                <div className="mt-8 space-y-2 border-t border-slate-700 pt-4 font-medium flex-shrink-0">
                     <Link
                         href="/admin/settings"
                         className="flex items-center gap-3 rounded-lg px-4 py-3 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
