@@ -27,6 +27,20 @@ interface PortalSidebarProps {
 export function PortalSidebar({ role }: PortalSidebarProps) {
     const pathname = usePathname()
 
+    const handleLogout = async () => {
+        try {
+            const { createClient } = await import("@/lib/supabase")
+            const supabase = createClient()
+            const { error } = await supabase.auth.signOut()
+            if (error) throw error
+
+            // Use window.location for a clean state reset on logout
+            window.location.href = '/login'
+        } catch (error: any) {
+            console.error("Logout failed:", error)
+        }
+    }
+
     const studentNavItems = [
         { title: "Dashboard", href: "/portal/student", icon: LayoutDashboard },
         { title: "My Courses", href: "/portal/student/courses", icon: BookOpen },
@@ -95,7 +109,7 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
                     </Link>
                     <button
                         className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => console.log("Logout triggered")}
+                        onClick={handleLogout}
                     >
                         <LogOut className="h-5 w-5" />
                         <span>Logout</span>
