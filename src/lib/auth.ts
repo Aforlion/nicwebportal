@@ -1,14 +1,24 @@
-import { createClient } from '@/lib/supabase'
+import { createClient as createBrowserClient } from '@/lib/supabase'
+import { createClient as createServerClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+async function getSupabase() {
+    if (typeof window === 'undefined') {
+        const cookieStore = await cookies()
+        return createServerClient(cookieStore)
+    }
+    return createBrowserClient()
+}
+
 export async function getUser() {
-    const supabase = createClient()
+    const supabase = await getSupabase()
     const { data: { user } } = await supabase.auth.getUser()
     return user
 }
 
 export async function getUserProfile() {
-    const supabase = createClient()
+    const supabase = await getSupabase()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return null
@@ -41,7 +51,7 @@ export async function requireAdmin() {
 }
 
 export async function getMembership(userId: string) {
-    const supabase = createClient()
+    const supabase = await getSupabase()
 
     const { data: membership } = await supabase
         .from('memberships')
