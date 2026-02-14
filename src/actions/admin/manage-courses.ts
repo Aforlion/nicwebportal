@@ -23,6 +23,7 @@ export async function createCourse(formData: FormData) {
             level: formData.get('level') as string,
             duration_hours: parseInt(formData.get('duration_hours') as string) || 0,
             is_published: formData.get('is_published') === 'true',
+            thumbnail_url: formData.get('thumbnail_url') as string || '',
         }
 
         // Rate Limiting
@@ -38,12 +39,14 @@ export async function createCourse(formData: FormData) {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)+/g, '')
 
+        const { data: { user } } = await supabase.auth.getUser()
+
         const { data, error } = await supabase
             .from('courses')
             .insert({
                 ...validatedData,
                 slug,
-                instructor_id: (await supabase.auth.getUser()).data.user?.id
+                created_by: user?.id
             })
             .select()
             .single()

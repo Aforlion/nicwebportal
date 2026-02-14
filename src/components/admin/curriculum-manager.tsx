@@ -32,6 +32,9 @@ import { Label } from "@/components/ui/label"
 import {
     createModule,
     deleteModule,
+    removeModuleFromCourse,
+    linkModuleToCourse,
+    getAvailableModules,
     createLesson,
     deleteLesson,
     updateLesson
@@ -44,9 +47,33 @@ interface CurriculumManagerProps {
 export function CurriculumManager({ course }: CurriculumManagerProps) {
     const router = useRouter()
     const [isCreatingModule, setIsCreatingModule] = useState(false)
+    const [isLibraryOpen, setIsLibraryOpen] = useState(false)
+    const [availableModules, setAvailableModules] = useState<any[]>([])
     const [isCreatingLesson, setIsCreatingLesson] = useState<string | null>(null) // module ID
     const [isEditingLesson, setIsEditingLesson] = useState<any | null>(null)
     const [isLoading, setIsLoading] = useState(false)
+
+    async function handleOpenLibrary() {
+        setIsLoading(true)
+        const result = await getAvailableModules()
+        if (result.modules) {
+            // Filter out modules already in the course
+            const existingIds = (course.modules || []).map((m: any) => m.id)
+            setAvailableModules(result.modules.filter((m: any) => !existingIds.includes(m.id)))
+        }
+        setIsLoading(false)
+        setIsLibraryOpen(true)
+    }
+
+    async function handleLinkModule(moduleId: string) {
+        setIsLoading(true)
+        const result = await linkModuleToCourse(course.id, moduleId)
+        if (result.success) {
+            router.refresh()
+            setIsLibraryOpen(false)
+        }
+        setIsLoading(false)
+    }
 
     async function handleAddModule(formData: FormData) {
         setIsLoading(true)
@@ -73,10 +100,10 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
         router.refresh()
     }
 
-    async function handleDeleteModule(moduleId: string) {
-        if (!confirm("Are you sure? This will delete all lessons in this module.")) return
+    async function handleRemoveModule(moduleId: string) {
+        if (!confirm("Remove this module from this course? (The module will stay in your library)")) return
         setIsLoading(true)
-        await deleteModule(course.id, moduleId)
+        await removeModuleFromCourse(course.id, moduleId)
         setIsLoading(false)
         router.refresh()
     }
@@ -93,9 +120,14 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Course Curriculum</h2>
-                <Button onClick={() => setIsCreatingModule(true)} disabled={isCreatingModule}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Module
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleOpenLibrary}>
+                        <FileText className="mr-2 h-4 w-4" /> Add from Library
+                    </Button>
+                    <Button onClick={() => setIsCreatingModule(true)} disabled={isCreatingModule}>
+                        <Plus className="mr-2 h-4 w-4" /> Create Module
+                    </Button>
+                </div>
             </div>
 
             {isCreatingModule && (
@@ -132,8 +164,16 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteModule(module.id)}>
-                                            <Trash2 className="mr-2 h-4 w-4" /> Delete Module
+                                        <DropdownMenuItem onClick={() => handleRemoveModule(module.id)}>
+                                            <Trash2 className="mr-2 h-4 w-4" /> Remove from Course
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem className="text-destructive" onClick={async () => {
+                                            if (confirm("Permanently DELETE this module from the library? This will affect ALL courses using it.")) {
+                                                await deleteModule(module.id)
+                                                router.refresh()
+                                            }
+                                        }}>
+                                            <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
@@ -203,6 +243,37 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                     </div>
                 )}
             </div>
+
+            {/* Library Dialog */}
+            <Dialog open={isLibraryOpen} onOpenChange={setIsLibraryOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Module Library</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                        {isLoading ? (
+                            <div className="flex justify-center py-8"><Loader2 className="animate-spin" /></div>
+                        ) : availableModules.length === 0 ? (
+                            <p className="text-center py-8 text-muted-foreground">No modules available to add.</p>
+                        ) : (
+                            availableModules.map(module => (
+                                <div key={module.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/5 transition-colors">
+                                    <div>
+                                        <h4 className="font-medium">{module.title}</h4>
+                                        <p className="text-xs text-muted-foreground">ID: {module.id.split('-')[0]}...</p>
+                                    </div>
+                                    <Button size="sm" onClick={() => handleLinkModule(module.id)}>
+                                        <Plus className="h-4 w-4 mr-1" /> Add
+                                    </Button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsLibraryOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Edit Lesson Dialog */}
             <Dialog open={!!isEditingLesson} onOpenChange={(open) => !open && setIsEditingLesson(null)}>

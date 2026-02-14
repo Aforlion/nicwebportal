@@ -29,16 +29,18 @@ export async function getCourseBySlug(slug: string) {
         .from('courses')
         .select(`
             *,
-            modules (
-                id,
-                title,
+            course_modules (
                 sort_order,
-                lessons (
+                module:modules (
                     id,
                     title,
-                    slug,
-                    duration_minutes,
-                    is_preview
+                    lessons (
+                        id,
+                        title,
+                        slug,
+                        duration_minutes,
+                        is_preview
+                    )
                 )
             )
         `)
@@ -49,6 +51,16 @@ export async function getCourseBySlug(slug: string) {
     if (error) {
         console.error('Error fetching course:', error)
         return null
+    }
+
+    // Flatten modular structure
+    if (course.course_modules) {
+        course.modules = course.course_modules
+            .map((cm: any) => ({
+                ...cm.module,
+                sort_order: cm.sort_order
+            }))
+            .sort((a: any, b: any) => a.sort_order - b.sort_order)
     }
 
     return course

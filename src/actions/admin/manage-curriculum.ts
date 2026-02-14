@@ -18,39 +18,52 @@ export async function createModule(courseId: string, formData: FormData) {
 
     try {
         const rawData = {
-            course_id: courseId,
             title: formData.get('title') as string,
-            sort_order: 0, // Placeholder, calculated below
         }
 
         // Rate Limiting
-        const allowed = await adminActionRateLimiter.check(courseId) // Using courseId as a simple partition
+        const allowed = await adminActionRateLimiter.check(courseId)
         if (!allowed) return { error: 'Too many requests. Please try again later.' }
 
-        const validatedData = ModuleSchema.omit({ sort_order: true }).parse(rawData)
+        const validatedData = ModuleSchema.omit({ course_id: true, sort_order: true }).parse(rawData)
         const { title } = validatedData
 
-        // Get current max sort order
-        const { data: existingModules } = await supabase
+        // 1. Create the standalone module
+        const { data: moduleData, error: moduleError } = await supabase
             .from('modules')
+            .insert({
+                title,
+                created_by: (await supabase.auth.getUser()).data.user?.id
+            })
+            .select()
+            .single()
+
+        if (moduleError) {
+            console.error('Create module error:', moduleError)
+            return { error: 'Failed to create module in database' }
+        }
+
+        // 2. Link it to the course
+        const { data: existingLinks } = await supabase
+            .from('course_modules')
             .select('sort_order')
             .eq('course_id', courseId)
             .order('sort_order', { ascending: false })
             .limit(1)
 
-        const nextOrder = (existingModules?.[0]?.sort_order || 0) + 1
+        const nextOrder = (existingLinks?.[0]?.sort_order || 0) + 1
 
-        const { error } = await supabase
-            .from('modules')
+        const { error: linkError } = await supabase
+            .from('course_modules')
             .insert({
                 course_id: courseId,
-                title,
+                module_id: moduleData.id,
                 sort_order: nextOrder
             })
 
-        if (error) {
-            console.error('Create module error:', error)
-            return { error: 'Failed to create module in database' }
+        if (linkError) {
+            console.error('Link module error:', linkError)
+            return { error: 'Failed to link module to course' }
         }
 
         revalidatePath(`/admin/training/${courseId}`)
@@ -63,7 +76,63 @@ export async function createModule(courseId: string, formData: FormData) {
     }
 }
 
-export async function deleteModule(courseId: string, moduleId: string) {
+export async function linkModuleToCourse(courseId: string, moduleId: string) {
+    await requireAdmin()
+    try {
+        const cookieStore = await cookies()
+        const supabase = createClient(cookieStore)
+
+        // Get current max sort order for this course
+        const { data: existingLinks } = await supabase
+            .from('course_modules')
+            .select('sort_order')
+            .eq('course_id', courseId)
+            .order('sort_order', { ascending: false })
+            .limit(1)
+
+        const nextOrder = (existingLinks?.[0]?.sort_order || 0) + 1
+
+        const { error } = await supabase
+            .from('course_modules')
+            .insert({
+                course_id: courseId,
+                module_id: moduleId,
+                sort_order: nextOrder
+            })
+
+        if (error) throw error
+
+        revalidatePath(`/admin/training/${courseId}`)
+        return { success: true }
+    } catch (err: any) {
+        console.error('Link module error:', err)
+        return { error: 'Failed to reuse module for this course' }
+    }
+}
+
+export async function removeModuleFromCourse(courseId: string, moduleId: string) {
+    await requireAdmin()
+    try {
+        const cookieStore = await cookies()
+        const supabase = createClient(cookieStore)
+
+        const { error } = await supabase
+            .from('course_modules')
+            .delete()
+            .eq('course_id', courseId)
+            .eq('module_id', moduleId)
+
+        if (error) throw error
+
+        revalidatePath(`/admin/training/${courseId}`)
+        return { success: true }
+    } catch (err: any) {
+        console.error('Remove module error:', err)
+        return { error: 'Failed to remove module from course' }
+    }
+}
+
+export async function deleteModule(moduleId: string) {
     // Strict Admin Check
     await requireAdmin()
 
@@ -80,7 +149,7 @@ export async function deleteModule(courseId: string, moduleId: string) {
             return { error: 'Failed to delete module' }
         }
 
-        revalidatePath(`/admin/training/${courseId}`)
+        revalidatePath(`/admin/training`)
         return { success: true }
     } catch (err: any) {
         return { error: err.message || 'An unexpected error occurred while deleting the module' }
@@ -144,6 +213,25 @@ export async function createLesson(courseId: string, moduleId: string, formData:
             return { error: `Validation failed: ${err.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')}` }
         }
         return { error: err.message || 'An unexpected error occurred' }
+    }
+}
+
+export async function getAvailableModules() {
+    await requireAdmin()
+    try {
+        const cookieStore = await cookies()
+        const supabase = createClient(cookieStore)
+
+        const { data, error } = await supabase
+            .from('modules')
+            .select('*')
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+        return { modules: data }
+    } catch (err: any) {
+        console.error('Fetch modules error:', err)
+        return { error: 'Failed to fetch available modules' }
     }
 }
 

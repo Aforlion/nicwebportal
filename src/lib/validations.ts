@@ -7,6 +7,7 @@ export const CourseSchema = z.object({
     level: z.enum(['Beginner', 'Intermediate', 'Advanced', 'Professional', 'General', 'Foundation', 'Certification', 'Specialty']),
     duration_hours: z.number().min(0),
     is_published: z.boolean().default(false),
+    thumbnail_url: z.string().url().optional().or(z.literal('')),
 })
 
 export const ModuleSchema = z.object({

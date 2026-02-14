@@ -38,9 +38,12 @@ export function CourseForm({ course, mode }: CourseFormProps) {
                 setError(result.error)
                 setIsLoading(false)
             } else {
-                // Success - redirect is handled in server action for revalidation usually, 
-                // but we can also route here to be sure
-                router.push('/admin/training')
+                // Redirect to the builder (detail page) for new courses
+                const destination = mode === 'create'
+                    ? `/admin/training/${(result as any).courseId}`
+                    : '/admin/training'
+
+                router.push(destination)
                 router.refresh()
             }
         } catch (e) {

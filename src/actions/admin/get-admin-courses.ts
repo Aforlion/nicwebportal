@@ -45,16 +45,18 @@ export async function getAdminCourse(courseId: string) {
             .from('courses')
             .select(`
                 *,
-                modules (
-                    id,
-                    title,
+                course_modules (
                     sort_order,
-                    lessons (
+                    module:modules (
                         id,
                         title,
-                        is_preview,
-                        duration_minutes,
-                        sort_order
+                        lessons (
+                            id,
+                            title,
+                            is_preview,
+                            duration_minutes,
+                            sort_order
+                        )
                     )
                 )
             `)
@@ -64,6 +66,16 @@ export async function getAdminCourse(courseId: string) {
         if (error) {
             console.error('Error fetching admin course:', error)
             return null
+        }
+
+        // Flatten modular structure: course_modules -> module
+        if (course.course_modules) {
+            course.modules = course.course_modules
+                .map((cm: any) => ({
+                    ...cm.module,
+                    sort_order: cm.sort_order
+                }))
+                .sort((a: any, b: any) => a.sort_order - b.sort_order)
         }
 
         // Sort modules and lessons
