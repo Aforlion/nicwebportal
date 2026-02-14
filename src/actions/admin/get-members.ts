@@ -5,8 +5,8 @@ import { cookies } from "next/headers"
 import { requireAdmin } from "@/lib/auth"
 
 export async function getMembers() {
+    await requireAdmin()
     try {
-        await requireAdmin()
 
         const cookieStore = await cookies()
         const supabase = createClient(cookieStore)

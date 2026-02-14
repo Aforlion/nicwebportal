@@ -25,12 +25,12 @@ export async function getAssessment(lessonId: string) {
 }
 
 export async function saveAssessment(lessonId: string, formData: FormData) {
+    // Strict Admin Check
+    await requireAdmin()
+
     try {
         const cookieStore = await cookies()
         const supabase = createClient(cookieStore)
-
-        // Strict Admin Check
-        await requireAdmin()
 
         // Rate Limiting
         const allowed = await adminActionRateLimiter.check(`save-assessment-${lessonId}`)

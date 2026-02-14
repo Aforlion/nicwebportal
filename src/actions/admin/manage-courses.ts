@@ -15,17 +15,16 @@ export async function createCourse(formData: FormData) {
     // Strict Admin Check
     await requireAdmin()
 
-    // Validate Input
-    const rawData = {
-        title: formData.get('title') as string,
-        description: formData.get('description') as string,
-        price: parseFloat(formData.get('price') as string) || 0,
-        level: formData.get('level') as string,
-        duration_hours: parseInt(formData.get('duration_hours') as string) || 0,
-        is_published: formData.get('is_published') === 'true',
-    }
-
     try {
+        const rawData = {
+            title: formData.get('title') as string,
+            description: formData.get('description') as string,
+            price: parseFloat(formData.get('price') as string) || 0,
+            level: formData.get('level') as string,
+            duration_hours: parseInt(formData.get('duration_hours') as string) || 0,
+            is_published: formData.get('is_published') === 'true',
+        }
+
         // Rate Limiting
         const allowed = await adminActionRateLimiter.check('create-course')
         if (!allowed) return { error: 'Too many requests. Please try again later.' }
@@ -73,17 +72,16 @@ export async function updateCourse(courseId: string, formData: FormData) {
     // Strict Admin Check
     await requireAdmin()
 
-    // Validate Input (Partial for update)
-    const rawData = {
-        title: formData.get('title') as string,
-        description: formData.get('description') as string,
-        price: parseFloat(formData.get('price') as string) || 0,
-        level: formData.get('level') as string,
-        duration_hours: parseInt(formData.get('duration_hours') as string) || 0,
-        is_published: formData.get('is_published') === 'true',
-    }
-
     try {
+        const rawData = {
+            title: formData.get('title') as string,
+            description: formData.get('description') as string,
+            price: parseFloat(formData.get('price') as string) || 0,
+            level: formData.get('level') as string,
+            duration_hours: parseInt(formData.get('duration_hours') as string) || 0,
+            is_published: formData.get('is_published') === 'true',
+        }
+
         // Rate Limiting
         const allowed = await adminActionRateLimiter.check(`update-course-${courseId}`)
         if (!allowed) return { error: 'Too many requests. Please try again later.' }

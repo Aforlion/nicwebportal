@@ -2,6 +2,7 @@
 
 
 import { Bell, Search, Menu, ChevronRight, Home } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -22,7 +23,7 @@ import { toast } from "sonner"
 
 export function AdminHeader() {
     const [open, setOpen] = useState(false)
-    const pathname = usePathname()
+    const pathname = usePathname() || ""
     const router = useRouter()
     const supabase = createClient()
 
@@ -61,17 +62,31 @@ export function AdminHeader() {
                     />
                 </div>
 
-                {/* Breadcrumbs */}
                 <nav className="flex items-center gap-1 text-sm text-muted-foreground overflow-hidden whitespace-nowrap">
-                    <Home className="h-4 w-4 shrink-0" />
+                    <Link href="/admin" className="hover:text-primary transition-colors flex items-center">
+                        <Home className="h-4 w-4 shrink-0" />
+                    </Link>
                     <ChevronRight className="h-4 w-4 shrink-0" />
-                    <span className="font-medium text-slate-900">Admin</span>
-                    {segments.map((segment, i) => (
-                        <div key={i} className="flex items-center gap-1">
-                            <ChevronRight className="h-4 w-4 shrink-0" />
-                            <span className="capitalize">{segment.replace(/-/g, ' ')}</span>
-                        </div>
-                    ))}
+                    <Link href="/admin" className="hover:text-primary transition-colors font-medium">
+                        Admin
+                    </Link>
+                    {segments.map((segment, i) => {
+                        const href = `/admin/${segments.slice(0, i + 1).join('/')}`
+                        const isLast = i === segments.length - 1
+
+                        return (
+                            <div key={i} className="flex items-center gap-1">
+                                <ChevronRight className="h-4 w-4 shrink-0" />
+                                {isLast ? (
+                                    <span className="capitalize text-slate-900 font-semibold">{segment.replace(/-/g, ' ')}</span>
+                                ) : (
+                                    <Link href={href} className="capitalize hover:text-primary transition-colors">
+                                        {segment.replace(/-/g, ' ')}
+                                    </Link>
+                                )}
+                            </div>
+                        )
+                    })}
                 </nav>
             </div>
             <div className="flex items-center gap-4">

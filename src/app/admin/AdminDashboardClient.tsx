@@ -108,30 +108,36 @@ export function AdminDashboardClient({ initialData }: AdminDashboardClientProps)
                             <CardTitle className="text-lg font-bold text-slate-800">Recent Activity</CardTitle>
                             <CardDescription className="hidden sm:block">Latest registrations and payments</CardDescription>
                         </div>
-                        <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5">
-                            View All
+                        <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5" asChild>
+                            <Link href="/admin/reports">View All</Link>
                         </Button>
                     </CardHeader>
                     <CardContent className="p-0">
                         <div className="divide-y divide-slate-50">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                                <div key={i} className="flex items-center gap-4 p-4 hover:bg-slate-50/50 transition-colors">
+                            {[
+                                { id: 1, type: "Member Onboarding", description: "New profile verification pending", time: "15m ago", initials: "AD" },
+                                { id: 2, type: "Course Enrollment", description: "Paid enrollment received", time: "30m ago", initials: "JD" },
+                                { id: 3, type: "Certificate Issued", description: "Standard Caregiving Level 1", time: "45m ago", initials: "SM" },
+                                { id: 4, type: "Payment Received", description: "Annual dues for Registry", time: "1h ago", initials: "RK" },
+                                { id: 5, type: "Module Updated", description: "New content added to Ethics", time: "2h ago", initials: "Admin" }
+                            ].map((activity) => (
+                                <div key={activity.id} className="flex items-center gap-4 p-4 hover:bg-slate-50/50 transition-colors">
                                     <Avatar className="h-10 w-10 border border-slate-100">
-                                        <AvatarFallback className={`text-xs font-bold ${i % 2 === 0 ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"
+                                        <AvatarFallback className={`text-xs font-bold ${activity.id % 2 === 0 ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"
                                             }`}>
-                                            {i % 2 === 0 ? "JD" : "SM"}
+                                            {activity.initials}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-grow min-w-0">
                                         <div className="flex items-center justify-between mb-0.5">
                                             <p className="text-sm font-medium text-slate-900 truncate">
-                                                {i % 2 === 0 ? "John Doe registered for Course" : "Sarah Mullins paid membership"}
+                                                {activity.type}
                                             </p>
-                                            <span className="text-xs text-slate-400 whitespace-nowrap">2h ago</span>
+                                            <span className="text-xs text-slate-400 whitespace-nowrap">{activity.time}</span>
                                         </div>
                                         <p className="text-xs text-slate-500 flex items-center gap-1">
                                             <Activity className="h-3 w-3" />
-                                            {i % 2 === 0 ? "Healthcare Assistant Program" : "Full Membership Renewal"}
+                                            {activity.description}
                                         </p>
                                     </div>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
