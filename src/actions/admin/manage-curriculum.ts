@@ -200,7 +200,8 @@ export async function createLesson(courseId: string, moduleId: string, formData:
                 content: '',
                 sort_order: nextOrder,
                 is_preview: false,
-                duration_minutes: 0
+                duration_minutes: 0,
+                created_by: (await supabase.auth.getUser()).data.user?.id
             })
 
         if (error) {
