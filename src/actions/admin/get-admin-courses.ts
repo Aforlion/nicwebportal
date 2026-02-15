@@ -50,9 +50,12 @@ export async function getAdminCourse(courseId: string) {
                     module:modules (
                         id,
                         title,
+                        description,
                         lessons (
                             id,
                             title,
+                            content,
+                            video_url,
                             is_preview,
                             duration_minutes,
                             sort_order

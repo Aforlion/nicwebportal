@@ -44,7 +44,7 @@ function LoginForm() {
                 .single()
 
             // Redirect based on role
-            const adminRoles = ['admin', 'super_admin', 'registry_officer', 'inspector', 'auditor']
+            const adminRoles = ['admin', 'super_admin', 'registry_officer', 'inspector', 'auditor', 'instructor']
             if (profile?.role && adminRoles.includes(profile.role)) {
                 router.push('/admin/members')
             } else {

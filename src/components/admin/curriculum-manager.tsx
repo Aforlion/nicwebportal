@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Textarea from "@/components/ui/textarea"
+import { toast } from "sonner"
 import {
     GripVertical,
     Plus,
@@ -15,6 +16,7 @@ import {
     Edit,
     Loader2
 } from "lucide-react"
+import { MarkdownHint } from "@/components/ui/markdown-hint"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -69,51 +71,79 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
         setIsLoading(true)
         const result = await linkModuleToCourse(course.id, moduleId)
         if (result.success) {
+            toast.success("Module added to course")
             router.refresh()
             setIsLibraryOpen(false)
+        } else {
+            toast.error(result.error || "Failed to add module")
         }
         setIsLoading(false)
     }
 
     async function handleAddModule(formData: FormData) {
         setIsLoading(true)
-        await createModule(course.id, formData)
+        const result = await createModule(course.id, formData)
+        if (result.success) {
+            toast.success("Module created and added to course")
+            setIsCreatingModule(false)
+            router.refresh()
+        } else {
+            toast.error(result.error || "Failed to create module")
+        }
         setIsLoading(false)
-        setIsCreatingModule(false)
-        router.refresh()
     }
 
     async function handleAddLesson(moduleId: string, formData: FormData) {
         setIsLoading(true)
-        await createLesson(course.id, moduleId, formData)
+        const result = await createLesson(course.id, moduleId, formData)
+        if (result.success) {
+            toast.success("Lesson created successfully")
+            setIsCreatingLesson(null)
+            router.refresh()
+        } else {
+            toast.error(result.error || "Failed to create lesson")
+        }
         setIsLoading(false)
-        setIsCreatingLesson(null)
-        router.refresh()
     }
 
     async function handleUpdateLesson(formData: FormData) {
         if (!isEditingLesson) return
         setIsLoading(true)
-        await updateLesson(course.id, isEditingLesson.id, formData)
+        const result = await updateLesson(course.id, isEditingLesson.id, formData)
+        if (result.success) {
+            toast.success("Lesson updated")
+            setIsEditingLesson(null)
+            router.refresh()
+        } else {
+            toast.error(result.error || "Failed to update lesson")
+        }
         setIsLoading(false)
-        setIsEditingLesson(null)
-        router.refresh()
     }
 
     async function handleRemoveModule(moduleId: string) {
         if (!confirm("Remove this module from this course? (The module will stay in your library)")) return
         setIsLoading(true)
-        await removeModuleFromCourse(course.id, moduleId)
+        const result = await removeModuleFromCourse(course.id, moduleId)
+        if (result.success) {
+            toast.success("Module removed from course")
+            router.refresh()
+        } else {
+            toast.error(result.error || "Failed to remove module")
+        }
         setIsLoading(false)
-        router.refresh()
     }
 
     async function handleDeleteLesson(lessonId: string) {
         if (!confirm("Are you sure you want to delete this lesson?")) return
         setIsLoading(true)
-        await deleteLesson(course.id, lessonId)
+        const result = await deleteLesson(course.id, lessonId)
+        if (result.success) {
+            toast.success("Lesson deleted")
+            router.refresh()
+        } else {
+            toast.error(result.error || "Failed to delete lesson")
+        }
         setIsLoading(false)
-        router.refresh()
     }
 
     return (
@@ -131,16 +161,24 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
             </div>
 
             {isCreatingModule && (
-                <form action={handleAddModule} className="bg-muted/30 p-4 rounded-lg border flex gap-2 animate-in fade-in slide-in-from-top-2">
+                <form action={handleAddModule} className="bg-muted/30 p-4 rounded-lg border flex flex-col gap-3 animate-in fade-in slide-in-from-top-2">
                     <Input
                         name="title"
                         placeholder="Module Title (e.g. Introduction to Caregiving)"
-                        className="flex-1 bg-background"
+                        className="bg-background"
                         autoFocus
                         required
                     />
-                    <Button type="submit" disabled={isLoading}>Add</Button>
-                    <Button type="button" variant="ghost" onClick={() => setIsCreatingModule(false)}>Cancel</Button>
+                    <Textarea
+                        name="description"
+                        placeholder="Short overview of this module..."
+                        className="bg-background min-h-[80px]"
+                    />
+                    <MarkdownHint />
+                    <div className="flex justify-end gap-2">
+                        <Button type="button" variant="ghost" onClick={() => setIsCreatingModule(false)}>Cancel</Button>
+                        <Button type="submit" disabled={isLoading}>Create Module</Button>
+                    </div>
                 </form>
             )}
 
@@ -169,8 +207,13 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                                         </DropdownMenuItem>
                                         <DropdownMenuItem className="text-destructive" onClick={async () => {
                                             if (confirm("Permanently DELETE this module from the library? This will affect ALL courses using it.")) {
-                                                await deleteModule(module.id)
-                                                router.refresh()
+                                                const result = await deleteModule(module.id)
+                                                if (result.success) {
+                                                    toast.success("Module deleted permanently")
+                                                    router.refresh()
+                                                } else {
+                                                    toast.error(result.error || "Failed to delete module")
+                                                }
                                             }
                                         }}>
                                             <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
@@ -333,6 +376,7 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                                     Available as Free Preview
                                 </Label>
                             </div>
+                            <MarkdownHint />
                             <DialogFooter>
                                 <Button type="button" variant="outline" onClick={() => setIsEditingLesson(null)}>Cancel</Button>
                                 <Button type="submit" disabled={isLoading}>Save Changes</Button>

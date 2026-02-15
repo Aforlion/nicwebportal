@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle, Circle, PlayCircle, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { RichText } from "@/components/ui/rich-text"
 
 export default async function LessonPlayerPage({ params }: { params: { id: string } }) {
     const data = await getCourseContent(params.id)
@@ -44,6 +45,11 @@ export default async function LessonPlayerPage({ params }: { params: { id: strin
                             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2">
                                 Module {idx + 1}: {module.title}
                             </h3>
+                            {module.description && (
+                                <div className="px-2 mb-3">
+                                    <RichText content={module.description} className="text-[10px] text-muted-foreground leading-normal" />
+                                </div>
+                            )}
                             <div className="space-y-1">
                                 {module.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => {
                                     const isCompleted = progress[lesson.id]
@@ -106,11 +112,11 @@ export default async function LessonPlayerPage({ params }: { params: { id: strin
                             </Button>
                         </div>
 
-                        <div className="prose max-w-none text-muted-foreground pb-20">
-                            {/* Markdown content would go here */}
-                            <p className="text-lg leading-relaxed">
-                                {firstLesson.content || "No additional text content for this lesson."}
-                            </p>
+                        <div className="prose max-w-none pb-20">
+                            <RichText
+                                content={firstLesson.content || "No additional text content for this lesson."}
+                                className="text-lg leading-relaxed text-muted-foreground"
+                            />
 
                             {/* Assessment / Quiz Section */}
                             {firstLesson.assessments && (

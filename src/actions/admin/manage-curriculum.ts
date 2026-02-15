@@ -19,6 +19,7 @@ export async function createModule(courseId: string, formData: FormData) {
     try {
         const rawData = {
             title: formData.get('title') as string,
+            description: formData.get('description') as string,
         }
 
         // Rate Limiting
@@ -26,13 +27,14 @@ export async function createModule(courseId: string, formData: FormData) {
         if (!allowed) return { error: 'Too many requests. Please try again later.' }
 
         const validatedData = ModuleSchema.omit({ course_id: true, sort_order: true }).parse(rawData)
-        const { title } = validatedData
+        const { title, description } = validatedData
 
         // 1. Create the standalone module
         const { data: moduleData, error: moduleError } = await supabase
             .from('modules')
             .insert({
                 title,
+                description,
                 created_by: (await supabase.auth.getUser()).data.user?.id
             })
             .select()

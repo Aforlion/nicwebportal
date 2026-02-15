@@ -22,7 +22,7 @@ export const LessonSchema = z.object({
     title: z.string().min(3).max(100),
     content: z.string().optional(),
     video_url: z.string().url().optional().or(z.literal('')),
-    duration_minutes: z.number().int().min(1),
+    duration_minutes: z.number().int().min(0),
     is_preview: z.boolean().default(false),
     sort_order: z.number().int().min(0),
 })

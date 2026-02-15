@@ -34,6 +34,7 @@ export async function getCourseBySlug(slug: string) {
                 module:modules (
                     id,
                     title,
+                    description,
                     lessons (
                         id,
                         title,

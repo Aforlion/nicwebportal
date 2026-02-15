@@ -7,17 +7,20 @@ import Textarea from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { createCourse, updateCourse } from "@/actions/admin/manage-courses"
 import { useRouter } from "next/navigation"
+import { ImageUpload } from "./image-upload"
 import { Loader2 } from "lucide-react"
+import { MarkdownHint } from "@/components/ui/markdown-hint"
 
 interface CourseFormProps {
     course?: any
     mode: 'create' | 'edit'
 }
 
-export function CourseForm({ course, mode }: CourseFormProps) {
+export function CourseForm({ course, mode = 'create' }: CourseFormProps) {
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState("")
+    const [error, setError] = useState<string | null>(null)
+    const [thumbnailUrl, setThumbnailUrl] = useState(course?.thumbnail_url || "")
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -25,6 +28,7 @@ export function CourseForm({ course, mode }: CourseFormProps) {
         setError("")
 
         const formData = new FormData(event.currentTarget)
+        formData.set("thumbnail_url", thumbnailUrl) // Manually add thumbnail_url from state
 
         try {
             let result
@@ -83,6 +87,7 @@ export function CourseForm({ course, mode }: CourseFormProps) {
                         defaultValue={course?.description}
                         required
                     />
+                    <MarkdownHint />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -130,12 +135,11 @@ export function CourseForm({ course, mode }: CourseFormProps) {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="thumbnail_url">Thumbnail URL</Label>
-                        <Input
-                            id="thumbnail_url"
-                            name="thumbnail_url"
-                            placeholder="https://..."
-                            defaultValue={course?.thumbnail_url}
+                        <ImageUpload
+                            value={thumbnailUrl}
+                            onChange={setThumbnailUrl}
+                            label="Course Thumbnail"
+                            disabled={isLoading}
                         />
                     </div>
                 </div>

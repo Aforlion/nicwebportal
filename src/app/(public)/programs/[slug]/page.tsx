@@ -4,6 +4,7 @@ import { CheckCircle2, Clock, Globe, Shield, PlayCircle, Lock } from "lucide-rea
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getCourseBySlug } from "@/actions/get-courses"
+import { RichText } from "@/components/ui/rich-text"
 
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
@@ -33,9 +34,9 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                             <h1 className="mb-6 text-4xl font-extrabold tracking-tight lg:text-5xl">
                                 {course.title}
                             </h1>
-                            <p className="mb-8 text-lg opacity-90 leading-relaxed">
-                                {course.description}
-                            </p>
+                            <div className="mb-8 opacity-90">
+                                <RichText content={course.description} className="text-lg leading-relaxed text-white/90" />
+                            </div>
                             <div className="flex flex-col gap-4 sm:flex-row">
                                 <Button size="lg" className="bg-secondary text-white hover:bg-secondary/90 h-14 text-lg px-8" asChild>
                                     <Link href={`/portal/student/enroll/${course.id}`}>
@@ -77,9 +78,14 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                         <div className="space-y-4">
                             {course.modules?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((module: any, index: number) => (
                                 <div key={module.id} className="border rounded-lg overflow-hidden">
-                                    <div className="bg-muted/30 px-6 py-4 border-b flex items-center justify-between">
-                                        <h4 className="font-semibold text-lg">Module {index + 1}: {module.title}</h4>
-                                        <span className="text-sm text-muted-foreground">{module.lessons?.length || 0} Lessons</span>
+                                    <div className="bg-muted/30 px-6 py-4 border-b">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h4 className="font-semibold text-lg">Module {index + 1}: {module.title}</h4>
+                                            <span className="text-sm text-muted-foreground">{module.lessons?.length || 0} Lessons</span>
+                                        </div>
+                                        {module.description && (
+                                            <RichText content={module.description} className="text-sm text-muted-foreground mb-2" />
+                                        )}
                                     </div>
                                     <div className="divide-y">
                                         {module.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => (
