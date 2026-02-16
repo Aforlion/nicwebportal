@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
+import { updateCourseProgress } from "./progress"
 
 export async function submitAssessment(courseId: string, lessonId: string, assessmentId: string, answers: any) {
     const cookieStore = await cookies()
@@ -24,26 +25,28 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
         return { error: "Assessment not found" }
     }
 
-    // 2. Calculate Score
+    // 2. Calculate Score & Determine if Manual Review is needed
     let score = 0
-    let maxScore = assessment.questions.length // Assuming 1 point per question for MVP
-    // Or if max_score is in table, usage depends. Let's assume equal weight for now.
-
-    // Simple grading logic for "multiple_choice" or "true_false"
-    // questions structure: [{ id, correctDetails: { answer: "optionId" } }]
-    // answers structure: { questionId: "selectedOptionId" }
+    let autogradableCount = 0
+    let requiresManualReview = false
 
     assessment.questions.forEach((q: any) => {
         const studentAnswer = answers[q.id]
-        // Check if correct
-        if (studentAnswer && studentAnswer === q.correctDetails?.answer) {
-            score += 1
+
+        if (q.type === 'essay' || q.type === 'report') {
+            requiresManualReview = true
+        } else {
+            autogradableCount += 1
+            // Check if correct (MCQ or True/False)
+            if (studentAnswer && studentAnswer === q.correctDetails?.answer) {
+                score += 1
+            }
         }
     })
 
-    const percentage = Math.round((score / maxScore) * 100)
-    const passed = percentage >= assessment.passing_score
-    const status = passed ? 'passed' : 'failed'
+    const percentage = autogradableCount > 0 ? Math.round((score / autogradableCount) * 100) : 0
+    const passed = !requiresManualReview && percentage >= assessment.passing_score
+    const status = requiresManualReview ? 'pending_review' : (passed ? 'passed' : 'failed')
 
     // 3. Get Enrollment ID
     const { data: enrollment } = await supabase
@@ -61,13 +64,11 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
         .insert({
             assessment_id: assessmentId,
             enrollment_id: enrollment.id,
-            score: percentage,
-            status: status, // Schema says 'submitted', 'graded'. Let's use 'graded' if auto? 
-            // My schema comment says "submitted, graded, pending_review".
-            // For auto-graded quiz, it's effectively 'graded'.
+            score: requiresManualReview ? null : percentage,
+            status: status,
             submission_data: answers,
             submitted_at: new Date().toISOString(),
-            graded_at: new Date().toISOString()
+            graded_at: requiresManualReview ? null : new Date().toISOString()
         })
 
     if (subError) {
@@ -87,14 +88,9 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
                 last_accessed_at: new Date().toISOString()
             }, { onConflict: 'enrollment_id, lesson_id' })
 
-        // Recalculate Course Progress? 
-        // We can do a quick calc or trigger. For MVP, we might leave it or do simple calc.
-        // Let's do a quick count
-        /*
-        const { count: completedCount } = await supabase.from('lesson_progress').select('*', { count: 'exact', head: true }).eq('enrollment_id', enrollment.id).eq('is_completed', true)
-        const { count: totalLessons } = await supabase.from('lessons').select('*', { count: 'exact', head: true }).eq('course_id', courseId) // Need join usually
-        // ... Logic for progress update ...
-        */
+
+        // Trigger Overall Progress Update
+        await updateCourseProgress(enrollment.id)
 
         revalidatePath(`/portal/student/courses/${courseId}`)
     }

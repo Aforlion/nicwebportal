@@ -1,21 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Award, Download, Share2, ShieldCheck, ExternalLink, Calendar } from "lucide-react"
+import { Award, Download, Share2, ShieldCheck, ExternalLink, Calendar, FileText } from "lucide-react"
 import Link from "next/link"
+import { getStudentCertificates } from "@/actions/student/certificate"
 
-const certificates = [
-    {
-        id: "CERT-HCA-2024-8829",
-        title: "Healthcare Assistant (HCA) - Professional Bundle",
-        issueDate: "Jan 10, 2024",
-        status: "Verified",
-        grade: "Distinction",
-        category: "Professional Certification",
+export default async function StudentCertificatesPage() {
+    const { certificates, error } = await getStudentCertificates()
+
+    if (error) {
+        return (
+            <div className="p-8 text-center bg-red-50 text-red-600 rounded-lg border border-red-200">
+                <p>{error}</p>
+            </div>
+        )
     }
-]
 
-export default function StudentCertificatesPage() {
     return (
         <div className="space-y-8">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -23,11 +23,16 @@ export default function StudentCertificatesPage() {
                     <h1 className="text-3xl font-bold text-secondary">My Certificates</h1>
                     <p className="text-muted-foreground">Download and share your official NIC certifications.</p>
                 </div>
+                <Button variant="outline" asChild>
+                    <Link href="/portal/student/transcript">
+                        <FileText className="mr-2 h-4 w-4" /> View Academic Transcript
+                    </Link>
+                </Button>
             </div>
 
             <div className="grid gap-8 lg:grid-cols-2">
-                {certificates.length > 0 ? (
-                    certificates.map((cert) => (
+                {certificates && certificates.length > 0 ? (
+                    certificates.map((cert: any) => (
                         <Card key={cert.id} className="overflow-hidden border-2 border-primary/10 group">
                             <div className="h-2 bg-gradient-to-r from-primary via-accent to-secondary" />
                             <CardHeader className="pb-4">
@@ -36,41 +41,40 @@ export default function StudentCertificatesPage() {
                                         <Award className="h-10 w-10" />
                                     </div>
                                     <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 uppercase font-bold text-[10px] tracking-widest">
-                                        <ShieldCheck className="mr-1 h-3 w-3" /> {cert.status}
+                                        <ShieldCheck className="mr-1 h-3 w-3" /> Verified
                                     </Badge>
                                 </div>
-                                <CardTitle className="text-xl text-secondary">{cert.title}</CardTitle>
-                                <CardDescription className="font-mono text-xs">{cert.id}</CardDescription>
+                                <CardTitle className="text-xl text-secondary">{cert.enrollments?.courses?.title}</CardTitle>
+                                <CardDescription className="font-mono text-xs">{cert.certificate_code}</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <p className="text-muted-foreground font-medium uppercase text-[10px] tracking-wider mb-1">Issue Date</p>
                                         <p className="font-bold text-secondary flex items-center gap-2">
-                                            <Calendar className="h-4 w-4 text-primary" /> {cert.issueDate}
+                                            <Calendar className="h-4 w-4 text-primary" /> {new Date(cert.issue_date).toLocaleDateString()}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-muted-foreground font-medium uppercase text-[10px] tracking-wider mb-1">Grade</p>
-                                        <p className="font-bold text-secondary">{cert.grade}</p>
+                                        <p className="text-muted-foreground font-medium uppercase text-[10px] tracking-wider mb-1">Status</p>
+                                        <p className="font-bold text-emerald-600">Active</p>
                                     </div>
                                 </div>
                                 <div className="bg-muted/30 p-4 rounded-xl space-y-2">
                                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Category</p>
-                                    <p className="text-sm font-medium text-secondary">{cert.category}</p>
+                                    <p className="text-sm font-medium text-secondary">Professional Certification</p>
                                 </div>
                             </CardContent>
                             <CardFooter className="flex gap-3 pt-0">
-                                <Button className="flex-grow bg-primary">
-                                    <Download className="mr-2 h-4 w-4" /> Download PDF
-                                </Button>
-                                <Button variant="outline" size="icon" asChild>
-                                    <Link href={`/verify?id=${cert.id}`} title="Public Verification Link">
-                                        <ExternalLink className="h-4 w-4 text-primary" />
+                                <Button className="flex-grow bg-primary" asChild>
+                                    <Link href={`/certificates/${cert.certificate_code}`} target="_blank">
+                                        <Download className="mr-2 h-4 w-4" /> View PDF
                                     </Link>
                                 </Button>
-                                <Button variant="outline" size="icon">
-                                    <Share2 className="h-4 w-4 text-primary" />
+                                <Button variant="outline" size="icon" asChild>
+                                    <Link href={`/certificates/${cert.certificate_code}`} target="_blank" title="Public Verification Link">
+                                        <ExternalLink className="h-4 w-4 text-primary" />
+                                    </Link>
                                 </Button>
                             </CardFooter>
                         </Card>
@@ -99,9 +103,6 @@ export default function StudentCertificatesPage() {
                     <p className="text-sm text-slate-300 mt-2 leading-relaxed">
                         All NIC certificates are cryptographically signed and stored on our private ledger. This allows employers and international bodies to verify your credentials without contacting the registry office.
                     </p>
-                    <Button variant="link" className="p-0 h-auto text-accent mt-4 font-bold text-xs" asChild>
-                        <Link href="/verify">Learn how verification works →</Link>
-                    </Button>
                 </div>
             </div>
         </div>

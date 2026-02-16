@@ -96,3 +96,83 @@ export async function getCertificateByCode(code: string) {
 
     return cert
 }
+
+export async function getStudentCertificates() {
+    const cookieStore = await cookies()
+    const supabase = createClient(cookieStore)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: "Unauthenticated" }
+
+    const { data, error } = await supabase
+        .from('certificates')
+        .select(`
+            *,
+            enrollments!inner (
+                courses (title)
+            )
+        `)
+        .eq('enrollments.user_id', user.id)
+
+    if (error) {
+        console.error("Error fetching certificates:", error)
+        return { error: "Failed to fetch certificates" }
+    }
+
+    return { certificates: data }
+}
+
+export async function getStudentTranscript() {
+    const cookieStore = await cookies()
+    const supabase = createClient(cookieStore)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: "Unauthenticated" }
+
+    // Fetch enrollments with course titles and overall progress
+    const { data: enrollments, error: enrollError } = await supabase
+        .from('enrollments')
+        .select(`
+            id,
+            enrolled_at,
+            completed_at,
+            progress,
+            status,
+            courses (
+                title,
+                duration_hours
+            )
+        `)
+        .eq('user_id', user.id)
+
+    if (enrollError) {
+        console.error("Error fetching transcript enrollments:", enrollError)
+        return { error: "Failed to fetch transcript data" }
+    }
+
+    // Fetch all assessment submissions for these enrollments to show grades
+    const enrollmentIds = enrollments.map(e => e.id)
+    const { data: submissions, error: subError } = await supabase
+        .from('assessment_submissions')
+        .select(`
+            enrollment_id,
+            score,
+            status,
+            submitted_at,
+            assessment:assessments (title)
+        `)
+        .in('enrollment_id', enrollmentIds)
+
+    if (subError) {
+        console.error("Error fetching transcript submissions:", subError)
+    }
+
+    return {
+        enrollments,
+        submissions: submissions || [],
+        user: {
+            full_name: user.user_metadata?.full_name || "Student",
+            email: user.email
+        }
+    }
+}

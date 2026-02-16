@@ -76,38 +76,51 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                         <h3 className="text-2xl font-bold mb-6">Course Curriculum</h3>
 
                         <div className="space-y-4">
-                            {course.modules?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((module: any, index: number) => (
-                                <div key={module.id} className="border rounded-lg overflow-hidden">
-                                    <div className="bg-muted/30 px-6 py-4 border-b">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h4 className="font-semibold text-lg">Module {index + 1}: {module.title}</h4>
-                                            <span className="text-sm text-muted-foreground">{module.lessons?.length || 0} Lessons</span>
-                                        </div>
-                                        {module.description && (
-                                            <RichText content={module.description} className="text-sm text-muted-foreground mb-2" />
-                                        )}
-                                    </div>
-                                    <div className="divide-y">
-                                        {module.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => (
-                                            <div key={lesson.id} className="px-6 py-3 flex items-center justify-between hover:bg-muted/10 transition-colors">
-                                                <div className="flex items-center gap-3">
-                                                    {lesson.is_preview ? (
-                                                        <PlayCircle className="h-4 w-4 text-primary" />
-                                                    ) : (
-                                                        <Lock className="h-4 w-4 text-muted-foreground" />
-                                                    )}
-                                                    <span className={lesson.is_preview ? "text-foreground" : "text-muted-foreground"}>{lesson.title}</span>
+                            <Accordion type="single" collapsible defaultValue={course.modules?.[0]?.id} className="w-full space-y-4">
+                                {course.modules?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((module: any, index: number) => (
+                                    <AccordionItem key={module.id} value={module.id} className="border rounded-lg overflow-hidden bg-white/50">
+                                        <AccordionTrigger className="bg-muted/30 px-6 py-4 border-b hover:no-underline hover:bg-muted/50 transition-colors group">
+                                            <div className="flex items-center justify-between w-full pr-4 text-left">
+                                                <div>
+                                                    <span className="text-xs font-bold text-primary uppercase tracking-wider block mb-1">Module {index + 1}</span>
+                                                    <h4 className="font-bold text-lg">{module.title}</h4>
                                                 </div>
-                                                {lesson.duration_minutes && (
-                                                    <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded-full">
-                                                        {lesson.duration_minutes} min
-                                                    </span>
+                                                <span className="text-sm text-muted-foreground whitespace-nowrap">{module.lessons?.length || 0} Lessons</span>
+                                            </div>
+                                        </AccordionTrigger>
+                                        <AccordionContent className="p-0">
+                                            <div className="px-6 py-4 bg-muted/10 border-b">
+                                                {module.description && (
+                                                    <CollapsibleRichText
+                                                        content={module.description}
+                                                        className="text-sm text-muted-foreground mb-4"
+                                                        maxHeight={100}
+                                                    />
                                                 )}
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
+                                            <div className="divide-y">
+                                                {module.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => (
+                                                    <div key={lesson.id} className="px-6 py-3 flex items-center justify-between hover:bg-muted/10 transition-colors">
+                                                        <div className="flex items-center gap-3">
+                                                            {lesson.is_preview ? (
+                                                                <PlayCircle className="h-4 w-4 text-primary" />
+                                                            ) : (
+                                                                <Lock className="h-4 w-4 text-muted-foreground" />
+                                                            )}
+                                                            <span className={lesson.is_preview ? "text-foreground font-medium" : "text-muted-foreground"}>{lesson.title}</span>
+                                                        </div>
+                                                        {lesson.duration_minutes && (
+                                                            <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded-full">
+                                                                {lesson.duration_minutes} min
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
 
                             {(!course.modules || course.modules.length === 0) && (
                                 <div className="text-center py-12 text-muted-foreground border-dashed border-2 rounded-lg">

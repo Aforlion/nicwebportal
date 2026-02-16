@@ -29,6 +29,7 @@ export const adminNavItems = [
     { title: "Caregivers", href: "/admin/registry/caregivers", icon: Search },
     { title: "Facilities", href: "/admin/registry/facilities", icon: Building2 },
     { title: "Training (LMS)", href: "/admin/training", icon: BookOpen },
+    { title: "Assessments", href: "/admin/assessments", icon: FileText },
     { title: "Payments", href: "/admin/payments", icon: CreditCard },
     { title: "Inspections", href: "/admin/inspections", icon: ShieldCheck },
     { title: "News & Events", href: "/admin/news", icon: Newspaper },

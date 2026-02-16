@@ -14,7 +14,9 @@ import {
     FileText,
     MoreVertical,
     Edit,
-    Loader2
+    Loader2,
+    ChevronDown,
+    ChevronUp
 } from "lucide-react"
 import { MarkdownHint } from "@/components/ui/markdown-hint"
 import {
@@ -39,7 +41,8 @@ import {
     getAvailableModules,
     createLesson,
     deleteLesson,
-    updateLesson
+    updateLesson,
+    updateModule
 } from "@/actions/admin/manage-curriculum"
 
 interface CurriculumManagerProps {
@@ -53,7 +56,13 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
     const [availableModules, setAvailableModules] = useState<any[]>([])
     const [isCreatingLesson, setIsCreatingLesson] = useState<string | null>(null) // module ID
     const [isEditingLesson, setIsEditingLesson] = useState<any | null>(null)
+    const [isEditingModule, setIsEditingModule] = useState<any | null>(null)
     const [isLoading, setIsLoading] = useState(false)
+    const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({})
+
+    const toggleModule = (moduleId: string) => {
+        setExpandedModules(prev => ({ ...prev, [moduleId]: !prev[moduleId] }))
+    }
 
     async function handleOpenLibrary() {
         setIsLoading(true)
@@ -133,6 +142,20 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
         setIsLoading(false)
     }
 
+    async function handleUpdateModule(formData: FormData) {
+        if (!isEditingModule) return
+        setIsLoading(true)
+        const result = await updateModule(course.id, isEditingModule.id, formData)
+        if (result.success) {
+            toast.success("Module updated")
+            setIsEditingModule(null)
+            router.refresh()
+        } else {
+            toast.error(result.error || "Failed to update module")
+        }
+        setIsLoading(false)
+    }
+
     async function handleDeleteLesson(lessonId: string) {
         if (!confirm("Are you sure you want to delete this lesson?")) return
         setIsLoading(true)
@@ -174,6 +197,14 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                         placeholder="Short overview of this module..."
                         className="bg-background min-h-[80px]"
                     />
+                    <div className="grid gap-2">
+                        <Label>Completion Requirement Info (Shown at start)</Label>
+                        <Input
+                            name="completion_requirements"
+                            placeholder="e.g. Complete all lessons and achieve 70% in the assessment."
+                            className="bg-background"
+                        />
+                    </div>
                     <MarkdownHint />
                     <div className="flex justify-end gap-2">
                         <Button type="button" variant="ghost" onClick={() => setIsCreatingModule(false)}>Cancel</Button>
@@ -202,6 +233,9 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => setIsEditingModule(module)}>
+                                            <Edit className="mr-2 h-4 w-4" /> Edit Module
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleRemoveModule(module.id)}>
                                             <Trash2 className="mr-2 h-4 w-4" /> Remove from Course
                                         </DropdownMenuItem>
@@ -223,54 +257,82 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                             </div>
                         </div>
 
+                        {module.completion_requirements && (
+                            <div className="px-4 py-2 bg-blue-50/50 border-b text-sm">
+                                <span className="font-bold text-blue-700 mr-2">Requirement:</span>
+                                <span className="text-blue-600">{module.completion_requirements}</span>
+                            </div>
+                        )}
+
                         <div className="p-2 space-y-2 bg-background/50">
-                            {(module.lessons || []).map((lesson: any) => (
-                                <div key={lesson.id} className="flex items-center gap-3 p-3 rounded-md border bg-background hover:bg-accent/5 transition-colors group">
-                                    <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-                                    {lesson.video_url ? (
-                                        <Video className="h-4 w-4 text-primary" />
-                                    ) : (
-                                        <FileText className="h-4 w-4 text-muted-foreground" />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-between text-muted-foreground hover:text-foreground"
+                                onClick={() => toggleModule(module.id)}
+                            >
+                                <span className="text-xs font-semibold">{module.lessons?.length || 0} Lessons</span>
+                                {expandedModules[module.id] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </Button>
+
+                            {expandedModules[module.id] && (
+                                <div className="space-y-2 pt-1 animate-in slide-in-from-top-1 duration-200">
+                                    {(module.lessons || []).map((lesson: any) => (
+                                        <div key={lesson.id} className="flex items-center gap-3 p-3 rounded-md border bg-background hover:bg-accent/5 transition-colors group">
+                                            <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+                                            {lesson.video_url ? (
+                                                <Video className="h-4 w-4 text-primary" />
+                                            ) : (
+                                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                            )}
+                                            <div className="flex-1 flex flex-col">
+                                                <span className="text-sm font-medium">{lesson.title}</span>
+                                                {lesson.resource_url && (
+                                                    <span className="text-[10px] text-primary truncate flex items-center gap-1 mt-0.5">
+                                                        <FileText className="h-3 w-3" /> {lesson.resource_url.split('/').pop()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {lesson.is_preview && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Preview</span>}
+
+                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" asChild title="Manage Quiz">
+                                                    <a href={`/admin/training/${course.id}/lessons/${lesson.id}/assessment`}>
+                                                        <FileText className="h-4 w-4" />
+                                                    </a>
+                                                </Button>
+                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" onClick={() => setIsEditingLesson(lesson)}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => handleDeleteLesson(lesson.id)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {isCreatingLesson === module.id && (
+                                        <form
+                                            action={(formData) => handleAddLesson(module.id, formData)}
+                                            className="flex items-center gap-2 p-2 pl-4 animate-in fade-in"
+                                        >
+                                            <Input
+                                                name="title"
+                                                placeholder="Lesson Title"
+                                                className="h-9"
+                                                autoFocus
+                                                required
+                                            />
+                                            <Button size="sm" type="submit" disabled={isLoading}>Add</Button>
+                                            <Button size="sm" variant="ghost" type="button" onClick={() => setIsCreatingLesson(null)}>Cancel</Button>
+                                        </form>
                                     )}
-                                    <span className="flex-1 text-sm font-medium">{lesson.title}</span>
-                                    {lesson.is_preview && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Preview</span>}
 
-                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" asChild title="Manage Quiz">
-                                            <a href={`/admin/training/${course.id}/lessons/${lesson.id}/assessment`}>
-                                                <FileText className="h-4 w-4" />
-                                            </a>
-                                        </Button>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" onClick={() => setIsEditingLesson(lesson)}>
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => handleDeleteLesson(lesson.id)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))}
-
-                            {isCreatingLesson === module.id && (
-                                <form
-                                    action={(formData) => handleAddLesson(module.id, formData)}
-                                    className="flex items-center gap-2 p-2 pl-10 animate-in fade-in"
-                                >
-                                    <Input
-                                        name="title"
-                                        placeholder="Lesson Title"
-                                        className="h-9"
-                                        autoFocus
-                                        required
-                                    />
-                                    <Button size="sm" type="submit" disabled={isLoading}>Add</Button>
-                                    <Button size="sm" variant="ghost" type="button" onClick={() => setIsCreatingLesson(null)}>Cancel</Button>
-                                </form>
-                            )}
-
-                            {(!module.lessons || module.lessons.length === 0) && !isCreatingLesson && (
-                                <div className="text-center py-4 text-sm text-muted-foreground italic">
-                                    No lessons in this module yet.
+                                    {(!module.lessons || module.lessons.length === 0) && !isCreatingLesson && (
+                                        <div className="text-center py-4 text-sm text-muted-foreground italic">
+                                            No lessons in this module yet.
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -354,6 +416,15 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                                         defaultValue={isEditingLesson.video_url}
                                     />
                                 </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="resource_url">Resource URL (PDF/Material)</Label>
+                                    <Input
+                                        id="resource_url"
+                                        name="resource_url"
+                                        placeholder="https://..."
+                                        defaultValue={isEditingLesson.resource_url}
+                                    />
+                                </div>
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="content">Lesson Content / Notes (Markdown)</Label>
@@ -379,6 +450,50 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                             <MarkdownHint />
                             <DialogFooter>
                                 <Button type="button" variant="outline" onClick={() => setIsEditingLesson(null)}>Cancel</Button>
+                                <Button type="submit" disabled={isLoading}>Save Changes</Button>
+                            </DialogFooter>
+                        </form>
+                    )}
+                </DialogContent>
+            </Dialog>
+            {/* Edit Module Dialog */}
+            <Dialog open={!!isEditingModule} onOpenChange={(open) => !open && setIsEditingModule(null)}>
+                <DialogContent className="max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>Edit Module</DialogTitle>
+                    </DialogHeader>
+                    {isEditingModule && (
+                        <form action={handleUpdateModule} className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="module_title">Module Title</Label>
+                                <Input
+                                    id="module_title"
+                                    name="title"
+                                    defaultValue={isEditingModule.title}
+                                    required
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="module_description">Description</Label>
+                                <Textarea
+                                    id="module_description"
+                                    name="description"
+                                    className="min-h-[100px]"
+                                    defaultValue={isEditingModule.description}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit_completion_requirements">Completion Requirement Info</Label>
+                                <Input
+                                    id="edit_completion_requirements"
+                                    name="completion_requirements"
+                                    defaultValue={isEditingModule.completion_requirements}
+                                    placeholder="e.g. Complete all lessons..."
+                                />
+                            </div>
+                            <MarkdownHint />
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setIsEditingModule(null)}>Cancel</Button>
                                 <Button type="submit" disabled={isLoading}>Save Changes</Button>
                             </DialogFooter>
                         </form>

@@ -35,9 +35,11 @@ export default function PaystackButton({ amount, email, courseId, courseTitle }:
         // reference.reference is the ID we need.
         // Actually, sometimes the argument is just the reference string depending on version, 
         // but typically it's an object. Let's log to be safe in real app, but here strictly:
+        // Handle different reference formats (sometimes object {reference: '...'}, sometimes just string)
+        const refId = typeof reference === 'object' ? reference.reference : reference;
 
         try {
-            const result = await verifyPaymentAndEnroll(reference.reference, courseId)
+            const result = await verifyPaymentAndEnroll(refId, courseId)
 
             if (result.success) {
                 toast.success("Enrollment successful!")
@@ -58,8 +60,20 @@ export default function PaystackButton({ amount, email, courseId, courseTitle }:
     }
 
     const handlePayment = () => {
+        if (!config.publicKey) {
+            console.error('Paystack Public Key is missing from environment variables')
+            toast.error("Payment configuration error. Please contact administrator.")
+            return
+        }
+
         setIsLoading(true)
-        initializePayment({ onSuccess, onClose })
+        try {
+            initializePayment({ onSuccess, onClose })
+        } catch (error) {
+            console.error('Paystack initialization error:', error)
+            setIsLoading(false)
+            toast.error("Failed to start payment process.")
+        }
     }
 
     return (

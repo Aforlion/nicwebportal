@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+import Textarea from "@/components/ui/textarea"
 import { submitAssessment } from "@/actions/student/take-assessment"
 import { toast } from "sonner"
 import { Loader2, CheckCircle, XCircle, RefreshCw } from "lucide-react"
@@ -27,6 +28,10 @@ export default function QuizPlayer({ courseId, lessonId, assessment }: QuizPlaye
 
     const handleOptionChange = (questionId: string, optionId: string) => {
         setAnswers({ ...answers, [questionId]: optionId })
+    }
+
+    const handleTextChange = (questionId: string, text: string) => {
+        setAnswers({ ...answers, [questionId]: text })
     }
 
     const handleSubmit = async () => {
@@ -112,20 +117,35 @@ export default function QuizPlayer({ courseId, lessonId, assessment }: QuizPlaye
                             {q.text}
                         </h3>
 
-                        <RadioGroup
-                            value={answers[q.id]}
-                            onValueChange={(val) => handleOptionChange(q.id, val)}
-                            className="space-y-3 pl-4"
-                        >
-                            {q.options.map((opt: any) => (
-                                <div key={opt.id} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={opt.id} id={`${q.id}-${opt.id}`} />
-                                    <Label htmlFor={`${q.id}-${opt.id}`} className="font-normal cursor-pointer w-full py-1">
-                                        {opt.text}
-                                    </Label>
-                                </div>
-                            ))}
-                        </RadioGroup>
+                        {q.type === 'essay' || q.type === 'report' ? (
+                            <div className="space-y-2">
+                                <Label htmlFor={`text-${q.id}`} className="text-sm text-muted-foreground uppercase tracking-wider block">
+                                    Your {q.type === 'essay' ? 'Essay' : 'Report/Link'} Response
+                                </Label>
+                                <Textarea
+                                    id={`text-${q.id}`}
+                                    placeholder={q.type === 'essay' ? "Write your detailed essay here..." : "Provide a summary and link to your report/project..."}
+                                    className="min-h-[150px]"
+                                    value={answers[q.id] || ""}
+                                    onChange={(e) => handleTextChange(q.id, e.target.value)}
+                                />
+                            </div>
+                        ) : (
+                            <RadioGroup
+                                value={answers[q.id]}
+                                onValueChange={(val) => handleOptionChange(q.id, val)}
+                                className="space-y-3 pl-4"
+                            >
+                                {q.options.map((opt: any) => (
+                                    <div key={opt.id} className="flex items-center space-x-2">
+                                        <RadioGroupItem value={opt.id} id={`${q.id}-${opt.id}`} />
+                                        <Label htmlFor={`${q.id}-${opt.id}`} className="font-normal cursor-pointer w-full py-1">
+                                            {opt.text}
+                                        </Label>
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                        )}
                     </div>
                 ))}
             </div>
@@ -136,6 +156,6 @@ export default function QuizPlayer({ courseId, lessonId, assessment }: QuizPlaye
                     Submit Answers
                 </Button>
             </div>
-        </div>
+        </div >
     )
 }

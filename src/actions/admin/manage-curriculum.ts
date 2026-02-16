@@ -12,38 +12,34 @@ import { adminActionRateLimiter } from "@/lib/rate-limit"
 export async function createModule(courseId: string, formData: FormData) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
+    const user = (await supabase.auth.getUser()).data.user
 
-    // Strict Admin Check
     await requireAdmin()
 
     try {
-        const rawData = {
-            title: formData.get('title') as string,
-            description: formData.get('description') as string,
-        }
+        const title = formData.get('title') as string
+        const description = formData.get('description') as string
+        const completion_requirements = formData.get('completion_requirements') as string
 
-        // Rate Limiting
-        const allowed = await adminActionRateLimiter.check(courseId)
-        if (!allowed) return { error: 'Too many requests. Please try again later.' }
-
-        const validatedData = ModuleSchema.omit({ course_id: true, sort_order: true }).parse(rawData)
-        const { title, description } = validatedData
+        const validatedData = ModuleSchema.omit({ course_id: true, sort_order: true }).parse({
+            title,
+            description,
+            completion_requirements
+        })
 
         // 1. Create the standalone module
         const { data: moduleData, error: moduleError } = await supabase
             .from('modules')
             .insert({
-                title,
-                description,
-                created_by: (await supabase.auth.getUser()).data.user?.id
+                title: validatedData.title,
+                description: validatedData.description,
+                completion_requirements: validatedData.completion_requirements,
+                created_by: user?.id
             })
             .select()
             .single()
 
-        if (moduleError) {
-            console.error('Create module error:', moduleError)
-            return { error: 'Failed to create module in database' }
-        }
+        if (moduleError) throw moduleError
 
         // 2. Link it to the course
         const { data: existingLinks } = await supabase
@@ -63,52 +59,76 @@ export async function createModule(courseId: string, formData: FormData) {
                 sort_order: nextOrder
             })
 
-        if (linkError) {
-            console.error('Link module error:', linkError)
-            return { error: 'Failed to link module to course' }
+        if (linkError) throw linkError
+
+        // 3. Add Default Lessons: Introduction, Summary, Assessment
+        const defaultLessons = [
+            { title: "MODULE INTRODUCTION", sort_order: 1 },
+            { title: "MODULE SUMMARY & WRAP-UP", sort_order: 98 },
+            { title: "MODULE ASSESSMENT", sort_order: 99 }
+        ]
+
+        for (const lesson of defaultLessons) {
+            const slug = `${lesson.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+            await supabase.from('lessons').insert({
+                module_id: moduleData.id,
+                title: lesson.title,
+                slug,
+                content: `Complete this ${lesson.title.toLowerCase()} to proceed.`,
+                sort_order: lesson.sort_order,
+                created_by: user?.id
+            })
         }
 
         revalidatePath(`/admin/training/${courseId}`)
         return { success: true }
     } catch (err: any) {
-        if (err.name === 'ZodError') {
-            return { error: `Validation failed: ${err.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')}` }
-        }
-        return { error: err.message || 'An unexpected error occurred' }
+        console.error('Create module error:', err)
+        return { error: err.message || 'Failed to create module' }
     }
 }
 
-export async function linkModuleToCourse(courseId: string, moduleId: string) {
-    await requireAdmin()
+export async function updateModule(courseId: string, moduleId: string, formData: FormData) {
+    const cookieStore = await cookies()
+    const supabase = createClient(cookieStore)
+    const profile = await requireAdmin()
+
     try {
-        const cookieStore = await cookies()
-        const supabase = createClient(cookieStore)
+        const title = formData.get('title') as string
+        const description = formData.get('description') as string
+        const completion_requirements = formData.get('completion_requirements') as string
 
-        // Get current max sort order for this course
-        const { data: existingLinks } = await supabase
-            .from('course_modules')
-            .select('sort_order')
-            .eq('course_id', courseId)
-            .order('sort_order', { ascending: false })
-            .limit(1)
+        // Permission Check: Admin can edit all, Instructor only their own
+        if (profile.role === 'instructor') {
+            const { data: module } = await supabase.from('modules').select('created_by').eq('id', moduleId).single()
+            if (module?.created_by !== profile.id) {
+                return { error: "Permission denied. You can only edit your own modules." }
+            }
+        }
 
-        const nextOrder = (existingLinks?.[0]?.sort_order || 0) + 1
+        const validatedData = ModuleSchema.omit({ course_id: true, sort_order: true }).parse({
+            title,
+            description,
+            completion_requirements
+        })
 
         const { error } = await supabase
-            .from('course_modules')
-            .insert({
-                course_id: courseId,
-                module_id: moduleId,
-                sort_order: nextOrder
+            .from('modules')
+            .update({
+                title: validatedData.title,
+                description: validatedData.description,
+                completion_requirements: validatedData.completion_requirements,
+                updated_at: new Date().toISOString()
             })
+            .eq('id', moduleId)
 
         if (error) throw error
 
         revalidatePath(`/admin/training/${courseId}`)
         return { success: true }
     } catch (err: any) {
-        console.error('Link module error:', err)
-        return { error: 'Failed to reuse module for this course' }
+        console.error('Update module error:', err)
+        return { error: err.message || 'Failed to update module' }
     }
 }
 

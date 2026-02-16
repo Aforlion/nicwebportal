@@ -22,21 +22,26 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
     }
 
     try {
+        console.log(`Verifying payment for reference: ${reference}`)
         const verifyResponse = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
             headers: {
                 Authorization: `Bearer ${paystackSecret}`
             }
         })
 
-        const verifyData = await verifyResponse.json()
-
-        if (!verifyData.status || verifyData.data.status !== 'success') {
-            return { error: "Payment verification failed" }
+        if (!verifyResponse.ok) {
+            const errorText = await verifyResponse.text()
+            console.error("Paystack API error:", errorText)
+            return { error: `Payment verification failed (HTTP ${verifyResponse.status})` }
         }
 
-        // Optional: Verify amount matches course price
-        // const paidAmount = verifyData.data.amount / 100 // Paystack is in kobo
-        // Fetch course price and compare... 
+        const verifyData = await verifyResponse.json()
+        console.log("Paystack verify response data received")
+
+        if (!verifyData.status || verifyData.data.status !== 'success') {
+            console.error("Payment not successful:", verifyData)
+            return { error: verifyData.message || "Payment verification failed" }
+        }
 
         // 2. Check if already enrolled
         const { data: existing } = await supabase
@@ -47,16 +52,18 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
             .single()
 
         if (existing) {
+            console.log("User already enrolled in this course")
             return { success: true, enrollmentId: existing.id }
         }
 
         // 3. Create Enrollment Record
+        console.log("Creating new enrollment record...")
         const { data: enrollment, error: enrollError } = await supabase
             .from('enrollments')
             .insert({
                 user_id: user.id,
                 course_id: courseId,
-                payment_reference: reference, // Ensure migration added this or we might need to add it
+                payment_reference: reference,
                 progress: 0,
                 completed_lessons: [],
                 enrolled_at: new Date().toISOString()
@@ -66,15 +73,20 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
 
         if (enrollError) {
             console.error("Enrollment insert error:", enrollError)
-            return { error: "Failed to create enrollment record" }
+            // Informative error for known schema mismatch
+            if (enrollError.code === '42703') {
+                return { error: "System error: Enrollment schema mismatch. Please run migrations." }
+            }
+            return { error: "Failed to create enrollment record. Please contact support." }
         }
 
+        console.log("Enrollment created successfully:", enrollment.id)
         revalidatePath('/portal/student')
         return { success: true, enrollmentId: enrollment.id }
 
-    } catch (err) {
-        console.error("Payment verification error:", err)
-        return { error: "Internal server error" }
+    } catch (err: any) {
+        console.error("Payment verification internal error:", err)
+        return { error: err.message || "Internal server error during payment verification" }
     }
 }
 
@@ -125,7 +137,11 @@ export async function enrollFreeCourse(courseId: string) {
 
     if (enrollError) {
         console.error("Enrollment insert error:", enrollError)
-        return { error: "Failed to create enrollment record" }
+        // Informative error for known schema mismatch
+        if (enrollError.code === '42703') {
+            return { error: "System error: Enrollment schema mismatch. Please run migrations." }
+        }
+        return { error: "Failed to create enrollment record. Please contact support." }
     }
 
     revalidatePath('/portal/student')

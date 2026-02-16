@@ -14,6 +14,7 @@ export const ModuleSchema = z.object({
     course_id: z.string().uuid(),
     title: z.string().min(3).max(100),
     description: z.string().optional(),
+    completion_requirements: z.string().optional(),
     sort_order: z.number().int().min(0),
 })
 
@@ -33,9 +34,14 @@ export const AssessmentSchema = z.object({
     questions: z.array(z.object({
         id: z.string(),
         text: z.string().min(1),
-        type: z.enum(['multiple_choice', 'true_false']),
-        options: z.array(z.string()).min(2),
-        correctAnswer: z.string(),
+        type: z.enum(['multiple_choice', 'true_false', 'essay', 'report']),
+        options: z.array(z.object({
+            id: z.string(),
+            text: z.string()
+        })).optional(),
+        correctDetails: z.object({
+            answer: z.string()
+        }).optional(),
         explanation: z.string().optional()
     })).min(1)
 })

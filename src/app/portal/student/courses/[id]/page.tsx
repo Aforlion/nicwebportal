@@ -6,6 +6,8 @@ import { CheckCircle, Circle, PlayCircle, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { RichText } from "@/components/ui/rich-text"
+import { CollapsibleRichText } from "@/components/ui/collapsible-rich-text"
+import LessonCompleteButton from "@/components/student/lesson-complete-button"
 
 export default async function LessonPlayerPage({ params }: { params: { id: string } }) {
     const data = await getCourseContent(params.id)
@@ -47,7 +49,11 @@ export default async function LessonPlayerPage({ params }: { params: { id: strin
                             </h3>
                             {module.description && (
                                 <div className="px-2 mb-3">
-                                    <RichText content={module.description} className="text-[10px] text-muted-foreground leading-normal" />
+                                    <CollapsibleRichText
+                                        content={module.description}
+                                        className="text-[10px] text-muted-foreground leading-normal"
+                                        maxHeight={60}
+                                    />
                                 </div>
                             )}
                             <div className="space-y-1">
@@ -107,9 +113,11 @@ export default async function LessonPlayerPage({ params }: { params: { id: strin
                                 <h1 className="text-2xl font-bold text-secondary mb-2">{firstLesson.title}</h1>
                                 <p className="text-muted-foreground">Module: {sortedModules?.find((m: any) => m.lessons?.some((l: any) => l.id === firstLesson.id))?.title}</p>
                             </div>
-                            <Button size="lg" className="gap-2">
-                                Mark as Complete <CheckCircle className="h-4 w-4" />
-                            </Button>
+                            <LessonCompleteButton
+                                courseId={course.id}
+                                lessonId={firstLesson.id}
+                                isCompleted={!!progress[firstLesson.id]}
+                            />
                         </div>
 
                         <div className="prose max-w-none pb-20">

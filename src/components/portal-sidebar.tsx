@@ -47,6 +47,7 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
         { title: "Exams", href: "/portal/student/exams", icon: GraduationCap },
         { title: "Internship", href: "/portal/student/internship", icon: Calendar },
         { title: "Certificates", href: "/portal/student/certificates", icon: Award },
+        { title: "Transcript", href: "/portal/student/transcript", icon: FileText },
     ]
 
     const memberNavItems = [

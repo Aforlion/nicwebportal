@@ -13,7 +13,7 @@ import { toast } from "sonner"
 interface Question {
     id: string
     text: string
-    type: 'multiple_choice' | 'true_false' // Expandable
+    type: 'multiple_choice' | 'true_false' | 'essay' | 'report'
     options: { id: string, text: string }[]
     correctDetails: { answer: string } // optionId
 }
@@ -134,38 +134,107 @@ export default function QuizBuilder({ lessonId, initialData }: QuizBuilderProps)
                         </Button>
 
                         <div className="grid gap-4">
-                            <div className="grid gap-2 pr-10">
-                                <Label>Question {qIdx + 1}</Label>
-                                <Input
-                                    value={q.text}
-                                    onChange={(e) => updateQuestion(qIdx, 'text', e.target.value)}
-                                    placeholder="Enter question text..."
-                                    required
-                                />
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <div className="flex-1">
+                                    <Label>Question {qIdx + 1}</Label>
+                                    <Input
+                                        value={q.text}
+                                        onChange={(e) => updateQuestion(qIdx, 'text', e.target.value)}
+                                        placeholder="Enter question text..."
+                                        required
+                                    />
+                                </div>
+                                <div className="w-full md:w-48">
+                                    <Label>Type</Label>
+                                    <select
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={q.type}
+                                        onChange={(e) => updateQuestion(qIdx, 'type', e.target.value)}
+                                    >
+                                        <option value="multiple_choice">Multiple Choice</option>
+                                        <option value="true_false">True / False</option>
+                                        <option value="essay">Essay / Open Text</option>
+                                        <option value="report">Project Report / Upload</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            <div className="space-y-3 pl-4 border-l-2 border-muted ml-2">
-                                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Options</Label>
-                                {q.options.map((opt, oIdx) => (
-                                    <div key={opt.id} className="flex items-center gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setCorrectOption(qIdx, opt.id)}
-                                            className={`p-1 rounded-full ${q.correctDetails.answer === opt.id ? 'text-green-600 bg-green-100' : 'text-muted-foreground hover:bg-muted'}`}
-                                            title="Mark as correct answer"
-                                        >
-                                            {q.correctDetails.answer === opt.id ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
-                                        </button>
-                                        <Input
-                                            value={opt.text}
-                                            onChange={(e) => updateOption(qIdx, oIdx, e.target.value)}
-                                            placeholder={`Option ${oIdx + 1}`}
-                                            className="flex-1 h-9"
-                                            required
-                                        />
+                            {(q.type === 'multiple_choice' || q.type === 'true_false') && (
+                                <div className="space-y-3 pl-4 border-l-2 border-muted ml-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-muted-foreground text-xs uppercase tracking-wider">Options</Label>
+                                        {q.type === 'multiple_choice' && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    const newQ = [...questions]
+                                                    newQ[qIdx].options.push({ id: `opt${newQ[qIdx].options.length + 1}`, text: "" })
+                                                    setQuestions(newQ)
+                                                }}
+                                                className="h-7 text-xs"
+                                            >
+                                                <Plus className="mr-1 h-3 w-3" /> Add Option
+                                            </Button>
+                                        )}
                                     </div>
-                                ))}
-                            </div>
+                                    {q.options.map((opt, oIdx) => (
+                                        <div key={opt.id} className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setCorrectOption(qIdx, opt.id)}
+                                                className={`p-1 rounded-full ${q.correctDetails.answer === opt.id ? 'text-green-600 bg-green-100' : 'text-muted-foreground hover:bg-muted'}`}
+                                                title="Mark as correct answer"
+                                            >
+                                                {q.correctDetails.answer === opt.id ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
+                                            </button>
+                                            <Input
+                                                value={opt.text}
+                                                onChange={(e) => updateOption(qIdx, oIdx, e.target.value)}
+                                                placeholder={`Option ${oIdx + 1}`}
+                                                className="flex-1 h-9"
+                                                required
+                                            />
+                                            {q.type === 'multiple_choice' && q.options.length > 2 && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-destructive"
+                                                    onClick={() => {
+                                                        const newQ = [...questions]
+                                                        newQ[qIdx].options.splice(oIdx, 1)
+                                                        // Ensure correct answer isn't deleted
+                                                        if (newQ[qIdx].correctDetails.answer === opt.id) {
+                                                            newQ[qIdx].correctDetails.answer = newQ[qIdx].options[0].id
+                                                        }
+                                                        setQuestions(newQ)
+                                                    }}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {q.type === 'essay' && (
+                                <div className="pl-4 border-l-2 border-blue-200 ml-2 bg-blue-50/30 p-4 rounded-r-lg">
+                                    <p className="text-sm text-blue-700">
+                                        <strong>Essay Question:</strong> Students will be provided with a text area to write their response. This question type requires manual grading.
+                                    </p>
+                                </div>
+                            )}
+
+                            {q.type === 'report' && (
+                                <div className="pl-4 border-l-2 border-purple-200 ml-2 bg-purple-50/30 p-4 rounded-r-lg">
+                                    <p className="text-sm text-purple-700">
+                                        <strong>Project Report:</strong> Students should provide a summary/link to their project or report. This question type requires manual grading.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}

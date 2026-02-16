@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
+import { updateCourseProgress } from "../student/progress"
 import { requireAdmin } from "@/lib/auth"
 import { AssessmentSchema } from "@/lib/validations"
 import { adminActionRateLimiter } from "@/lib/rate-limit"
@@ -88,5 +89,86 @@ export async function saveAssessment(lessonId: string, formData: FormData) {
             return { error: `Validation failed: ${err.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')}` }
         }
         return { error: err.message || 'An unexpected error occurred while saving the assessment' }
+    }
+}
+export async function getSubmissions(status?: string) {
+    await requireAdmin()
+    const cookieStore = await cookies()
+    const supabase = createClient(cookieStore)
+
+    let query = supabase
+        .from('assessment_submissions')
+        .select(`
+            *,
+            assessment:assessments(
+                title,
+                lessons(
+                    modules(
+                        courses(title)
+                    )
+                )
+            ),
+            enrollment:enrollments(
+                profiles(full_name, avatar_url)
+            )
+        `)
+        .order('submitted_at', { ascending: false })
+
+    if (status) {
+        query = query.eq('status', status)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+        console.error('Error fetching submissions:', error)
+        return { error: 'Failed to fetch submissions' }
+    }
+
+    return { submissions: data }
+}
+
+export async function gradeSubmission(submissionId: string, score: number, feedback: string) {
+    await requireAdmin()
+    const cookieStore = await cookies()
+    const supabase = createClient(cookieStore)
+    const admin = (await supabase.auth.getUser()).data.user
+
+    try {
+        // Fetch basic info for progress update
+        const { data: submission } = await supabase
+            .from('assessment_submissions')
+            .select('enrollment_id, assessment_id')
+            .eq('id', submissionId)
+            .single()
+
+        if (submission) {
+            const { data: assessment } = await supabase
+                .from('assessments')
+                .select('lesson_id, passing_score')
+                .eq('id', submission.assessment_id)
+                .single()
+
+            if (assessment && score >= assessment.passing_score) {
+                // Update lesson progress
+                await supabase
+                    .from('lesson_progress')
+                    .upsert({
+                        enrollment_id: submission.enrollment_id,
+                        lesson_id: assessment.lesson_id,
+                        is_completed: true,
+                        completed_at: new Date().toISOString(),
+                        last_accessed_at: new Date().toISOString()
+                    }, { onConflict: 'enrollment_id, lesson_id' })
+                await updateCourseProgress(submission.enrollment_id)
+            }
+        }
+
+        revalidatePath('/admin/assessments')
+        revalidatePath('/portal/student/courses')
+        return { success: true }
+    } catch (err: any) {
+        console.error('Grade submission error:', err)
+        return { error: err.message || 'Failed to grade submission' }
     }
 }
