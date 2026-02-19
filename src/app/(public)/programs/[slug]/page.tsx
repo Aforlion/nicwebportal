@@ -5,6 +5,13 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getCourseBySlug } from "@/actions/get-courses"
 import { RichText } from "@/components/ui/rich-text"
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion"
+import { CollapsibleRichText } from "@/components/ui/collapsible-rich-text"
 
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
@@ -77,7 +84,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
 
                         <div className="space-y-4">
                             <Accordion type="single" collapsible defaultValue={course.modules?.[0]?.id} className="w-full space-y-4">
-                                {course.modules?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((module: any, index: number) => (
+                                {(course.modules || []).map((module: any, index: number) => (
                                     <AccordionItem key={module.id} value={module.id} className="border rounded-lg overflow-hidden bg-white/50">
                                         <AccordionTrigger className="bg-muted/30 px-6 py-4 border-b hover:no-underline hover:bg-muted/50 transition-colors group">
                                             <div className="flex items-center justify-between w-full pr-4 text-left">
@@ -99,7 +106,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                                                 )}
                                             </div>
                                             <div className="divide-y">
-                                                {module.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => (
+                                                {(module.lessons || []).sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => (
                                                     <div key={lesson.id} className="px-6 py-3 flex items-center justify-between hover:bg-muted/10 transition-colors">
                                                         <div className="flex items-center gap-3">
                                                             {lesson.is_preview ? (
