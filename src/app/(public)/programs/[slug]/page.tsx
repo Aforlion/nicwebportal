@@ -41,9 +41,14 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                             <h1 className="mb-6 text-4xl font-extrabold tracking-tight lg:text-5xl">
                                 {course.title}
                             </h1>
-                            <div className="mb-8 opacity-90">
-                                <RichText content={course.description} className="text-lg leading-relaxed text-white/90" />
-                            </div>
+                            <CollapsibleRichText
+                                content={course.description}
+                                contentClassName="text-lg leading-relaxed text-white/90"
+                                className="mb-8 opacity-90"
+                                maxHeight={200}
+                                buttonClassName="text-white hover:text-white/80"
+                                maskClassName="from-primary/80"
+                            />
                             <div className="flex flex-col gap-4 sm:flex-row">
                                 <Button size="lg" className="bg-secondary text-white hover:bg-secondary/90 h-14 text-lg px-8" asChild>
                                     <Link href={`/portal/student/enroll/${course.id}`}>
@@ -100,7 +105,8 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                                                 {module.description && (
                                                     <CollapsibleRichText
                                                         content={module.description}
-                                                        className="text-sm text-muted-foreground mb-4"
+                                                        contentClassName="text-sm text-muted-foreground"
+                                                        className="mb-4"
                                                         maxHeight={100}
                                                     />
                                                 )}

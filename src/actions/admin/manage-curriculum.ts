@@ -230,11 +230,12 @@ export async function createLesson(courseId: string, moduleId: string, formData:
     try {
         const title = formData.get('title') as string
 
-        // Get current max sort order
+        // Get current max sort order (excluding the default end lessons Summary=98, Assessment=99)
         const { data: existingLessons } = await supabase
             .from('lessons')
             .select('sort_order')
             .eq('module_id', moduleId)
+            .lt('sort_order', 98)
             .order('sort_order', { ascending: false })
             .limit(1)
 
@@ -257,6 +258,7 @@ export async function createLesson(courseId: string, moduleId: string, formData:
         if (error) throw error
 
         revalidatePath(`/admin/training/${courseId}`)
+        revalidatePath('/programs', 'layout')
         return { success: true }
     } catch (err: any) {
         console.error('Create lesson error:', err)
@@ -308,6 +310,7 @@ export async function updateLesson(courseId: string, lessonId: string, formData:
         if (error) throw error
 
         revalidatePath(`/admin/training/${courseId}`)
+        revalidatePath('/programs', 'layout')
         return { success: true }
     } catch (err: any) {
         console.error('Update lesson error:', err)
@@ -332,6 +335,7 @@ export async function updateLessonOrder(courseId: string, moduleId: string, less
         }
 
         revalidatePath(`/admin/training/${courseId}`)
+        revalidatePath('/programs', 'layout')
         return { success: true }
     } catch (err: any) {
         console.error('Update lesson order error:', err)

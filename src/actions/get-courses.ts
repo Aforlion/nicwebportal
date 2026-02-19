@@ -40,7 +40,8 @@ export async function getCourseBySlug(slug: string) {
                         title,
                         slug,
                         duration_minutes,
-                        is_preview
+                        is_preview,
+                        sort_order
                     )
                 )
             )
@@ -59,9 +60,10 @@ export async function getCourseBySlug(slug: string) {
         course.modules = course.course_modules
             .map((cm: any) => ({
                 ...cm.module,
-                sort_order: cm.sort_order
+                sort_order: cm.sort_order,
+                lessons: (cm.module.lessons || []).sort((a: any, b: any) => Number(a.sort_order) - Number(b.sort_order))
             }))
-            .sort((a: any, b: any) => a.sort_order - b.sort_order)
+            .sort((a: any, b: any) => Number(a.sort_order) - Number(b.sort_order))
     }
 
     return course
