@@ -32,6 +32,8 @@ export async function saveAssessment(lessonId: string, formData: FormData) {
     try {
         const cookieStore = await cookies()
         const supabase = createClient(cookieStore)
+        const profile = await requireAdmin()
+        const user = (await supabase.auth.getUser()).data.user
 
         // Rate Limiting
         const allowed = await adminActionRateLimiter.check(`save-assessment-${lessonId}`)
@@ -72,14 +74,15 @@ export async function saveAssessment(lessonId: string, formData: FormData) {
                 .insert({
                     lesson_id: lessonId,
                     ...validatedData,
-                    type: 'quiz'
+                    type: 'quiz',
+                    created_by: user?.id
                 })
             dbError = insertError
         }
 
         if (dbError) {
             console.error('Save assessment error:', dbError)
-            return { error: 'Failed to save assessment to database' }
+            return { error: `Database error: ${dbError.message}` }
         }
 
         revalidatePath(`/admin/training`)
