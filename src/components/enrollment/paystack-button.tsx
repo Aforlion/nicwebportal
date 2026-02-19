@@ -61,11 +61,12 @@ export default function PaystackButton({ amount, email, courseId, courseTitle }:
 
     const handlePayment = () => {
         if (!config.publicKey) {
-            console.error('Paystack Public Key is missing from environment variables')
-            toast.error("Payment configuration error. Please contact administrator.")
+            console.error('Paystack Public Key is missing from environment variables (NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY)')
+            toast.error("Payment configuration error. Please ensure you have redeployed after setting environment variables.")
             return
         }
 
+        console.log('Initializing Paystack with key:', config.publicKey.substring(0, 10) + '...')
         setIsLoading(true)
         try {
             initializePayment({ onSuccess, onClose })
