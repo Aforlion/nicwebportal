@@ -5,7 +5,6 @@ import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { requireAdmin } from "@/lib/auth"
 import { ModuleSchema, LessonSchema } from "@/lib/validations"
-import { adminActionRateLimiter } from "@/lib/rate-limit"
 
 // --- Modules ---
 
@@ -155,9 +154,7 @@ export async function removeModuleFromCourse(courseId: string, moduleId: string)
 }
 
 export async function deleteModule(moduleId: string) {
-    // Strict Admin Check
     await requireAdmin()
-
     try {
         const cookieStore = await cookies()
         const supabase = createClient(cookieStore)
@@ -166,15 +163,59 @@ export async function deleteModule(moduleId: string) {
             .delete()
             .eq('id', moduleId)
 
-        if (error) {
-            console.error('Delete module error:', error)
-            return { error: 'Failed to delete module' }
-        }
+        if (error) throw error
 
         revalidatePath(`/admin/training`)
         return { success: true }
     } catch (err: any) {
-        return { error: err.message || 'An unexpected error occurred while deleting the module' }
+        console.error('Delete module error:', err)
+        return { error: err.message || 'Failed to delete module' }
+    }
+}
+
+export async function linkModuleToCourse(courseId: string, moduleId: string) {
+    await requireAdmin()
+    try {
+        const cookieStore = await cookies()
+        const supabase = createClient(cookieStore)
+
+        // Check if already linked
+        const { data: existing } = await supabase
+            .from('course_modules')
+            .select('id')
+            .eq('course_id', courseId)
+            .eq('module_id', moduleId)
+            .single()
+
+        if (existing) {
+            return { error: 'Module is already linked to this course' }
+        }
+
+        // Get sort order
+        const { data: existingLinks } = await supabase
+            .from('course_modules')
+            .select('sort_order')
+            .eq('course_id', courseId)
+            .order('sort_order', { ascending: false })
+            .limit(1)
+
+        const nextOrder = (existingLinks?.[0]?.sort_order || 0) + 1
+
+        const { error } = await supabase
+            .from('course_modules')
+            .insert({
+                course_id: courseId,
+                module_id: moduleId,
+                sort_order: nextOrder
+            })
+
+        if (error) throw error
+
+        revalidatePath(`/admin/training/${courseId}`)
+        return { success: true }
+    } catch (err: any) {
+        console.error('Link module error:', err)
+        return { error: 'Failed to link module to course' }
     }
 }
 
@@ -184,19 +225,10 @@ export async function createLesson(courseId: string, moduleId: string, formData:
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
-    // Strict Admin Check
     await requireAdmin()
 
     try {
-        const rawData = {
-            module_id: moduleId,
-            title: formData.get('title') as string,
-            duration_minutes: 0, // Default
-            sort_order: 0, // Calculated below
-        }
-
-        const validatedData = LessonSchema.omit({ sort_order: true }).partial({ duration_minutes: true }).parse(rawData)
-        const { title } = validatedData
+        const title = formData.get('title') as string
 
         // Get current max sort order
         const { data: existingLessons } = await supabase
@@ -207,8 +239,6 @@ export async function createLesson(courseId: string, moduleId: string, formData:
             .limit(1)
 
         const nextOrder = (existingLessons?.[0]?.sort_order || 0) + 1
-
-        // Simple slug generation
         const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Date.now()
 
         const { error } = await supabase
@@ -224,18 +254,88 @@ export async function createLesson(courseId: string, moduleId: string, formData:
                 created_by: (await supabase.auth.getUser()).data.user?.id
             })
 
-        if (error) {
-            console.error('Create lesson error:', error)
-            return { error: 'Failed to create lesson in database' }
+        if (error) throw error
+
+        revalidatePath(`/admin/training/${courseId}`)
+        return { success: true }
+    } catch (err: any) {
+        console.error('Create lesson error:', err)
+        return { error: err.message || 'Failed to create lesson' }
+    }
+}
+
+export async function deleteLesson(courseId: string, lessonId: string) {
+    await requireAdmin()
+    try {
+        const cookieStore = await cookies()
+        const supabase = createClient(cookieStore)
+        const { error } = await supabase
+            .from('lessons')
+            .delete()
+            .eq('id', lessonId)
+
+        if (error) throw error
+
+        revalidatePath(`/admin/training/${courseId}`)
+        return { success: true }
+    } catch (err: any) {
+        console.error('Delete lesson error:', err)
+        return { error: 'Failed to delete lesson' }
+    }
+}
+
+export async function updateLesson(courseId: string, lessonId: string, formData: FormData) {
+    const cookieStore = await cookies()
+    const supabase = createClient(cookieStore)
+    await requireAdmin()
+
+    try {
+        const updates = {
+            title: formData.get('title') as string,
+            video_url: formData.get('video_url') as string,
+            resource_url: formData.get('resource_url') as string,
+            duration_minutes: parseInt(formData.get('duration_minutes') as string) || 0,
+            is_preview: formData.get('is_preview') === 'on',
+            content: formData.get('content') as string,
+            updated_at: new Date().toISOString()
+        }
+
+        const { error } = await supabase
+            .from('lessons')
+            .update(updates)
+            .eq('id', lessonId)
+
+        if (error) throw error
+
+        revalidatePath(`/admin/training/${courseId}`)
+        return { success: true }
+    } catch (err: any) {
+        console.error('Update lesson error:', err)
+        return { error: err.message || 'Failed to update lesson' }
+    }
+}
+
+export async function updateLessonOrder(courseId: string, moduleId: string, lessonIds: string[]) {
+    await requireAdmin()
+    const cookieStore = await cookies()
+    const supabase = createClient(cookieStore)
+
+    try {
+        for (let i = 0; i < lessonIds.length; i++) {
+            const { error } = await supabase
+                .from('lessons')
+                .update({ sort_order: i + 1 })
+                .eq('id', lessonIds[i])
+                .eq('module_id', moduleId)
+
+            if (error) throw error
         }
 
         revalidatePath(`/admin/training/${courseId}`)
         return { success: true }
     } catch (err: any) {
-        if (err.name === 'ZodError') {
-            return { error: `Validation failed: ${err.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')}` }
-        }
-        return { error: err.message || 'An unexpected error occurred' }
+        console.error('Update lesson order error:', err)
+        return { error: 'Failed to update lesson order' }
     }
 }
 
@@ -255,74 +355,5 @@ export async function getAvailableModules() {
     } catch (err: any) {
         console.error('Fetch modules error:', err)
         return { error: 'Failed to fetch available modules' }
-    }
-}
-
-export async function deleteLesson(courseId: string, lessonId: string) {
-    // Strict Admin Check
-    await requireAdmin()
-
-    try {
-        const cookieStore = await cookies()
-        const supabase = createClient(cookieStore)
-        const { error } = await supabase
-            .from('lessons')
-            .delete()
-            .eq('id', lessonId)
-
-        if (error) {
-            console.error('Delete lesson error:', error)
-            return { error: 'Failed to delete lesson' }
-        }
-
-        revalidatePath(`/admin/training/${courseId}`)
-        return { success: true }
-    } catch (err: any) {
-        return { error: err.message || 'An unexpected error occurred while deleting the lesson' }
-    }
-}
-
-export async function updateLesson(courseId: string, lessonId: string, formData: FormData) {
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
-
-    // Strict Admin Check
-    await requireAdmin()
-
-    try {
-        const rawData = {
-            module_id: '00000000-0000-0000-0000-000000000000', // Dummy as we are updating existing
-            title: formData.get('title') as string,
-            video_url: formData.get('video_url') as string,
-            duration_minutes: parseInt(formData.get('duration_minutes') as string) || 0,
-            is_preview: formData.get('is_preview') === 'on',
-            content: formData.get('content') as string,
-        }
-
-        const validatedData = LessonSchema.omit({ module_id: true, sort_order: true }).partial().parse(rawData)
-
-        // Only update fields that are present, or just update all
-        const updates = {
-            ...validatedData,
-            updated_at: new Date().toISOString()
-        }
-
-        const { error } = await supabase
-            .from('lessons')
-            .update(updates)
-            .eq('id', lessonId)
-
-        if (error) {
-            console.error('Update lesson error:', error)
-            return { error: 'Database update failed' }
-        }
-
-        revalidatePath(`/admin/training/${courseId}`)
-        return { success: true }
-    } catch (err: any) {
-        if (err.name === 'ZodError') {
-            return { error: `Validation failed: ${err.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')}` }
-        }
-        return { error: err.message || 'An unexpected error occurred' }
     }
 }

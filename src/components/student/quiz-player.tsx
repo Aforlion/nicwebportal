@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import Textarea from "@/components/ui/textarea"
+import { FileUpload } from "@/components/ui/file-upload"
 import { submitAssessment } from "@/actions/student/take-assessment"
 import { toast } from "sonner"
 import { Loader2, CheckCircle, XCircle, RefreshCw } from "lucide-react"
@@ -117,18 +118,36 @@ export default function QuizPlayer({ courseId, lessonId, assessment }: QuizPlaye
                             {q.text}
                         </h3>
 
-                        {q.type === 'essay' || q.type === 'report' ? (
+                        {q.type === 'essay' ? (
                             <div className="space-y-2">
                                 <Label htmlFor={`text-${q.id}`} className="text-sm text-muted-foreground uppercase tracking-wider block">
-                                    Your {q.type === 'essay' ? 'Essay' : 'Report/Link'} Response
+                                    Your Essay Response
                                 </Label>
                                 <Textarea
                                     id={`text-${q.id}`}
-                                    placeholder={q.type === 'essay' ? "Write your detailed essay here..." : "Provide a summary and link to your report/project..."}
+                                    placeholder="Write your detailed essay here..."
                                     className="min-h-[150px]"
                                     value={answers[q.id] || ""}
                                     onChange={(e) => handleTextChange(q.id, e.target.value)}
                                 />
+                            </div>
+                        ) : q.type === 'report' ? (
+                            <div className="space-y-2">
+                                <Label className="text-sm text-muted-foreground uppercase tracking-wider block">
+                                    Upload Project Report
+                                </Label>
+                                <div className="border rounded-lg p-4 bg-muted/20">
+                                    <FileUpload
+                                        value={answers[q.id] || ""}
+                                        onChange={(url) => handleTextChange(q.id, url)}
+                                        bucket="assessment-submissions"
+                                        label="Upload Document (PDF, Doc, Zip)"
+                                        name={`question_${q.id}`}
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                        Please upload your project report or assignment file. Evaluators will download this file for grading.
+                                    </p>
+                                </div>
                             </div>
                         ) : (
                             <RadioGroup

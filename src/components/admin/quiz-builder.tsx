@@ -231,7 +231,7 @@ export default function QuizBuilder({ lessonId, initialData }: QuizBuilderProps)
                             {q.type === 'report' && (
                                 <div className="pl-4 border-l-2 border-purple-200 ml-2 bg-purple-50/30 p-4 rounded-r-lg">
                                     <p className="text-sm text-purple-700">
-                                        <strong>Project Report:</strong> Students should provide a summary/link to their project or report. This question type requires manual grading.
+                                        <strong>Project Report:</strong> Students will be able to upload a file (PDF, Doc, Zip) or provide a link to their project. This question type requires manual grading.
                                     </p>
                                 </div>
                             )}

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Textarea from "@/components/ui/textarea"
@@ -18,6 +19,24 @@ import {
     ChevronDown,
     ChevronUp
 } from "lucide-react"
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent
+} from '@dnd-kit/core'
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { FileUpload } from "@/components/ui/file-upload"
 import { MarkdownHint } from "@/components/ui/markdown-hint"
 import {
     DropdownMenu,
@@ -42,7 +61,8 @@ import {
     createLesson,
     deleteLesson,
     updateLesson,
-    updateModule
+    updateModule,
+    updateLessonOrder
 } from "@/actions/admin/manage-curriculum"
 
 interface CurriculumManagerProps {
@@ -59,6 +79,13 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
     const [isEditingModule, setIsEditingModule] = useState<any | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({})
+
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    )
 
     const toggleModule = (moduleId: string) => {
         setExpandedModules(prev => ({ ...prev, [moduleId]: !prev[moduleId] }))
@@ -169,6 +196,30 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
         setIsLoading(false)
     }
 
+    async function handleReorderLessons(moduleId: string, lessonIds: string[]) {
+        setIsLoading(true)
+        const result = await updateLessonOrder(course.id, moduleId, lessonIds)
+        if (!result.success) {
+            toast.error(result.error || "Failed to update lesson order")
+            router.refresh()
+        }
+        setIsLoading(false)
+    }
+
+    function onDragEnd(event: DragEndEvent, moduleId: string, lessons: any[]) {
+        const { active, over } = event
+
+        if (over && active.id !== over.id) {
+            const oldIndex = lessons.findIndex((item) => item.id === active.id)
+            const newIndex = lessons.findIndex((item) => item.id === over.id)
+
+            const newLessons = arrayMove(lessons, oldIndex, newIndex)
+            const newLessonIds = newLessons.map((l: any) => l.id)
+
+            handleReorderLessons(moduleId, newLessonIds)
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -277,39 +328,26 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
 
                             {expandedModules[module.id] && (
                                 <div className="space-y-2 pt-1 animate-in slide-in-from-top-1 duration-200">
-                                    {(module.lessons || []).map((lesson: any) => (
-                                        <div key={lesson.id} className="flex items-center gap-3 p-3 rounded-md border bg-background hover:bg-accent/5 transition-colors group">
-                                            <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-                                            {lesson.video_url ? (
-                                                <Video className="h-4 w-4 text-primary" />
-                                            ) : (
-                                                <FileText className="h-4 w-4 text-muted-foreground" />
-                                            )}
-                                            <div className="flex-1 flex flex-col">
-                                                <span className="text-sm font-medium">{lesson.title}</span>
-                                                {lesson.resource_url && (
-                                                    <span className="text-[10px] text-primary truncate flex items-center gap-1 mt-0.5">
-                                                        <FileText className="h-3 w-3" /> {lesson.resource_url.split('/').pop()}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            {lesson.is_preview && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Preview</span>}
-
-                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" asChild title="Manage Quiz">
-                                                    <a href={`/admin/training/${course.id}/lessons/${lesson.id}/assessment`}>
-                                                        <FileText className="h-4 w-4" />
-                                                    </a>
-                                                </Button>
-                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" onClick={() => setIsEditingLesson(lesson)}>
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => handleDeleteLesson(lesson.id)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                    <DndContext
+                                        sensors={sensors}
+                                        collisionDetection={closestCenter}
+                                        onDragEnd={(event) => onDragEnd(event, module.id, module.lessons || [])}
+                                    >
+                                        <SortableContext
+                                            items={(module.lessons || []).map((l: any) => l.id)}
+                                            strategy={verticalListSortingStrategy}
+                                        >
+                                            {(module.lessons || []).map((lesson: any) => (
+                                                <SortableLessonItem
+                                                    key={lesson.id}
+                                                    lesson={lesson}
+                                                    courseId={course.id}
+                                                    onEdit={() => setIsEditingLesson(lesson)}
+                                                    onDelete={() => handleDeleteLesson(lesson.id)}
+                                                />
+                                            ))}
+                                        </SortableContext>
+                                    </DndContext>
 
                                     {isCreatingLesson === module.id && (
                                         <form
@@ -417,12 +455,13 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="resource_url">Resource URL (PDF/Material)</Label>
-                                    <Input
-                                        id="resource_url"
+                                    <Label>Resource (PDF/Material)</Label>
+                                    <FileUpload
+                                        value={isEditingLesson.resource_url || ""}
+                                        onChange={(url: string) => setIsEditingLesson({ ...isEditingLesson, resource_url: url })}
+                                        bucket="course-resources"
+                                        label=""
                                         name="resource_url"
-                                        placeholder="https://..."
-                                        defaultValue={isEditingLesson.resource_url}
                                     />
                                 </div>
                             </div>
@@ -500,6 +539,76 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                     )}
                 </DialogContent>
             </Dialog>
+        </div>
+    )
+}
+
+function SortableLessonItem({ lesson, courseId, onEdit, onDelete }: {
+    lesson: any,
+    courseId: string,
+    onEdit: () => void,
+    onDelete: () => void
+}) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: lesson.id })
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 50 : undefined,
+    }
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={`flex items-center gap-3 p-3 rounded-md border bg-background hover:bg-accent/5 transition-colors group ${isDragging ? 'opacity-50 shadow-lg border-primary' : ''}`}
+        >
+            <button
+                type="button"
+                className="cursor-grab active:cursor-grabbing p-1 -ml-1 hover:bg-accent rounded"
+                {...attributes}
+                {...listeners}
+            >
+                <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+            </button>
+
+            {lesson.video_url ? (
+                <Video className="h-4 w-4 text-primary" />
+            ) : (
+                <FileText className="h-4 w-4 text-muted-foreground" />
+            )}
+
+            <div className="flex-1 flex flex-col">
+                <span className="text-sm font-medium">{lesson.title}</span>
+                {lesson.resource_url && (
+                    <span className="text-[10px] text-primary truncate flex items-center gap-1 mt-0.5">
+                        <FileText className="h-3 w-3" /> {lesson.resource_url.split('/').pop()}
+                    </span>
+                )}
+            </div>
+
+            {lesson.is_preview && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Preview</span>}
+
+            <div className="flex items-center gap-1">
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-primary group-hover:opacity-100 sm:opacity-0 transition-opacity" asChild title="Manage Quiz">
+                    <Link href={`/admin/training/${courseId}/lessons/${lesson.id}/assessment`}>
+                        <FileText className="h-4 w-4" />
+                    </Link>
+                </Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-primary group-hover:opacity-100 sm:opacity-0 transition-opacity" onClick={onEdit}>
+                    <Edit className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive group-hover:opacity-100 sm:opacity-0 transition-opacity" onClick={onDelete}>
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </div>
         </div>
     )
 }

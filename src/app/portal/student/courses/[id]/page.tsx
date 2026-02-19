@@ -9,8 +9,9 @@ import { RichText } from "@/components/ui/rich-text"
 import { CollapsibleRichText } from "@/components/ui/collapsible-rich-text"
 import LessonCompleteButton from "@/components/student/lesson-complete-button"
 
-export default async function LessonPlayerPage({ params }: { params: { id: string } }) {
-    const data = await getCourseContent(params.id)
+export default async function LessonPlayerPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
+    const data = await getCourseContent(id)
 
     if (!data) {
         redirect('/portal/student')

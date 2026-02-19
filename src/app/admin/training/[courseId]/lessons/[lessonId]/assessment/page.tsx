@@ -4,14 +4,15 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
-export default async function AssessmentPage({ params }: { params: { courseId: string, lessonId: string } }) {
-    const assessment = await getAssessment(params.lessonId)
+export default async function AssessmentPage({ params }: { params: Promise<{ courseId: string, lessonId: string }> }) {
+    const { lessonId, courseId } = await params
+    const assessment = await getAssessment(lessonId)
 
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-2 mb-6">
                 <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/admin/training/${params.courseId}`}>
+                    <Link href={`/admin/training/${courseId}`}>
                         <ArrowLeft className="h-4 w-4 mr-1" /> Back to Curriculum
                     </Link>
                 </Button>

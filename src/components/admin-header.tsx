@@ -98,7 +98,7 @@ export function AdminHeader() {
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-9 w-9 rounded-full border border-slate-200">
                             <Avatar className="h-8 w-8">
-                                <AvatarImage src="/admin-avatar.png" alt="Admin" />
+                                <AvatarImage src="/admin-avatar.svg" alt="Admin" />
                                 <AvatarFallback className="bg-primary/10 text-primary font-bold">AD</AvatarFallback>
                             </Avatar>
                         </Button>

@@ -12,8 +12,9 @@ async function getCourseById(id: string) {
     return data
 }
 
-export default async function EditCoursePage({ params }: { params: { courseId: string } }) {
-    const course = await getCourseById(params.courseId)
+export default async function EditCoursePage({ params }: { params: Promise<{ courseId: string }> }) {
+    const { courseId } = await params
+    const course = await getCourseById(courseId)
 
     if (!course) {
         notFound()

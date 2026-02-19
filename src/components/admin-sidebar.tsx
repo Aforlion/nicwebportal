@@ -23,14 +23,14 @@ import { cn } from "@/lib/utils"
 
 export const adminNavItems = [
     { title: "Overview", href: "/admin", icon: LayoutDashboard },
-    { title: "Students", href: "/admin/students", icon: GraduationCap },
+    { title: "Students", href: "/admin/members", icon: GraduationCap }, // Redirected to Members for now
     { title: "Members", href: "/admin/members", icon: Users },
     { title: "CPD Review", href: "/admin/cpd-review", icon: GraduationCap },
     { title: "Caregivers", href: "/admin/registry/caregivers", icon: Search },
     { title: "Facilities", href: "/admin/registry/facilities", icon: Building2 },
     { title: "Training (LMS)", href: "/admin/training", icon: BookOpen },
     { title: "Assessments", href: "/admin/assessments", icon: FileText },
-    { title: "Payments", href: "/admin/payments", icon: CreditCard },
+    // { title: "Payments", href: "/admin/payments", icon: CreditCard }, // Disabled until route exists
     { title: "Inspections", href: "/admin/inspections", icon: ShieldCheck },
     { title: "News & Events", href: "/admin/news", icon: Newspaper },
     { title: "Advocacy/Docs", href: "/admin/advocacy", icon: FileText },

@@ -6,7 +6,8 @@ import PaystackButton from "@/components/enrollment/paystack-button"
 import EnrollFreeButton from "@/components/enrollment/enroll-free-button"
 import { Check, ShieldCheck, Clock, BookOpen, User } from "lucide-react"
 
-export default async function EnrollmentPage({ params }: { params: { courseId: string } }) {
+export default async function EnrollmentPage({ params }: { params: Promise<{ courseId: string }> }) {
+    const { courseId } = await params
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 

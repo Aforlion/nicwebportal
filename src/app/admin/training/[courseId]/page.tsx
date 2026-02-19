@@ -5,8 +5,9 @@ import { ArrowLeft, ExternalLink, Settings } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-export default async function CourseBuilderPage({ params }: { params: { courseId: string } }) {
-    const course = await getAdminCourse(params.courseId)
+export default async function CourseBuilderPage({ params }: { params: Promise<{ courseId: string }> }) {
+    const { courseId } = await params
+    const course = await getAdminCourse(courseId)
 
     if (!course) {
         notFound()

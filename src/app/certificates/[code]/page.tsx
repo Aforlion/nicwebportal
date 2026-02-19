@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Download, Printer } from "lucide-react"
 import Link from "next/link"
 
-export default async function CertificatePage({ params }: { params: { code: string } }) {
-    const cert = await getCertificateByCode(params.code)
+export default async function CertificatePage({ params }: { params: Promise<{ code: string }> }) {
+    const { code } = await params
+    const cert = await getCertificateByCode(code)
 
     if (!cert) {
         notFound()
