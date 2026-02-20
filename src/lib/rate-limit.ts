@@ -1,42 +1,81 @@
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
+
 /**
- * Simple in-memory rate limiter for server-side actions.
- * Note: Since this is in-memory, it will reset on server restart
- * and only applies to the current server instance.
+ * Persistent, distributed rate limiter backed by Upstash Redis.
+ * Safe for serverless (Vercel) – survives cold starts and scales across instances.
+ *
+ * Key MUST always include an identity component (userId or IP) to avoid
+ * cross-user interference (DoS) and to make limits meaningful per caller.
+ *
+ * Usage:
+ *   const ip = request.headers.get('x-forwarded-for') ?? 'unknown'
+ *   const limited = await rateLimiter.auth.check(`login:${userId ?? ip}`)
  */
 
-class RateLimiter {
-    private requests: Map<string, number[]>;
-    private windowMs: number;
-    private maxRequests: number;
+function buildRedis() {
+    const url = process.env.UPSTASH_REDIS_REST_URL
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN
 
-    constructor(windowMs: number = 60000, maxRequests: number = 5) {
-        this.requests = new Map();
-        this.windowMs = windowMs;
-        this.maxRequests = maxRequests;
-    }
-
-    /**
-     * Checks if a request should be allowed for the given identifier.
-     * @param identifier Typically an IP address or user ID.
-     * @returns boolean true if allowed, false if limit exceeded.
-     */
-    async check(identifier: string): Promise<boolean> {
-        const now = Date.now();
-        const timestamps = this.requests.get(identifier) || [];
-
-        // Remove expired timestamps
-        const validTimestamps = timestamps.filter(t => now - t < this.windowMs);
-
-        if (validTimestamps.length >= this.maxRequests) {
-            return false;
+    if (!url || !token) {
+        // Dev fallback — log a warning; never silently fail in production
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set in production.')
         }
-
-        validTimestamps.push(now);
-        this.requests.set(identifier, validTimestamps);
-        return true;
+        console.warn('[rate-limit] Upstash env vars not set. Rate limiting disabled in dev mode.')
+        return null
     }
+
+    return new Redis({ url, token })
 }
 
-// Export singleton instances for common use cases
-export const authRateLimiter = new RateLimiter(60000, 5); // 5 attempts per minute
-export const adminActionRateLimiter = new RateLimiter(60000, 10); // 10 admin actions per minute
+const redis = buildRedis()
+
+// Shared helper: returns a Ratelimit instance for a given window+limit, or a no-op if redis is unavailable.
+function createLimiter(requests: number, windowSeconds: number) {
+    if (!redis) {
+        // Dev no-op: always allow
+        return { limit: async (_key: string) => ({ success: true }) }
+    }
+    return new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(requests, `${windowSeconds} s`),
+        analytics: false,
+    })
+}
+
+// Pre-configured limiters for different contexts
+const limiters = {
+    // Authentication: 5 attempts per minute per user/IP (prevent brute force)
+    auth: createLimiter(5, 60),
+    // Admin mutations: 10 actions per minute per admin user
+    admin: createLimiter(10, 60),
+    // Assessment submissions: 3 per minute (prevent re-submission spam)
+    assessment: createLimiter(3, 60),
+    // General student actions: 20 per minute
+    student: createLimiter(20, 60),
+}
+
+export type LimiterName = keyof typeof limiters
+
+/**
+ * Check a rate limit.
+ *
+ * @param limiter  Which limiter to use ('auth' | 'admin' | 'assessment' | 'student')
+ * @param identity A UNIQUE key combining action + user ID and/or IP.
+ *                 Examples:
+ *                   `login:${ip}`
+ *                   `create-course:${userId}`
+ *                   `submit-assessment:${userId}:${assessmentId}`
+ * @returns true if the request is allowed, false if rate limited.
+ */
+export async function checkRateLimit(limiter: LimiterName, identity: string): Promise<boolean> {
+    try {
+        const result = await limiters[limiter].limit(identity)
+        return result.success
+    } catch (err) {
+        // If Upstash is temporarily unavailable, fail-open (allow) but log for alerting
+        console.error('[rate-limit] Upstash check failed — failing open:', err)
+        return true
+    }
+}

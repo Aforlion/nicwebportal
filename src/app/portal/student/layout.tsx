@@ -1,10 +1,20 @@
 import { PortalSidebar } from "@/components/portal-sidebar";
+import { getUserProfile } from "@/lib/auth";
 
-export default function StudentLayout({
+export default async function StudentLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    const profile = await getUserProfile();
+    const displayName = profile?.full_name ?? 'Student';
+    const initials = displayName
+        .split(' ')
+        .map((n: string) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+
     return (
         <div className="flex min-h-screen bg-muted/20">
             <PortalSidebar role="student" />
@@ -16,11 +26,11 @@ export default function StudentLayout({
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="text-right">
-                            <p className="text-sm font-medium text-secondary">John Doe</p>
-                            <p className="text-xs text-muted-foreground">Student ID: NIC-STU-2401</p>
+                            <p className="text-sm font-medium text-secondary">{displayName}</p>
+                            <p className="text-xs text-muted-foreground">{profile?.email ?? ''}</p>
                         </div>
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                            JD
+                            {initials}
                         </div>
                     </div>
                 </header>

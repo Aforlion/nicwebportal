@@ -3,17 +3,16 @@
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 import { requireAdmin } from "@/lib/auth"
 import { CourseSchema } from "@/lib/validations"
-import { adminActionRateLimiter } from "@/lib/rate-limit"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function createCourse(formData: FormData) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
     // Strict Admin Check
-    await requireAdmin()
+    const profile = await requireAdmin()
 
     try {
         const rawData = {
@@ -26,34 +25,31 @@ export async function createCourse(formData: FormData) {
             thumbnail_url: formData.get('thumbnail_url') as string || '',
         }
 
-        // Rate Limiting
-        const allowed = await adminActionRateLimiter.check('create-course')
-        if (!allowed) return { error: 'Too many requests. Please try again later.' }
+        // Rate Limiting: key is action + user ID (no cross-user interference)
+        const allowed = await checkRateLimit('admin', `create-course:${profile.id}`)
+        if (!allowed) return { error: 'Too many requests. Please try again in a minute.' }
 
         const validatedData = CourseSchema.parse(rawData)
         const { title } = validatedData
 
-        // Generate slug from title
         const slug = title
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)+/g, '')
-
-        const { data: { user } } = await supabase.auth.getUser()
 
         const { data, error } = await supabase
             .from('courses')
             .insert({
                 ...validatedData,
                 slug,
-                created_by: user?.id
+                created_by: profile.id
             })
             .select()
             .single()
 
         if (error) {
-            console.error('Create course error:', error)
-            return { error: 'Failed to create course in database' }
+            console.error('[createCourse] DB error:', error)
+            return { error: 'Something went wrong. Please try again.' }
         }
 
         revalidatePath('/admin/training')
@@ -64,7 +60,8 @@ export async function createCourse(formData: FormData) {
         if (err.name === 'ZodError') {
             return { error: `Validation failed: ${err.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')}` }
         }
-        return { error: err.message || 'An unexpected error occurred' }
+        console.error('[createCourse] Unexpected error:', err)
+        return { error: 'Something went wrong. Please try again.' }
     }
 }
 
@@ -73,7 +70,7 @@ export async function updateCourse(courseId: string, formData: FormData) {
     const supabase = createClient(cookieStore)
 
     // Strict Admin Check
-    await requireAdmin()
+    const profile = await requireAdmin()
 
     try {
         const rawData = {
@@ -85,9 +82,9 @@ export async function updateCourse(courseId: string, formData: FormData) {
             is_published: formData.get('is_published') === 'true',
         }
 
-        // Rate Limiting
-        const allowed = await adminActionRateLimiter.check(`update-course-${courseId}`)
-        if (!allowed) return { error: 'Too many requests. Please try again later.' }
+        // Rate Limiting: key is action + user ID
+        const allowed = await checkRateLimit('admin', `update-course:${profile.id}:${courseId}`)
+        if (!allowed) return { error: 'Too many requests. Please try again in a minute.' }
 
         const validatedData = CourseSchema.partial().parse(rawData)
         const thumbnail_url = formData.get('thumbnail_url') as string
@@ -105,8 +102,8 @@ export async function updateCourse(courseId: string, formData: FormData) {
             .eq('id', courseId)
 
         if (error) {
-            console.error('Update course error:', error)
-            return { error: 'Database update failed' }
+            console.error('[updateCourse] DB error:', error)
+            return { error: 'Something went wrong. Please try again.' }
         }
 
         revalidatePath('/admin/training')
@@ -118,6 +115,7 @@ export async function updateCourse(courseId: string, formData: FormData) {
         if (err.name === 'ZodError') {
             return { error: `Validation failed: ${err.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')}` }
         }
-        return { error: err.message || 'An unexpected error occurred' }
+        console.error('[updateCourse] Unexpected error:', err)
+        return { error: 'Something went wrong. Please try again.' }
     }
 }

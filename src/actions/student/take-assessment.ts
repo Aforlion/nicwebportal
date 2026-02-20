@@ -4,17 +4,30 @@ import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { updateCourseProgress } from "./progress"
+import { AnswersSchema } from "@/lib/validations"
+import { checkRateLimit } from "@/lib/rate-limit"
 
-export async function submitAssessment(courseId: string, lessonId: string, assessmentId: string, answers: any) {
+export async function submitAssessment(courseId: string, lessonId: string, assessmentId: string, answers: unknown) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-        return { error: "User not authenticated" }
+        return { error: "Not authorized. Please log in." }
     }
 
-    // 1. Fetch Assessment to grade
+    // Rate limit: max 3 assessment submissions per minute per user per assessment
+    const allowed = await checkRateLimit('assessment', `submit-assessment:${user.id}:${assessmentId}`)
+    if (!allowed) return { error: 'Submission rate limit exceeded. Please wait before trying again.' }
+
+    // 1. Validate and sanitize answers BEFORE any processing or storage
+    const parsedAnswers = AnswersSchema.safeParse(answers)
+    if (!parsedAnswers.success) {
+        return { error: `Invalid submission format: ${parsedAnswers.error.issues.map(e => e.message).join(', ')}` }
+    }
+    const safeAnswers = parsedAnswers.data
+
+    // 2. Fetch Assessment to grade
     const { data: assessment } = await supabase
         .from('assessments')
         .select('*')
@@ -22,22 +35,21 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
         .single()
 
     if (!assessment) {
-        return { error: "Assessment not found" }
+        return { error: "Assessment not found." }
     }
 
-    // 2. Calculate Score & Determine if Manual Review is needed
+    // 3. Calculate Score & Determine if Manual Review is needed
     let score = 0
     let autogradableCount = 0
     let requiresManualReview = false
 
     assessment.questions.forEach((q: any) => {
-        const studentAnswer = answers[q.id]
+        const studentAnswer = safeAnswers[q.id]
 
         if (q.type === 'essay' || q.type === 'report') {
             requiresManualReview = true
         } else {
             autogradableCount += 1
-            // Check if correct (MCQ or True/False)
             if (studentAnswer && studentAnswer === q.correctDetails?.answer) {
                 score += 1
             }
@@ -48,7 +60,7 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
     const passed = !requiresManualReview && percentage >= assessment.passing_score
     const status = requiresManualReview ? 'pending_review' : (passed ? 'passed' : 'failed')
 
-    // 3. Get Enrollment ID
+    // 4. Get Enrollment ID (also verifies the student is enrolled)
     const { data: enrollment } = await supabase
         .from('enrollments')
         .select('id, progress')
@@ -56,9 +68,9 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
         .eq('course_id', courseId)
         .single()
 
-    if (!enrollment) return { error: "Not enrolled" }
+    if (!enrollment) return { error: "You are not enrolled in this course." }
 
-    // 4. Save Submission
+    // 5. Save Submission — using validated safeAnswers only
     const { error: subError } = await supabase
         .from('assessment_submissions')
         .insert({
@@ -66,19 +78,19 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
             enrollment_id: enrollment.id,
             score: requiresManualReview ? null : percentage,
             status: status,
-            submission_data: answers,
+            submission_data: safeAnswers,   // Zod-validated, sanitized payload
             submitted_at: new Date().toISOString(),
             graded_at: requiresManualReview ? null : new Date().toISOString()
         })
 
     if (subError) {
-        console.error('Submission error:', subError)
-        return { error: 'Failed to save submission' }
+        console.error('[submitAssessment] DB insert error:', subError)
+        return { error: 'Something went wrong saving your submission. Please try again.' }
     }
 
-    // 5. Update Lesson Progress if Passed
+    // 6. Update Lesson Progress if Passed
     if (passed) {
-        await supabase
+        const { error: progressError } = await supabase
             .from('lesson_progress')
             .upsert({
                 enrollment_id: enrollment.id,
@@ -88,10 +100,12 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
                 last_accessed_at: new Date().toISOString()
             }, { onConflict: 'enrollment_id, lesson_id' })
 
+        if (progressError) {
+            console.error('[submitAssessment] Progress update error:', progressError)
+            // Non-fatal: submission is saved; don't fail the whole response
+        }
 
-        // Trigger Overall Progress Update
         await updateCourseProgress(enrollment.id)
-
         revalidatePath(`/portal/student/courses/${courseId}`)
     }
 
@@ -99,6 +113,10 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
         success: true,
         score: percentage,
         passed,
-        feedback: passed ? "Great job! You passed." : "You didn't reach the passing score. Please try again."
+        feedback: passed
+            ? "Great job! You passed."
+            : requiresManualReview
+                ? "Your submission is under review. You'll be notified once it's graded."
+                : "You didn't reach the passing score. Please try again."
     }
 }

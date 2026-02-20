@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache"
 import { updateCourseProgress } from "../student/progress"
 import { requireAdmin } from "@/lib/auth"
 import { AssessmentSchema } from "@/lib/validations"
-import { adminActionRateLimiter } from "@/lib/rate-limit"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function getAssessment(lessonId: string) {
     const cookieStore = await cookies()
@@ -26,18 +26,15 @@ export async function getAssessment(lessonId: string) {
 }
 
 export async function saveAssessment(lessonId: string, formData: FormData) {
-    // Strict Admin Check
-    await requireAdmin()
+    const cookieStore = await cookies()
+    const supabase = createClient(cookieStore)
+    // Strict Admin Check — call once, reuse profile
+    const profile = await requireAdmin()
 
     try {
-        const cookieStore = await cookies()
-        const supabase = createClient(cookieStore)
-        const profile = await requireAdmin()
-        const user = (await supabase.auth.getUser()).data.user
-
-        // Rate Limiting
-        const allowed = await adminActionRateLimiter.check(`save-assessment-${lessonId}`)
-        if (!allowed) return { error: 'Too many requests. Please try again later.' }
+        // Rate Limiting: per-user + per-lesson to prevent rapid re-saves
+        const allowed = await checkRateLimit('admin', `save-assessment:${profile.id}:${lessonId}`)
+        if (!allowed) return { error: 'Too many requests. Please try again in a minute.' }
 
         // Validate Input
         const rawData = {
@@ -48,7 +45,6 @@ export async function saveAssessment(lessonId: string, formData: FormData) {
         }
 
         const validatedData = AssessmentSchema.parse(rawData)
-        const { title, description, passing_score, questions } = validatedData
 
         // Check if assessment exists
         const { data: existing } = await supabase
@@ -75,14 +71,14 @@ export async function saveAssessment(lessonId: string, formData: FormData) {
                     lesson_id: lessonId,
                     ...validatedData,
                     type: 'quiz',
-                    created_by: user?.id
+                    created_by: profile.id
                 })
             dbError = insertError
         }
 
         if (dbError) {
-            console.error('Save assessment error:', dbError)
-            return { error: `Database error: ${dbError.message}` }
+            console.error('[saveAssessment] DB error:', dbError)
+            return { error: 'Something went wrong. Please try again.' }
         }
 
         revalidatePath(`/admin/training`)
@@ -91,7 +87,8 @@ export async function saveAssessment(lessonId: string, formData: FormData) {
         if (err.name === 'ZodError') {
             return { error: `Validation failed: ${err.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')}` }
         }
-        return { error: err.message || 'An unexpected error occurred while saving the assessment' }
+        console.error('[saveAssessment] Unexpected error:', err)
+        return { error: 'Something went wrong. Please try again.' }
     }
 }
 export async function getSubmissions(status?: string) {
@@ -171,7 +168,7 @@ export async function gradeSubmission(submissionId: string, score: number, feedb
         revalidatePath('/portal/student/courses')
         return { success: true }
     } catch (err: any) {
-        console.error('Grade submission error:', err)
-        return { error: err.message || 'Failed to grade submission' }
+        console.error('[gradeSubmission] Unexpected error:', err)
+        return { error: 'Something went wrong. Please try again.' }
     }
 }

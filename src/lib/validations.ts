@@ -45,3 +45,17 @@ export const AssessmentSchema = z.object({
         explanation: z.string().optional()
     })).min(1)
 })
+
+/**
+ * Validates the answers payload submitted by a student.
+ * - Keys are question IDs (UUIDs)
+ * - Values are the student's selected/written answers (string, max 5,000 chars)
+ * - Unknown keys are stripped (passthrough disabled)
+ */
+export const AnswersSchema = z.record(
+    z.string().uuid({ message: "Answer key must be a valid question UUID" }),
+    z.string().max(5000, { message: "Answer exceeds maximum allowed length" })
+)
+
+export type Answers = z.infer<typeof AnswersSchema>
+

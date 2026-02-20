@@ -11,11 +11,16 @@ export async function updateCourseProgress(enrollmentId: string) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
-    // 1. Get Course ID and current state
+    // AUTH CHECK: Verify the caller is the owner of this enrollment
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // 1. Get Course ID, current state, AND verify ownership
     const { data: enrollment } = await supabase
         .from('enrollments')
-        .select('course_id, completed_lessons')
+        .select('course_id, completed_lessons, user_id')
         .eq('id', enrollmentId)
+        .eq('user_id', user.id) // ownership check - RLS also enforces this, belt-and-suspenders
         .single()
 
     if (!enrollment) return
