@@ -63,7 +63,7 @@ export async function finalizeRegistrationAction(reference: string) {
                     paid_at: new Date().toISOString(),
                     payment_reference: reference,
                     payment_amount: verification.data.amount / 100, // Convert back from kobo
-                    paid_recapitalization: (verification.data.amount / 100) > 12000
+                    paid_recapitalization: (verification.data.amount / 100) > 200
                 })
                 .eq('token', token)
 
