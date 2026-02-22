@@ -23,6 +23,7 @@ import dynamic from "next/dynamic"
 
 const PaystackPaymentHandler = dynamic(() => import("@/components/paystack-payment-handler"), { ssr: false })
 import { toast } from "sonner"
+import { sendFoundingWelcomeAction } from "@/lib/actions/registration"
 
 // Note: Paystack keys should be in .env. We'll use a placeholder for now.
 const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_placeholder"
@@ -169,6 +170,9 @@ function FoundingOnboardingFlow() {
 
             // 4. Mark Invitation as Used
             await supabase.from('membership_invitations').update({ is_used: true }).eq('id', invitation.id)
+
+            // 5. Send Welcome Email
+            await sendFoundingWelcomeAction(invitation.email, invitation.full_name)
 
             setStep(4) // Success
         } catch (err: any) {

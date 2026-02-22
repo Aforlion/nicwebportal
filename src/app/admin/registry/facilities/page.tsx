@@ -18,8 +18,13 @@ import {
     Activity,
     History,
     MoreHorizontal,
-    Plus
+    Plus,
+    Check,
+    Ban,
+    AlertTriangle,
+    Calendar
 } from "lucide-react"
+import { sendFacilityStatusAction } from "@/lib/actions/registration"
 
 type Facility = {
     id: string
@@ -49,6 +54,38 @@ export default function AdminFacilitiesPage() {
         active: 0,
         pending: 0,
         suspended: 0
+    })
+
+    // Action Modal State
+    const [actionModal, setActionModal] = useState<{
+        isOpen: boolean
+        facility: Facility | null
+        type: 'suspend' | 'revoke' | 'approve' | 'reinstate' | null
+        reason: string
+        submitting: boolean
+    }>({
+        isOpen: false,
+        facility: null,
+        type: null,
+        reason: "",
+        submitting: false
+    })
+
+    // Inspection Modal State
+    const [inspectionModal, setInspectionModal] = useState<{
+        isOpen: boolean
+        facility: Facility | null
+        date: string
+        time: string
+        inspector: string
+        submitting: boolean
+    }>({
+        isOpen: false,
+        facility: null,
+        date: "",
+        time: "",
+        inspector: "NIC Regional Inspector",
+        submitting: false
     })
 
     const supabase = createClient()
@@ -88,12 +125,39 @@ export default function AdminFacilitiesPage() {
         }
     }
 
-    const handleUpdateStatus = async (id: string, newStatus: string) => {
+    const openActionModal = (facility: Facility, type: 'suspend' | 'revoke' | 'approve' | 'reinstate') => {
+        setActionModal({
+            isOpen: true,
+            facility,
+            type,
+            reason: "",
+            submitting: false
+        })
+    }
+
+    const handleActionSubmit = async () => {
+        if (!actionModal.facility || !actionModal.type) return
+
+        // Validation: Reason required for negative actions
+        if ((actionModal.type === 'suspend' || actionModal.type === 'revoke') && !actionModal.reason) {
+            alert("Please provide a reason for this action.")
+            return
+        }
+
+        setActionModal(prev => ({ ...prev, submitting: true }))
+
         try {
+            const newStatus =
+                actionModal.type === 'approve' ? 'active' :
+                    actionModal.type === 'reinstate' ? 'active' :
+                        actionModal.type === 'suspend' ? 'suspended' : 'revoked'
+
             const { error } = await supabase
                 .from('facilities')
-                .update({ status: newStatus })
-                .eq('id', id)
+                .update({
+                    status: newStatus,
+                })
+                .eq('id', actionModal.facility.id)
 
             if (error) throw error
 
@@ -101,16 +165,91 @@ export default function AdminFacilitiesPage() {
             const { data: { user } } = await supabase.auth.getUser()
             await supabase.from('registry_actions').insert({
                 target_type: 'facility',
-                target_id: id,
-                action_type: newStatus === 'active' ? 'reinstate' : (newStatus === 'suspended' ? 'suspend' : 'revoke'),
-                reason: `Administrative status update to ${newStatus}`,
+                target_id: actionModal.facility.id,
+                action_type: actionModal.type,
+                reason: actionModal.reason || `Administrative status update to ${newStatus}`,
                 performed_by: user?.id
             })
 
-            fetchFacilities()
+            // Refresh UI
+            await fetchFacilities()
+            setActionModal({ isOpen: false, facility: null, type: null, reason: "", submitting: false })
+
+            // Send Email Notification
+            const emailStatusMap: Record<string, 'approved' | 'denied' | 'action_required'> = {
+                'approve': 'approved',
+                'reinstate': 'approved',
+                'suspend': 'action_required',
+                'revoke': 'denied'
+            }
+
+            if (actionModal.facility.email) {
+                await sendFacilityStatusAction(
+                    actionModal.facility.email,
+                    actionModal.facility.name,
+                    "", // Owner name
+                    emailStatusMap[actionModal.type] || 'action_required',
+                    actionModal.reason,
+                    actionModal.facility.registration_number
+                )
+            }
         } catch (err) {
             console.error("Error updating facility status:", err)
             alert("Failed to update status")
+        } finally {
+            setActionModal(prev => ({ ...prev, submitting: false }))
+        }
+    }
+
+    const handleInspectionSubmit = async () => {
+        if (!inspectionModal.facility || !inspectionModal.date || !inspectionModal.time) {
+            alert("Please fill in all inspection details.")
+            return
+        }
+
+        setInspectionModal(prev => ({ ...prev, submitting: true }))
+
+        try {
+            // 1. Update Facility Next Inspection Date in DB
+            const { error: updateError } = await supabase
+                .from('facilities')
+                .update({
+                    next_inspection_date: inspectionModal.date,
+                    status: 'pending' // Optionally set back to pending or a specific 'under_review' if you have it
+                })
+                .eq('id', inspectionModal.facility.id)
+
+            if (updateError) throw updateError
+
+            // 2. Log in audit trail
+            const { data: { user } } = await supabase.auth.getUser()
+            await supabase.from('registry_actions').insert({
+                target_type: 'facility',
+                target_id: inspectionModal.facility.id,
+                action_type: 'schedule_inspection',
+                reason: `Inspection scheduled for ${inspectionModal.date} at ${inspectionModal.time}`,
+                performed_by: user?.id
+            })
+
+            // 3. Send Notification Email
+            const { sendInspectionScheduledAction } = await import("@/lib/actions/registration")
+            await sendInspectionScheduledAction(
+                inspectionModal.facility.email,
+                inspectionModal.facility.name,
+                "", // ownerName 
+                inspectionModal.date,
+                inspectionModal.time,
+                inspectionModal.inspector
+            )
+
+            alert("Inspection scheduled and facility notified!")
+            setInspectionModal({ isOpen: false, facility: null, date: "", time: "", inspector: "NIC Regional Inspector", submitting: false })
+            fetchFacilities()
+        } catch (err: any) {
+            console.error("Error scheduling inspection:", err)
+            alert("Failed to schedule inspection: " + err.message)
+        } finally {
+            setInspectionModal(prev => ({ ...prev, submitting: false }))
         }
     }
 
@@ -292,7 +431,7 @@ export default function AdminFacilitiesPage() {
                                                     <Button
                                                         size="sm"
                                                         className="bg-emerald-600 hover:bg-emerald-700"
-                                                        onClick={() => handleUpdateStatus(f.id, 'active')}
+                                                        onClick={() => openActionModal(f, 'approve')}
                                                     >
                                                         <CheckCircle className="h-4 w-4 mr-1" />
                                                         Approve
@@ -303,7 +442,7 @@ export default function AdminFacilitiesPage() {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="text-orange-600"
-                                                        onClick={() => handleUpdateStatus(f.id, 'suspended')}
+                                                        onClick={() => openActionModal(f, 'suspend')}
                                                     >
                                                         <XCircle className="h-4 w-4 mr-1" />
                                                         Suspend
@@ -314,14 +453,35 @@ export default function AdminFacilitiesPage() {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="text-emerald-600"
-                                                        onClick={() => handleUpdateStatus(f.id, 'active')}
+                                                        onClick={() => openActionModal(f, 'reinstate')}
                                                     >
                                                         <CheckCircle className="h-4 w-4 mr-1" />
                                                         Reinstate
                                                     </Button>
                                                 )}
-                                                <Button size="sm" variant="ghost">
-                                                    <MoreHorizontal className="h-4 w-4" />
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="border-primary text-primary"
+                                                    onClick={() => setInspectionModal({
+                                                        isOpen: true,
+                                                        facility: f,
+                                                        date: "",
+                                                        time: "",
+                                                        inspector: "NIC Regional Inspector",
+                                                        submitting: false
+                                                    })}
+                                                >
+                                                    <Calendar className="h-4 w-4 mr-1" />
+                                                    Schedule
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="text-red-600"
+                                                    onClick={() => openActionModal(f, 'revoke')}
+                                                >
+                                                    <ShieldOff className="h-4 w-4" />
                                                 </Button>
                                             </div>
                                         </td>
@@ -332,6 +492,149 @@ export default function AdminFacilitiesPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Action Modal Overlay */}
+            {actionModal.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <Card className="w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
+                        <CardHeader className="border-b pb-4">
+                            <CardTitle className="flex items-center gap-2 text-xl">
+                                {actionModal.type === 'approve' && <CheckCircle className="h-5 w-5 text-emerald-600" />}
+                                {actionModal.type === 'suspend' && <XCircle className="h-5 w-5 text-orange-600" />}
+                                {actionModal.type === 'revoke' && <ShieldOff className="h-5 w-5 text-red-600" />}
+                                {actionModal.type === 'reinstate' && <CheckCircle className="h-5 w-5 text-emerald-600" />}
+                                <span className="capitalize">{actionModal.type} Facility</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-6 space-y-4">
+                            <div className="bg-muted/50 p-3 rounded-lg flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center">
+                                    <Building2 className="h-5 w-5 text-slate-500" />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-slate-800">{actionModal.facility?.name}</p>
+                                    <p className="text-xs text-slate-500 font-mono">{actionModal.facility?.registration_number}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">
+                                    Reason / Comments
+                                </label>
+                                <textarea
+                                    className="w-full h-32 p-3 rounded-md border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none outline-none"
+                                    placeholder={
+                                        actionModal.type === 'approve' ? "Extra feedback for the facility owner (optional)..." :
+                                            actionModal.type === 'suspend' ? "Reason for suspension (required)..." :
+                                                actionModal.type === 'revoke' ? "Reason for revocation (required)..." :
+                                                    "Reason for reinstatement..."
+                                    }
+                                    value={actionModal.reason}
+                                    onChange={(e) => setActionModal(prev => ({ ...prev, reason: e.target.value }))}
+                                />
+                                <p className="text-[10px] text-orange-600 font-medium bg-orange-50 p-2 rounded border border-orange-100 italic">
+                                    Note: The facility administrator will be notified immediately via email with this status update and reason.
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3 pt-4">
+                                <Button
+                                    className="flex-1"
+                                    variant="outline"
+                                    onClick={() => setActionModal({ isOpen: false, facility: null, type: null, reason: "", submitting: false })}
+                                    disabled={actionModal.submitting}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    className={`flex-1 text-white ${actionModal.type === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                                        actionModal.type === 'suspend' ? 'bg-orange-600 hover:bg-orange-700' :
+                                            actionModal.type === 'revoke' ? 'bg-red-600 hover:bg-red-700' :
+                                                'bg-emerald-600 hover:bg-emerald-700'
+                                        }`}
+                                    onClick={handleActionSubmit}
+                                    disabled={actionModal.submitting}
+                                >
+                                    {actionModal.submitting ? "Processing..." : `Confirm ${actionModal.type}`}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Inspection Modal Overlay */}
+            {inspectionModal.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <Card className="w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
+                        <CardHeader className="border-b pb-4">
+                            <CardTitle className="flex items-center gap-2 text-xl">
+                                <Calendar className="h-5 w-5 text-primary" />
+                                Schedule Compliance Inspection
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-6 space-y-4">
+                            <div className="bg-muted/50 p-3 rounded-lg flex items-center gap-3">
+                                <Building2 className="h-5 w-5 text-slate-500" />
+                                <div>
+                                    <p className="font-bold text-slate-800">{inspectionModal.facility?.name}</p>
+                                    <p className="text-xs text-slate-500 font-mono">{inspectionModal.facility?.registration_number}</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Date</label>
+                                    <Input
+                                        type="date"
+                                        value={inspectionModal.date}
+                                        onChange={(e) => setInspectionModal(prev => ({ ...prev, date: e.target.value }))}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Time</label>
+                                    <Input
+                                        type="time"
+                                        value={inspectionModal.time}
+                                        onChange={(e) => setInspectionModal(prev => ({ ...prev, time: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">Assigned Inspector</label>
+                                <Input
+                                    placeholder="e.g., John Doe"
+                                    value={inspectionModal.inspector}
+                                    onChange={(e) => setInspectionModal(prev => ({ ...prev, inspector: e.target.value }))}
+                                />
+                            </div>
+
+                            <p className="text-[10px] text-primary font-medium bg-blue-50 p-2 rounded border border-blue-100 italic">
+                                Note: This will notify the facility and mark their status as "Under Review".
+                            </p>
+
+                            <div className="flex gap-3 pt-4">
+                                <Button
+                                    className="flex-1"
+                                    variant="outline"
+                                    onClick={() => setInspectionModal({ isOpen: false, facility: null, date: "", time: "", inspector: "NIC Regional Inspector", submitting: false })}
+                                    disabled={inspectionModal.submitting}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    className="flex-1 bg-primary text-white hover:bg-primary/90"
+                                    onClick={handleInspectionSubmit}
+                                    disabled={inspectionModal.submitting}
+                                >
+                                    {inspectionModal.submitting ? "Processing..." : "Schedule & Notify"}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     )
 }

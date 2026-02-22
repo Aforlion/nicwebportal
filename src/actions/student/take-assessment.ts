@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache"
 import { updateCourseProgress } from "./progress"
 import { AnswersSchema } from "@/lib/validations"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { sendAssessmentReceiptEmail } from "@/lib/email"
 
 export async function submitAssessment(courseId: string, lessonId: string, assessmentId: string, answers: unknown) {
     const cookieStore = await cookies()
@@ -86,6 +87,22 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
     if (subError) {
         console.error('[submitAssessment] DB insert error:', subError)
         return { error: 'Something went wrong saving your submission. Please try again.' }
+    }
+
+    // Send Assessment Receipt Email
+    const { data: courseData } = await supabase
+        .from('courses')
+        .select('title')
+        .eq('id', courseId)
+        .single()
+
+    if (courseData) {
+        await sendAssessmentReceiptEmail(
+            user.email!,
+            user.user_metadata?.full_name || "Student",
+            courseData.title,
+            assessment.title
+        )
     }
 
     // 6. Update Lesson Progress if Passed

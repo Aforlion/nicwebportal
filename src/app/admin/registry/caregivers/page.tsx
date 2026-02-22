@@ -22,6 +22,7 @@ import {
     MoreVertical,
     Check
 } from "lucide-react"
+import { sendRegistrationStatusAction } from "@/lib/actions/registration"
 
 type Caregiver = {
     id: string
@@ -245,8 +246,22 @@ export default function AdminRegistryPage() {
             await fetchRegistryData()
             setActionModal({ isOpen: false, caregiver: null, type: null, reason: "", submitting: false })
 
-            // TODO: In a real app, trigger email notification here via edge function
-            console.log(`Email notification sent to ${actionModal.caregiver.email} for ${actionModal.type}`)
+            // 4. Send Email Notification
+            const statusMap: Record<string, 'approved' | 'denied' | 'action_required'> = {
+                'reinstate': 'approved',
+                'suspend': 'action_required', // Suspension is usually action required or a temporary denial
+                'revoke': 'denied'
+            }
+
+            if (actionModal.caregiver.email && actionModal.type) {
+                await sendRegistrationStatusAction(
+                    actionModal.caregiver.email,
+                    actionModal.caregiver.full_name,
+                    statusMap[actionModal.type] || 'action_required',
+                    actionModal.reason,
+                    actionModal.caregiver.nic_id
+                )
+            }
 
         } catch (error) {
             console.error(`Error performing ${actionModal.type}:`, error)

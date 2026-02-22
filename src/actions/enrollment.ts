@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { sendEnrollmentEmail } from "@/lib/email"
 
 export async function verifyPaymentAndEnroll(reference: string, courseId: string) {
     const cookieStore = await cookies()
@@ -77,6 +78,17 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
             return { error: "Failed to create enrollment record. Please contact support." }
         }
 
+        // 4. Send Confirmation Email
+        const { data: courseData } = await supabase
+            .from('courses')
+            .select('title')
+            .eq('id', courseId)
+            .single()
+
+        if (courseData) {
+            await sendEnrollmentEmail(user.email!, user.user_metadata?.full_name || "Student", courseData.title, courseId)
+        }
+
         revalidatePath('/portal/student')
         return { success: true, enrollmentId: enrollment.id }
 
@@ -140,6 +152,18 @@ export async function enrollFreeCourse(courseId: string) {
         return { error: "Failed to create enrollment record. Please contact support." }
     }
 
+    // Send Confirmation Email
+    const { data: courseData } = await supabase
+        .from('courses')
+        .select('title')
+        .eq('id', courseId)
+        .single()
+
+    if (courseData) {
+        await sendEnrollmentEmail(user.email!, user.user_metadata?.full_name || "Student", courseData.title, courseId)
+    }
+
     revalidatePath('/portal/student')
     return { success: true, enrollmentId: enrollment.id }
 }
+

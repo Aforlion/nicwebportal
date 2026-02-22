@@ -38,6 +38,7 @@ import { getMembers } from "@/actions/admin/get-members"
 import { useEffect } from "react"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import { sendFoundingInvitationAction } from "@/lib/actions/registration"
 
 export default function AdminMembersPage() {
     const [members, setMembers] = useState<any[]>([])
@@ -333,12 +334,18 @@ function InviteFounderModal() {
 
             const link = `${window.location.origin}/onboard/founding?token=${token}`
             setInviteLink(link)
+
+            // 4. Send Automated Invitation Email
+            await sendFoundingInvitationAction(email, selectedFounder, link)
+            toast.success("Invitation generated and email sent!")
+
         } catch (err: any) {
-            alert(err.message || "Failed to create invitation")
+            toast.error(err.message || "Failed to create invitation")
         } finally {
             setLoading(false)
         }
     }
+
 
     return (
         <DialogContent className="sm:max-w-md">

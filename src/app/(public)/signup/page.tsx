@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { sendWelcomeEmailAction } from "@/lib/actions/registration"
 import { Mail, Lock, User, Phone, AlertCircle, CheckCircle2 } from "lucide-react"
 
 export default function SignupPage() {
@@ -62,6 +63,9 @@ export default function SignupPage() {
             if (authError) throw authError
 
             if (authData.user) {
+                // Send Welcome Email
+                await sendWelcomeEmailAction(formData.email, formData.fullName)
+
                 setSuccess(true)
                 setTimeout(() => {
                     router.push('/login')

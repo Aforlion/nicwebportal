@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import { sendCertificateEmail } from "@/lib/email"
 
 export async function issueCertificate(courseId: string) {
     const cookieStore = await cookies()
@@ -39,6 +40,22 @@ export async function issueCertificate(courseId: string) {
         .single()
 
     if (existing) {
+        // 5. Send Confirmation Email
+        const { data: certData } = await supabase
+            .from('enrollments')
+            .select('courses(title)')
+            .eq('id', enrollment.id)
+            .single()
+
+        if (certData) {
+            await sendCertificateEmail(
+                user.email!,
+                user.user_metadata?.full_name || "Student",
+                (certData.courses as any).title,
+                existing.certificate_code
+            )
+        }
+
         return { success: true, code: existing.certificate_code }
     }
 
