@@ -28,15 +28,25 @@ Content: ${html.substring(0, 100)}... (truncated)`);
     }
 
     try {
-        // Example implementation with Resend (requires npm install resend)
-        // const { Resend } = await import('resend');
-        // const resend = new Resend(apiKey);
-        // await resend.emails.send({ from: 'NIC <notifications@nicnigeria.org>', to, subject, html });
+        const { Resend } = await import('resend');
+        const resend = new Resend(apiKey);
 
-        console.log(`[sendEmail] Email sent to ${to}`);
-        return { success: true };
+        const { data, error } = await resend.emails.send({
+            from: 'NIC <notifications@nicnigeria.org>',
+            to,
+            subject,
+            html
+        });
+
+        if (error) {
+            console.error("[sendEmail] Resend Error:", error);
+            return { success: false, error };
+        }
+
+        console.log(`[sendEmail] Email sent to ${to}`, data);
+        return { success: true, data };
     } catch (error) {
-        console.error("[sendEmail] Error:", error);
+        console.error("[sendEmail] Unexpected Error:", error);
         return { success: false, error };
     }
 }
