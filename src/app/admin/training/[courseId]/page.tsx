@@ -5,6 +5,8 @@ import { ArrowLeft, ExternalLink, Settings } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+export const dynamic = 'force-dynamic'
+
 export default async function CourseBuilderPage({ params }: { params: Promise<{ courseId: string }> }) {
     const { courseId } = await params
     const course = await getAdminCourse(courseId)

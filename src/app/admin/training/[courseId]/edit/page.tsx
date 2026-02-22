@@ -4,6 +4,8 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 
+export const dynamic = 'force-dynamic'
+
 // We can fetch by ID directly here since we have the ID in params
 async function getCourseById(id: string) {
     const cookieStore = await cookies()

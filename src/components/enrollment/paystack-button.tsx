@@ -55,7 +55,6 @@ export default function PaystackButton({ amount, email, courseId, courseTitle }:
     }
 
     const onClose = () => {
-        console.log('Payment closed')
         setIsLoading(false)
     }
 
@@ -66,7 +65,6 @@ export default function PaystackButton({ amount, email, courseId, courseTitle }:
             return
         }
 
-        console.log('Initializing Paystack with key:', config.publicKey.substring(0, 10) + '...')
         setIsLoading(true)
         try {
             initializePayment({ onSuccess, onClose })

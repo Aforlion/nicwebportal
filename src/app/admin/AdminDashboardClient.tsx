@@ -7,49 +7,64 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { toast } from "sonner"
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { format } from "date-fns"
 
 interface AdminDashboardClientProps {
     initialData: {
         stats?: any[]
+        pendingVerifications?: number
+        recentActivity?: any[]
         error?: string
     }
 }
 
 export function AdminDashboardClient({ initialData }: AdminDashboardClientProps) {
     const [stats, setStats] = useState<any[]>([])
+    const [pendingCount, setPendingCount] = useState(0)
+    const [activities, setActivities] = useState<any[]>([])
 
     useEffect(() => {
         if (initialData.error) {
             toast.error(initialData.error)
-        } else if (initialData.stats) {
-            // Map the icons back to the stats from the title
-            const iconMap: any = {
-                "Total Students": GraduationCap,
-                "Certified Members": Users,
-                "Active Programs": FileText,
-                "Total Revenue": CreditCard
-            }
-            const colorMap: any = {
-                "Total Students": "text-blue-600",
-                "Certified Members": "text-amber-600",
-                "Active Programs": "text-emerald-600",
-                "Total Revenue": "text-purple-600"
-            }
-            const bgMap: any = {
-                "Total Students": "bg-blue-100",
-                "Certified Members": "bg-amber-100",
-                "Active Programs": "bg-emerald-100",
-                "Total Revenue": "bg-purple-100"
-            }
+        } else {
+            if (initialData.stats) {
+                const iconMap: any = {
+                    "Total Students": GraduationCap,
+                    "Certified Members": Users,
+                    "Active Programs": FileText,
+                    "Total Revenue": CreditCard
+                }
+                const colorMap: any = {
+                    "Total Students": "text-blue-600",
+                    "Certified Members": "text-amber-600",
+                    "Active Programs": "text-emerald-600",
+                    "Total Revenue": "text-purple-600"
+                }
+                const bgMap: any = {
+                    "Total Students": "bg-blue-100",
+                    "Certified Members": "bg-amber-100",
+                    "Active Programs": "bg-emerald-100",
+                    "Total Revenue": "bg-purple-100"
+                }
 
-            setStats(initialData.stats.map((s: any) => ({
-                ...s,
-                icon: iconMap[s.title] || Activity,
-                color: colorMap[s.title] || "text-slate-600",
-                bg: bgMap[s.title] || "bg-slate-100"
-            })))
+                setStats(initialData.stats.map((s: any) => ({
+                    ...s,
+                    icon: iconMap[s.title] || Activity,
+                    color: colorMap[s.title] || "text-slate-600",
+                    bg: bgMap[s.title] || "bg-slate-100"
+                })))
+            }
+            if (initialData.pendingVerifications !== undefined) {
+                setPendingCount(initialData.pendingVerifications)
+            }
+            if (initialData.recentActivity) {
+                setActivities(initialData.recentActivity)
+            }
         }
     }, [initialData])
+
+    // Get current date string
+    const currentDateRange = format(new Date(), "MMM d, yyyy")
 
     return (
         <div className="space-y-8">
@@ -57,13 +72,13 @@ export function AdminDashboardClient({ initialData }: AdminDashboardClientProps)
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-serif">Dashboard Overview</h1>
                     <p className="text-slate-500 mt-1">
-                        Welcome back, Administrator. You have <span className="font-medium text-amber-600">3 pending tasks</span> today.
+                        Welcome back, Administrator. You have <span className="font-medium text-amber-600">{pendingCount} pending verifications</span> today.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" className="bg-white">
                         <Calendar className="mr-2 h-4 w-4" />
-                        Jan 20, 2026 - Jan 29, 2026
+                        {currentDateRange}
                     </Button>
                     <Button className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
                         Download Report
@@ -91,9 +106,9 @@ export function AdminDashboardClient({ initialData }: AdminDashboardClientProps)
                             <p className="flex items-center text-xs font-medium text-slate-500">
                                 <span className="flex items-center text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md mr-2">
                                     <ArrowUpRight className="mr-1 h-3 w-3" />
-                                    {stat.description.split(" ")[0]}
+                                    Live
                                 </span>
-                                from last month
+                                sync with database
                             </p>
                         </CardContent>
                     </Card>
@@ -106,45 +121,45 @@ export function AdminDashboardClient({ initialData }: AdminDashboardClientProps)
                     <CardHeader className="bg-white border-b border-slate-50 flex flex-row items-center justify-between py-4">
                         <div>
                             <CardTitle className="text-lg font-bold text-slate-800">Recent Activity</CardTitle>
-                            <CardDescription className="hidden sm:block">Latest registrations and payments</CardDescription>
+                            <CardDescription className="hidden sm:block">Latest registrations and system events</CardDescription>
                         </div>
                         <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5" asChild>
-                            <Link href="/admin/reports">View All</Link>
+                            <Link href="/admin/members">View All</Link>
                         </Button>
                     </CardHeader>
                     <CardContent className="p-0">
                         <div className="divide-y divide-slate-50">
-                            {[
-                                { id: 1, type: "Member Onboarding", description: "New profile verification pending", time: "15m ago", initials: "AD" },
-                                { id: 2, type: "Course Enrollment", description: "Paid enrollment received", time: "30m ago", initials: "JD" },
-                                { id: 3, type: "Certificate Issued", description: "Standard Caregiving Level 1", time: "45m ago", initials: "SM" },
-                                { id: 4, type: "Payment Received", description: "Annual dues for Registry", time: "1h ago", initials: "RK" },
-                                { id: 5, type: "Module Updated", description: "New content added to Ethics", time: "2h ago", initials: "Admin" }
-                            ].map((activity) => (
-                                <div key={activity.id} className="flex items-center gap-4 p-4 hover:bg-slate-50/50 transition-colors">
-                                    <Avatar className="h-10 w-10 border border-slate-100">
-                                        <AvatarFallback className={`text-xs font-bold ${activity.id % 2 === 0 ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"
-                                            }`}>
-                                            {activity.initials}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-grow min-w-0">
-                                        <div className="flex items-center justify-between mb-0.5">
-                                            <p className="text-sm font-medium text-slate-900 truncate">
-                                                {activity.type}
+                            {activities.length > 0 ? (
+                                activities.map((activity) => (
+                                    <div key={activity.id} className="flex items-center gap-4 p-4 hover:bg-slate-50/50 transition-colors">
+                                        <Avatar className="h-10 w-10 border border-slate-100">
+                                            <AvatarFallback className={`text-xs font-bold ${activity.status === 'paid' ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"}`}>
+                                                {activity.initials}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-grow min-w-0">
+                                            <div className="flex items-center justify-between mb-0.5">
+                                                <p className="text-sm font-medium text-slate-900 truncate">
+                                                    {activity.type}
+                                                </p>
+                                                <span className="text-xs text-slate-400 whitespace-nowrap">{activity.time}</span>
+                                            </div>
+                                            <p className="text-xs text-slate-500 flex items-center gap-1">
+                                                <Activity className="h-3 w-3" />
+                                                {activity.description}
                                             </p>
-                                            <span className="text-xs text-slate-400 whitespace-nowrap">{activity.time}</span>
                                         </div>
-                                        <p className="text-xs text-slate-500 flex items-center gap-1">
-                                            <Activity className="h-3 w-3" />
-                                            {activity.description}
-                                        </p>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
+                                ))
+                            ) : (
+                                <div className="p-8 text-center text-slate-500">
+                                    <Activity className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                                    <p>No recent activity found</p>
                                 </div>
-                            ))}
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -165,14 +180,14 @@ export function AdminDashboardClient({ initialData }: AdminDashboardClientProps)
                             <div className="space-y-4 relative z-10">
                                 <div className="flex justify-between items-center border-b border-white/20 pb-2">
                                     <span className="text-white/80 text-sm">Pending Verifications</span>
-                                    <span className="font-bold text-xl">14</span>
+                                    <span className="font-bold text-xl">{pendingCount}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-white/80 text-sm">New Facilities</span>
-                                    <span className="font-bold text-xl">3</span>
+                                    <span className="text-white/80 text-sm">Action Needed</span>
+                                    <span className="font-bold text-xl">{pendingCount > 0 ? "YES" : "NO"}</span>
                                 </div>
-                                <Link href="/admin/registry" className="w-full bg-white text-primary hover:bg-white/90 font-bold mt-4 shadow-lg inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2">
-                                    Go to Registry
+                                <Link href="/admin/members?status=paid" className="w-full bg-white text-primary hover:bg-white/90 font-bold mt-4 shadow-lg inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2">
+                                    Go to Verifications
                                 </Link>
                             </div>
                         </CardContent>
@@ -183,11 +198,11 @@ export function AdminDashboardClient({ initialData }: AdminDashboardClientProps)
                             <CardTitle className="text-lg">Quick Actions</CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-2 gap-4">
-                            <Link href="/admin/training/new" className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/20 group">
+                            <Link href="/admin/training" className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/20 group">
                                 <div className="p-2 rounded-full bg-blue-50 group-hover:bg-blue-100 transition-colors">
                                     <GraduationCap className="h-5 w-5 text-blue-600" />
                                 </div>
-                                <span className="text-xs font-semibold text-slate-700">New Course</span>
+                                <span className="text-xs font-semibold text-slate-700">LMS Training</span>
                             </Link>
                             <button className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/20 group">
                                 <div className="p-2 rounded-full bg-amber-50 group-hover:bg-amber-100 transition-colors">

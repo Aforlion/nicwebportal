@@ -22,7 +22,6 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
     }
 
     try {
-        console.log(`Verifying payment for reference: ${reference}`)
         const verifyResponse = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
             headers: {
                 Authorization: `Bearer ${paystackSecret}`
@@ -36,7 +35,6 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
         }
 
         const verifyData = await verifyResponse.json()
-        console.log("Paystack verify response data received")
 
         if (!verifyData.status || verifyData.data.status !== 'success') {
             console.error("Payment not successful:", verifyData)
@@ -57,7 +55,6 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
         }
 
         // 3. Create Enrollment Record
-        console.log("Creating new enrollment record...")
         const { data: enrollment, error: enrollError } = await supabase
             .from('enrollments')
             .insert({
@@ -80,7 +77,6 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
             return { error: "Failed to create enrollment record. Please contact support." }
         }
 
-        console.log("Enrollment created successfully:", enrollment.id)
         revalidatePath('/portal/student')
         return { success: true, enrollmentId: enrollment.id }
 

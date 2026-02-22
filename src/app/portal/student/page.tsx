@@ -6,8 +6,10 @@ import { PlayCircle, Clock, Award, ArrowRight, ShieldCheck, BookOpen } from "luc
 import Link from "next/link"
 import { getStudentDashboardData } from "@/actions/get-student-progress"
 
+export const dynamic = 'force-dynamic'
+
 export default async function StudentDashboard() {
-    const { enrollments, recent } = await getStudentDashboardData()
+    const { enrollments, recent, events, tip } = await getStudentDashboardData()
 
     return (
         <div className="space-y-8">
@@ -140,23 +142,33 @@ export default async function StudentDashboard() {
                             <CardDescription>Scheduled live sessions</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {[
-                                { date: "Jan 20", time: "10:00 AM", title: "Infection Control Live Lab", type: "Lab" },
-                                { date: "Jan 22", time: "02:00 PM", title: "Dementia Ethics Seminar", type: "Seminar" },
-                            ].map((event) => (
-                                <div key={event.title} className="flex gap-4 items-start border-b border-muted pb-4 last:border-0 last:pb-0">
-                                    <div className="bg-primary/5 rounded px-2 py-1 text-center min-w-[50px]">
-                                        <p className="text-xs font-bold text-primary">{event.date.split(' ')[0]}</p>
-                                        <p className="text-lg font-bold text-primary leading-none">{event.date.split(' ')[1]}</p>
-                                    </div>
-                                    <div>
-                                        <h4 className="text-sm font-bold text-secondary leading-tight">{event.title}</h4>
-                                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                            <Clock className="h-3 w-3" /> {event.time} • <Badge variant="outline" className="text-[10px] h-4 py-0 leading-none">{event.type}</Badge>
-                                        </p>
-                                    </div>
+                            {events && events.length > 0 ? (
+                                events.map((event: any) => {
+                                    const date = new Date(event.published_at)
+                                    const month = date.toLocaleString('default', { month: 'short' })
+                                    const day = date.getDate()
+                                    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+                                    return (
+                                        <div key={event.id} className="flex gap-4 items-start border-b border-muted pb-4 last:border-0 last:pb-0">
+                                            <div className="bg-primary/5 rounded px-2 py-1 text-center min-w-[50px]">
+                                                <p className="text-xs font-bold text-primary">{month}</p>
+                                                <p className="text-lg font-bold text-primary leading-none">{day}</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-sm font-bold text-secondary leading-tight">{event.title}</h4>
+                                                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                                    <Clock className="h-3 w-3" /> {time} • <Badge variant="outline" className="text-[10px] h-4 py-0 leading-none">{event.category.toUpperCase()}</Badge>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )
+                                })
+                            ) : (
+                                <div className="text-center py-4 text-muted-foreground text-xs italic">
+                                    No upcoming live sessions.
                                 </div>
-                            ))}
+                            )}
                             <Button variant="outline" className="w-full text-xs h-8" asChild>
                                 <Link href="/portal/student/internship">View Full Calendar</Link>
                             </Button>
@@ -172,7 +184,7 @@ export default async function StudentDashboard() {
                         </CardHeader>
                         <CardContent>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                Complete your **HCA modules** and log your **internship hours** to become eligible for the National Registry.
+                                {tip}
                             </p>
                         </CardContent>
                     </Card>

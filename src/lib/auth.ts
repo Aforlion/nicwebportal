@@ -40,14 +40,28 @@ export async function requireAuth() {
     return user
 }
 
-export async function requireAdmin() {
+export async function requireRole(allowedRoles: string[]) {
     const profile = await getUserProfile()
-    const adminRoles = ['admin', 'super_admin', 'registry_officer', 'inspector', 'auditor', 'instructor']
 
-    if (!profile || !adminRoles.includes(profile.role)) {
+    if (!profile || !allowedRoles.includes(profile.role)) {
+        // Log unauthorized attempt? 
+        // For production hardening, we redirect to a generic safe place or login
+        if (!profile) redirect('/login')
         redirect('/portal/member')
     }
     return profile
+}
+
+export async function requireAdmin() {
+    return requireRole(['admin', 'super_admin'])
+}
+
+export async function requireStaff() {
+    return requireRole(['admin', 'super_admin', 'registry_officer', 'inspector', 'auditor', 'instructor'])
+}
+
+export async function requireInspector() {
+    return requireRole(['admin', 'super_admin', 'inspector'])
 }
 
 export async function getMembership(userId: string) {

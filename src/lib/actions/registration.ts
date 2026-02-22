@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase"
 import { verifyTransaction } from "@/lib/payments/paystack"
+import { sendRegistrationEmail } from "../email"
 
 export async function savePendingRegistrationAction(data: {
     email: string,
@@ -98,6 +99,9 @@ export async function finalizeRegistrationAction(reference: string) {
                 .from('pending_registrations')
                 .update({ status: 'paid', payment_reference: reference })
                 .eq('id', pendingId)
+
+            // 3. Send Confirmation Email
+            await sendRegistrationEmail(email, fd.fullName)
 
             return { success: true, type: 'individual', fullName: fd.fullName }
         }

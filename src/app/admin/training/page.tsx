@@ -1,6 +1,8 @@
 import { getAdminCourses } from "@/actions/admin/get-admin-courses"
 import { AdminTrainingClient } from "./AdminTrainingClient"
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminTrainingPage() {
     const result = await getAdminCourses()
 

@@ -14,9 +14,12 @@ import {
     CreditCard,
     User,
     Users,
+    UserPlus,
+    Contact,
     ShieldCheck,
     FileText,
-    History
+    History,
+    CheckSquare
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -54,16 +57,16 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
         { title: "Dashboard", href: "/portal/member", icon: LayoutDashboard },
         { title: "Profile", href: "/portal/member/profile", icon: User },
         { title: "Documents", href: "/portal/member/documents", icon: FileText },
-        { title: "CPD Records", href: "/portal/member/cpd", icon: GraduationCap },
+        { title: "CPD Records", href: "/portal/member/cpd", icon: History },
         { title: "Payments", href: "/portal/member/payments", icon: CreditCard },
-        { title: "ID Card", href: "/portal/member/id-card", icon: ShieldCheck },
+        { title: "ID Card", href: "/portal/member/id-card", icon: Contact },
     ]
 
     const facilityNavItems = [
         { title: "Dashboard", href: "/portal/facility", icon: LayoutDashboard },
         { title: "Staff Directory", href: "/portal/facility/staff", icon: Users },
-        { title: "Link Caregiver", href: "/portal/facility/link", icon: ShieldCheck },
-        { title: "Inspections", href: "/portal/facility/inspections", icon: History },
+        { title: "Link Caregiver", href: "/portal/facility/link", icon: UserPlus },
+        { title: "Inspections", href: "/portal/facility/inspections", icon: CheckSquare },
         { title: "Certificates", href: "/portal/facility/certificates", icon: Award },
     ]
 

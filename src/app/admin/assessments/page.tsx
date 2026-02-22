@@ -1,6 +1,8 @@
 import { getSubmissions } from "@/actions/admin/manage-assessments"
 import AssessmentsClient from "./AssessmentsClient"
 
+export const dynamic = 'force-dynamic'
+
 export default async function AssessmentsPage() {
     const { submissions, error } = await getSubmissions()
 

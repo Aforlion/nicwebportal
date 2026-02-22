@@ -13,6 +13,12 @@ import {
     NavigationMenuList,
     NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu"
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion"
 
 const navItems = [
     { title: "Home", href: "/" },
@@ -143,24 +149,54 @@ export function Navbar() {
             {/* Mobile Navigation */}
             {isOpen && (
                 <div className="md:hidden border-t bg-background p-4 animate-in slide-in-from-top duration-300">
-                    <nav className="flex flex-col gap-4">
-                        {navItems.map((item) => (
-                            <Link
-                                key={item.title}
-                                href={item.href}
-                                className="text-lg font-medium hover:text-primary transition-colors"
-                                onClick={() => setIsOpen(false)}
-                            >
-                                {item.title}
-                            </Link>
-                        ))}
-                        <hr className="my-2" />
-                        <Button variant="outline" asChild onClick={() => setIsOpen(false)}>
-                            <Link href="/login">Login</Link>
-                        </Button>
-                        <Button asChild onClick={() => setIsOpen(false)}>
-                            <Link href="/programs">Enrol Now</Link>
-                        </Button>
+                    <nav className="flex flex-col gap-2">
+                        <Accordion type="single" collapsible className="w-full border-none">
+                            {navItems.map((item) => (
+                                <React.Fragment key={item.title}>
+                                    {item.children ? (
+                                        <AccordionItem value={item.title} className="border-none">
+                                            <AccordionTrigger className="text-lg font-medium py-3 hover:text-primary transition-colors hover:no-underline">
+                                                {item.title}
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <div className="flex flex-col gap-2 pl-4 py-2 border-l-2 border-primary/10 ml-1">
+                                                    {item.children.map((child) => (
+                                                        <Link
+                                                            key={child.title}
+                                                            href={child.href}
+                                                            className="text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                                                            onClick={() => setIsOpen(false)}
+                                                        >
+                                                            {child.title}
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    ) : (
+                                        <Link
+                                            href={item.href}
+                                            className="text-lg font-medium py-3 hover:text-primary transition-colors block border-b last:border-0"
+                                            onClick={() => setIsOpen(false)}
+                                        >
+                                            {item.title}
+                                        </Link>
+                                    )}
+                                </React.Fragment>
+                            ))}
+                        </Accordion>
+                        <hr className="my-4" />
+                        <div className="flex flex-col gap-3">
+                            <Button variant="outline" className="w-full justify-start gap-2" asChild onClick={() => setIsOpen(false)}>
+                                <Link href="/login">
+                                    <User className="h-4 w-4" />
+                                    Login
+                                </Link>
+                            </Button>
+                            <Button className="w-full bg-primary" asChild onClick={() => setIsOpen(false)}>
+                                <Link href="/programs">Enrol Now</Link>
+                            </Button>
+                        </div>
                     </nav>
                 </div>
             )}

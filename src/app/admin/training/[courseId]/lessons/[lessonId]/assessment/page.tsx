@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
+export const dynamic = 'force-dynamic'
+
 export default async function AssessmentPage({ params }: { params: Promise<{ courseId: string, lessonId: string }> }) {
     const { lessonId, courseId } = await params
     const assessment = await getAssessment(lessonId)
@@ -23,7 +25,7 @@ export default async function AssessmentPage({ params }: { params: Promise<{ cou
                 <p className="text-muted-foreground">Create assessment for this lesson.</p>
             </div>
 
-            <QuizBuilder lessonId={params.lessonId} initialData={assessment} />
+            <QuizBuilder lessonId={lessonId} initialData={assessment} />
         </div>
     )
 }
