@@ -8,7 +8,7 @@ import { sendFacilityRegistrationEmailAction } from "@/lib/actions/registration"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import Textarea from "@/components/ui/textarea";
+import Textarea from "@/components/ui/textarea"
 import { Building2, Mail, Phone, MapPin, Users, ShieldCheck, CheckCircle2, AlertCircle } from "lucide-react"
 
 const FACILITY_TYPES = [
@@ -66,8 +66,11 @@ export function FacilityRegistrationForm() {
                 }
             })
 
-            if (authError) throw authError
-            if (!authData.user) throw new Error("Failed to create user account")
+            if (authError) {
+                console.error("Auth Signup Error:", authError)
+                throw authError
+            }
+            if (!authData.user) throw new Error("Failed to create user account - no user returned")
 
             // 2. Create Profile Manually (More robust than triggers)
             // We ignore error if it already exists (handled by DB constraint or trigger if active)
@@ -82,7 +85,7 @@ export function FacilityRegistrationForm() {
                 })
 
             if (profileError) {
-                console.warn("Manual profile creation warning (might exist):", profileError)
+                console.error("Manual profile creation error:", profileError)
                 // We don't throw here strictly, in case the trigger DID work or race condition
             }
 
@@ -104,7 +107,10 @@ export function FacilityRegistrationForm() {
                     status: 'pending' // Requires NIC approval
                 })
 
-            if (facilityError) throw facilityError
+            if (facilityError) {
+                console.error("Facility Creation Error:", facilityError)
+                throw facilityError
+            }
 
             // 4. Send Institutional Welcome Email
             await sendFacilityRegistrationEmailAction(

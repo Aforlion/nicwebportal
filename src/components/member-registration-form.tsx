@@ -372,7 +372,7 @@ export function MemberRegistrationForm() {
                                 email={formData.email}
                                 amount={selectedCategory?.fee || 0}
                                 useRedirect={true}
-                                callbackUrl={`${window.location.origin}/join/success`}
+                                callbackUrl={`${window.location.origin}/payment/callback`}
                                 onBefore={async () => {
                                     const res = await savePendingRegistrationAction({
                                         email: formData.email,

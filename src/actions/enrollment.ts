@@ -16,7 +16,7 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
     }
 
     // 1. Verify payment with Paystack API
-    const paystackSecret = process.env.PAYSTACK_SECRET_KEY
+    const paystackSecret = process.env.PAYSTACK_LIVE_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY
     if (!paystackSecret) {
         console.error("Paystack Secret Key is missing")
         return { error: "Payment configuration error" }

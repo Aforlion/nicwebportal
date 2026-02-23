@@ -1,6 +1,6 @@
 "use server"
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_LIVE_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY
 
 if (!PAYSTACK_SECRET_KEY) {
     console.warn("PAYSTACK_SECRET_KEY is not defined in environment variables.")
