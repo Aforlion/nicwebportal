@@ -117,6 +117,78 @@ export async function finalizeRegistrationAction(reference: string) {
             return { success: true, type: 'individual', fullName: fd.fullName }
         }
 
+        if (type === 'facility') {
+            const pendingId = metadata?.pending_id
+            if (!pendingId) return { success: false, message: "Missing registration context." }
+
+            // 1. Get Pending Data
+            const { data: pending, error: pError } = await supabase
+                .from('pending_registrations')
+                .select('*')
+                .eq('id', pendingId)
+                .single()
+
+            if (pError || !pending) return { success: false, message: "Registration record not found." }
+            if (pending.status === 'completed') return { success: true, message: "Already completed." }
+
+            const fd = pending.form_data
+
+            // 2. Create the Auth User (Owner)
+            // Note: On server side we use the admin client or standard client
+            // We'll use the supabase-js signUp which is already handled by the trigger 
+            // for profile creation.
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email: fd.ownerEmail,
+                password: fd.password,
+                options: {
+                    data: {
+                        full_name: fd.ownerFullName,
+                        role: 'member'
+                    }
+                }
+            })
+
+            if (authError || !authData.user) {
+                console.error("Facility Owner Signup Error during callback:", authError)
+                // If user already exists, we might need to link them, but for now we error
+                return { success: false, message: authError?.message || "Failed to create owner account." }
+            }
+
+            // 3. Create Facility via existing action
+            const result = await registerFacilityAction({
+                ownerId: authData.user.id,
+                facilityName: fd.facilityName,
+                regNumber: fd.regNumber,
+                tin: fd.tin,
+                facilityType: fd.facilityType,
+                email: fd.email,
+                phone: fd.phone,
+                address: fd.address,
+                state: fd.state,
+                city: fd.city,
+                capacity: parseInt(fd.capacity) || 0
+            })
+
+            if (!result.success) {
+                return { success: false, message: result.error || "Failed to create facility record." }
+            }
+
+            // 4. Mark Pending as Completed
+            await supabase
+                .from('pending_registrations')
+                .update({
+                    status: 'completed',
+                    payment_reference: reference
+                })
+                .eq('id', pendingId)
+
+            // 5. Send Welcome Email
+            const { sendFacilityRegistrationEmail } = await import("../email")
+            await sendFacilityRegistrationEmail(fd.ownerEmail, fd.ownerFullName, fd.facilityName)
+
+            return { success: true, type: 'facility', facilityName: fd.facilityName }
+        }
+
         return { success: true, message: "Payment verified." }
     } catch (error: any) {
         console.error("Finalize Registration Error:", error)

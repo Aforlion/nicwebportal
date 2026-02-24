@@ -47,7 +47,7 @@ function FoundingOnboardingFlow() {
     })
     const [uploading, setUploading] = useState(false)
     const [includeRecapitalization, setIncludeRecapitalization] = useState(true)
-    const paymentAmount = includeRecapitalization ? 500 : 200
+    const paymentAmount = includeRecapitalization ? 115000 : 15000
 
     useEffect(() => {
         if (!token) {
@@ -162,7 +162,7 @@ function FoundingOnboardingFlow() {
                 is_founding: true,
                 is_active: true,
                 paid_recapitalization: invitation.paid_recapitalization,
-                recapitalization_amount: invitation.paid_recapitalization ? 300 : 0,
+                recapitalization_amount: invitation.paid_recapitalization ? 100000 : 0,
                 last_payment_reference: invitation.payment_reference,
                 last_payment_date: invitation.paid_at,
                 expiry_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
@@ -288,7 +288,7 @@ function FoundingOnboardingFlow() {
                                         </div>
                                     </div>
                                     <p className="text-sm text-muted-foreground mb-3">Mandatory yearly professional membership renewal fee.</p>
-                                    <span className="text-xl font-bold text-secondary">₦200</span>
+                                    <span className="text-xl font-bold text-secondary">₦15,000</span>
                                 </div>
 
                                 {/* Optional Recapitalization Fee */}
@@ -306,7 +306,7 @@ function FoundingOnboardingFlow() {
                                         </div>
                                     </div>
                                     <p className="text-sm text-muted-foreground mb-3">A one-time contribution toward the institute's national recapitalization initiative.</p>
-                                    <span className="text-xl font-bold text-primary">₦300</span>
+                                    <span className="text-xl font-bold text-primary">₦100,000</span>
                                 </div>
                             </div>
 

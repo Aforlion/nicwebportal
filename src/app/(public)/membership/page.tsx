@@ -14,21 +14,21 @@ const categories = [
         title: "Student Member",
         description: "For individuals currently enrolled in an NIC-accredited training program.",
         eligibility: "Evidence of current enrollment in HCA or Specialty training.",
-        fee: "₦200 / Year",
+        fee: "₦5,000 / Year",
     },
     {
         id: "associate",
         title: "Associate Member",
         description: "For certified caregivers with less than 3 years of professional experience.",
         eligibility: "NIC-accredited HCA certification or equivalent.",
-        fee: "₦200 / Year",
+        fee: "₦25,000 / Year",
     },
     {
         id: "full",
         title: "Full Member (MNIC)",
         description: "The standard professional designation for experienced, certified caregivers.",
         eligibility: "HCA certification + 3 years experience or Degree in Related field + 1 year experience.",
-        fee: "₦200 / Year",
+        fee: "₦50,000 / Year",
     },
 ]
 

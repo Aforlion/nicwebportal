@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Textarea from "@/components/ui/textarea"
-import { Building2, Mail, Phone, MapPin, Users, ShieldCheck, CheckCircle2, AlertCircle } from "lucide-react"
+import { Building2, Mail, Phone, MapPin, Users, ShieldCheck, CheckCircle2, AlertCircle, CreditCard } from "lucide-react"
+import dynamic from "next/dynamic"
+
+const PaystackPaymentHandler = dynamic(() => import("@/components/paystack-payment-handler"), { ssr: false })
+import { savePendingRegistrationAction } from "@/lib/actions/registration"
+
+const REGISTRATION_FEE = 100000
 
 const FACILITY_TYPES = [
     { value: "nursing_home", label: "Nursing Home" },
@@ -48,65 +54,7 @@ export function FacilityRegistrationForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
-        setError("")
-
-        try {
-            const supabase = createClient()
-
-            // 1. Sign up the owner as a user
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: formData.ownerEmail,
-                password: formData.password,
-                options: {
-                    data: {
-                        full_name: formData.ownerFullName,
-                        role: 'member' // Facility owners are members with a special institutional category (handled in migration later)
-                    }
-                }
-            })
-
-            if (authError) {
-                console.error("Auth Signup Error:", authError)
-                throw authError
-            }
-            if (!authData.user) throw new Error("Failed to create user account - no user returned")
-
-            // 2. Create Facility via Server Action (Bypasses Client RLS/Session issues)
-            const result = await registerFacilityAction({
-                ownerId: authData.user.id,
-                facilityName: formData.facilityName,
-                regNumber: formData.regNumber,
-                tin: formData.tin,
-                facilityType: formData.facilityType,
-                email: formData.email,
-                phone: formData.phone,
-                address: formData.address,
-                state: formData.state,
-                city: formData.city,
-                capacity: parseInt(formData.capacity) || 0
-            })
-
-            if (!result.success) {
-                throw new Error(result.error || "Failed to create facility record")
-            }
-
-            // 3. Send Institutional Welcome Email
-            await sendFacilityRegistrationEmailAction(
-                formData.ownerEmail,
-                formData.ownerFullName,
-                formData.facilityName
-            )
-
-            setSuccess(true)
-            // In a real app, redirect after success
-            // setTimeout(() => router.push('/login'), 3000)
-        } catch (err: any) {
-            console.error("Facility registration error:", err)
-            setError(err.message || "An unexpected error occurred. Please try again.")
-        } finally {
-            setLoading(false)
-        }
+        // No longer used for direct submission - Paystack handler takes over
     }
 
     if (success) {
@@ -351,16 +299,53 @@ export function FacilityRegistrationForm() {
                         </div>
                     </div>
 
+                    {/* Section 4: Payment Summary */}
+                    <div className="pt-6 border-t">
+                        <h3 className="mb-4 text-lg font-bold flex items-center gap-2 text-primary">
+                            <CreditCard className="h-5 w-5" />
+                            Registration Fee
+                        </h3>
+                        <div className="bg-primary/5 rounded-2xl p-6 border border-primary/10">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-secondary font-medium">Institutional Registration Fee</span>
+                                <span className="text-2xl font-extrabold text-primary">₦{REGISTRATION_FEE.toLocaleString()}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                This is a mandatory one-time registration fee for care facilities to be listed on the National Caregiver Registry.
+                            </p>
+                        </div>
+                    </div>
+
                     <div className="pt-4">
-                        <Button
-                            type="submit"
-                            className="w-full h-12 text-lg bg-primary hover:bg-primary/90"
-                            disabled={loading}
-                        >
-                            {loading ? "Submitting Application..." : "Register Facility & Create Profile"}
-                        </Button>
+                        <PaystackPaymentHandler
+                            email={formData.ownerEmail}
+                            amount={REGISTRATION_FEE}
+                            useRedirect={true}
+                            callbackUrl={`${window.location.host.includes('localhost') ? 'http://' : 'https://'}${window.location.host}/payment/callback`}
+                            onBefore={async () => {
+                                // Basic validation before Paystack
+                                if (!formData.facilityName || !formData.ownerEmail || !formData.password) {
+                                    setError("Please fill in all required fields including password.")
+                                    return { success: false, error: "Missing fields" }
+                                }
+
+                                const res = await savePendingRegistrationAction({
+                                    email: formData.ownerEmail,
+                                    formData: formData,
+                                    registrationType: 'facility'
+                                })
+                                if (res.success) {
+                                    return { success: true, metadata: { pending_id: res.id, registration_type: 'facility' } }
+                                }
+                                setError(res.error || "Failed to save registration data")
+                                return { success: false, error: res.error }
+                            }}
+                            buttonText={`Pay ₦${REGISTRATION_FEE.toLocaleString()} & Submit Application`}
+                            className="w-full h-14 text-lg bg-primary hover:bg-primary/90"
+                            showIcon={true}
+                        />
                         <p className="text-center text-xs text-muted-foreground mt-4 italic">
-                            By clicking register, you agree to NIC's institutional terms and conditions.
+                            Secure payment provided by Paystack. By clicking pay, you agree to NIC's institutional terms and conditions.
                             NIC reserves the right to verify all provided information before certification.
                         </p>
                     </div>

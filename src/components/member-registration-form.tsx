@@ -24,9 +24,9 @@ const PaystackPaymentHandler = dynamic(() => import("@/components/paystack-payme
 import { savePendingRegistrationAction } from "@/lib/actions/registration"
 
 const MEMBERSHIP_CATEGORIES = [
-    { id: "student", name: "Student Member", fee: 200, description: "For enrolled students" },
-    { id: "associate", name: "Associate Member", fee: 200, description: "Less than 3 years experience" },
-    { id: "full", name: "Full Member (MNIC)", fee: 200, description: "3+ years experience" },
+    { id: "student", name: "Student Member", fee: 5000, description: "For enrolled students" },
+    { id: "associate", name: "Associate Member", fee: 25000, description: "Less than 3 years experience" },
+    { id: "full", name: "Full Member (MNIC)", fee: 50000, description: "3+ years experience" },
 ]
 
 const STEPS = [
