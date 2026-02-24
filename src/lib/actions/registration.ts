@@ -1,6 +1,8 @@
 "use server"
 
 import { createClient } from "@/lib/supabase"
+import { createClient as createServerClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 import { verifyTransaction } from "@/lib/payments/paystack"
 import { sendRegistrationEmail } from "../email"
 
@@ -232,6 +234,67 @@ export async function sendFoundingPaymentReceiptAction(
     } catch (error: any) {
         console.error("Founding Payment Receipt Action Error:", error)
         return { success: false, error: error.message }
+    }
+}
+
+export async function registerFacilityAction(data: {
+    ownerId: string,
+    facilityName: string,
+    regNumber: string,
+    tin: string,
+    facilityType: string,
+    email: string,
+    phone: string,
+    address: string,
+    state: string,
+    city: string,
+    capacity: number
+}) {
+    try {
+        const supabase = createServerClient(cookies())
+
+        // 1. Double check and Upsert Profile just in case trigger was slow (idempotent)
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+                id: data.ownerId,
+                email: data.email,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'id' })
+
+        if (profileError) {
+            console.error("Server Profile Sync Warning:", profileError)
+        }
+
+        // 2. Create the facility record
+        const { data: facility, error: facilityError } = await supabase
+            .from('facilities')
+            .insert({
+                name: data.facilityName,
+                registration_number: data.regNumber,
+                tin: data.tin,
+                facility_type: data.facilityType,
+                email: data.email,
+                phone: data.phone,
+                address: data.address,
+                state: data.state,
+                city: data.city,
+                capacity: data.capacity,
+                owner_id: data.ownerId,
+                status: 'pending'
+            })
+            .select()
+            .single()
+
+        if (facilityError) {
+            console.error("Server Facility Creation Error:", facilityError)
+            return { success: false, error: facilityError.message }
+        }
+
+        return { success: true, facilityId: facility.id }
+    } catch (error: any) {
+        console.error("Register Facility Action Error:", error)
+        return { success: false, error: error.message || "An unexpected error occurred." }
     }
 }
 

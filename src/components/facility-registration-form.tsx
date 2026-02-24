@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { sendFacilityRegistrationEmailAction } from "@/lib/actions/registration"
+import { sendFacilityRegistrationEmailAction, registerFacilityAction } from "@/lib/actions/registration"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -72,47 +72,26 @@ export function FacilityRegistrationForm() {
             }
             if (!authData.user) throw new Error("Failed to create user account - no user returned")
 
-            // 2. Create Profile Manually (More robust than triggers)
-            // We ignore error if it already exists (handled by DB constraint or trigger if active)
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .upsert({
-                    id: authData.user.id,
-                    full_name: formData.ownerFullName,
-                    email: formData.ownerEmail,
-                    role: 'member',
-                    phone: formData.phone
-                })
+            // 2. Create Facility via Server Action (Bypasses Client RLS/Session issues)
+            const result = await registerFacilityAction({
+                ownerId: authData.user.id,
+                facilityName: formData.facilityName,
+                regNumber: formData.regNumber,
+                tin: formData.tin,
+                facilityType: formData.facilityType,
+                email: formData.email,
+                phone: formData.phone,
+                address: formData.address,
+                state: formData.state,
+                city: formData.city,
+                capacity: parseInt(formData.capacity) || 0
+            })
 
-            if (profileError) {
-                console.error("Manual profile creation error:", profileError)
-                // We don't throw here strictly, in case the trigger DID work or race condition
+            if (!result.success) {
+                throw new Error(result.error || "Failed to create facility record")
             }
 
-            // 3. Create the facility record
-            const { error: facilityError } = await supabase
-                .from('facilities')
-                .insert({
-                    name: formData.facilityName,
-                    registration_number: formData.regNumber,
-                    tin: formData.tin,
-                    facility_type: formData.facilityType,
-                    email: formData.email,
-                    phone: formData.phone,
-                    address: formData.address,
-                    state: formData.state,
-                    city: formData.city,
-                    capacity: parseInt(formData.capacity) || 0,
-                    owner_id: authData.user.id,
-                    status: 'pending' // Requires NIC approval
-                })
-
-            if (facilityError) {
-                console.error("Facility Creation Error:", facilityError)
-                throw facilityError
-            }
-
-            // 4. Send Institutional Welcome Email
+            // 3. Send Institutional Welcome Email
             await sendFacilityRegistrationEmailAction(
                 formData.ownerEmail,
                 formData.ownerFullName,
