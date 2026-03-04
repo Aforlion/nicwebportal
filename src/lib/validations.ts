@@ -59,3 +59,38 @@ export const AnswersSchema = z.record(
 
 export type Answers = z.infer<typeof AnswersSchema>
 
+
+export const FoundingRegistrationSchema = z.object({
+    fullName: z.string().min(2, "Full name is required"),
+    email: z.string().email("Invalid email address"),
+    phone: z.string().min(10, "Valid phone number is required"),
+    address: z.string().min(5, "Address is required"),
+    state: z.string().min(1, "State is required"),
+    city: z.string().min(1, "City is required"),
+})
+
+export const IndividualRegistrationSchema = z.object({
+    fullName: z.string().min(2, "Full name is required"),
+    email: z.string().email("Invalid email address"),
+    phone: z.string().min(10, "Valid phone number is required"),
+    address: z.string().min(5, "Address is required"),
+    state: z.string().min(1, "State is required"),
+    city: z.string().min(1, "City is required"),
+    category: z.enum(['student', 'associate', 'full', 'professional']),
+})
+
+export const FacilityRegistrationSchema = z.object({
+    facilityName: z.string().min(2, "Facility name is required"),
+    regNumber: z.string().min(1, "Registration number is required"),
+    tin: z.string().optional(),
+    facilityType: z.string().min(1, "Facility type is required"),
+    email: z.string().email("Invalid facility email"),
+    phone: z.string().min(10, "Facility phone is required"),
+    address: z.string().min(5, "Facility address is required"),
+    state: z.string().min(1, "State is required"),
+    city: z.string().min(1, "City is required"),
+    capacity: z.string().or(z.number()),
+    ownerEmail: z.string().email("Owner email is required"),
+    ownerFullName: z.string().min(2, "Owner name is required"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+})

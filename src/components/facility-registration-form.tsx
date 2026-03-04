@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,6 +30,15 @@ export function FacilityRegistrationForm() {
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
     const [error, setError] = useState("")
+    const [baseUrl, setBaseUrl] = useState("")
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const host = window.location.host
+            const protocol = host.includes('localhost') ? 'http' : 'https'
+            setBaseUrl(`${protocol}://${host}`)
+        }
+    }, [])
 
     const [formData, setFormData] = useState({
         facilityName: "",
@@ -321,7 +330,7 @@ export function FacilityRegistrationForm() {
                             email={formData.ownerEmail}
                             amount={REGISTRATION_FEE}
                             useRedirect={true}
-                            callbackUrl={`${window.location.host.includes('localhost') ? 'http://' : 'https://'}${window.location.host}/payment/callback`}
+                            callbackUrl={baseUrl ? `${baseUrl}/payment/callback` : undefined}
                             onBefore={async () => {
                                 // Basic validation before Paystack
                                 if (!formData.facilityName || !formData.ownerEmail || !formData.password) {

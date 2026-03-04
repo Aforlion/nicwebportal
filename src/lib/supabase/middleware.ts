@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { env } from '@/env'
 
 // ============================================================
 //  Route-Specific RBAC Configuration
@@ -12,36 +13,59 @@ import { NextResponse, type NextRequest } from 'next/server'
 //  Rules are evaluated in ORDER — first match wins.
 //  Add new protected route groups here; do NOT add roles to a global array.
 //
-const ROUTE_RBAC: { pathPrefix: string; allowedRoles: string[] }[] = [
-    // Training management — instructors can access alongside admins
-    {
-        pathPrefix: '/admin/training',
-        allowedRoles: ['admin', 'super_admin', 'instructor'],
-    },
-    // Registry / facility management — registry officers and inspectors
-    {
-        pathPrefix: '/admin/registry',
-        allowedRoles: ['admin', 'super_admin', 'registry_officer', 'inspector'],
-    },
-    // Audit / compliance views
-    {
-        pathPrefix: '/admin/compliance',
-        allowedRoles: ['admin', 'super_admin', 'auditor', 'inspector'],
-    },
-    // Member management — admin + registry
-    {
-        pathPrefix: '/admin/members',
-        allowedRoles: ['admin', 'super_admin', 'registry_officer'],
-    },
-    // Catch-all admin: only highest-privilege roles
-    {
-        pathPrefix: '/admin',
-        allowedRoles: ['admin', 'super_admin'],
-    },
-]
+// const ROUTE_RBAC: { pathPrefix: string; allowedRoles: string[] }[] = [
+//     // Training management — instructors can access alongside admins
+//     {
+//         pathPrefix: '/admin/training',
+//         allowedRoles: ['admin', 'super_admin', 'instructor'],
+//     },
+//     // Registry / facility management — registry officers and inspectors
+//     {
+//         pathPrefix: '/admin/registry',
+//         allowedRoles: ['admin', 'super_admin', 'registry_officer', 'inspector'],
+//     },
+//     // Audit / compliance views
+//     {
+//         pathPrefix: '/admin/compliance',
+//         allowedRoles: ['admin', 'super_admin', 'auditor', 'inspector'],
+//     },
+//     // Member management — admin + registry
+//     {
+//         pathPrefix: '/admin/members',
+//         allowedRoles: ['admin', 'super_admin', 'registry_officer'],
+//     },
+//     // Catch-all admin: only highest-privilege roles
+//     {
+//         pathPrefix: '/admin',
+//         allowedRoles: ['admin', 'super_admin'],
+//     },
+// ]
 
 function getAllowedRolesForPath(pathname: string): string[] | null {
-    for (const rule of ROUTE_RBAC) {
+    const rbacRules = [
+        {
+            pathPrefix: '/admin/training',
+            allowedRoles: ['admin', 'super_admin', 'instructor'],
+        },
+        {
+            pathPrefix: '/admin/registry',
+            allowedRoles: ['admin', 'super_admin', 'registry_officer', 'inspector'],
+        },
+        {
+            pathPrefix: '/admin/compliance',
+            allowedRoles: ['admin', 'super_admin', 'auditor', 'inspector'],
+        },
+        {
+            pathPrefix: '/admin/members',
+            allowedRoles: ['admin', 'super_admin', 'registry_officer'],
+        },
+        {
+            pathPrefix: '/admin',
+            allowedRoles: ['admin', 'super_admin'],
+        },
+    ]
+
+    for (const rule of rbacRules) {
         if (pathname.startsWith(rule.pathPrefix)) {
             return rule.allowedRoles
         }
@@ -57,8 +81,8 @@ export async function updateSession(request: NextRequest) {
     const supabaseResponse = NextResponse.next({ request })
 
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        env.NEXT_PUBLIC_SUPABASE_URL,
+        env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         {
             cookies: {
                 getAll() {

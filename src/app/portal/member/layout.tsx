@@ -1,10 +1,25 @@
 import { PortalSidebar } from "@/components/portal-sidebar";
+import { getUserProfile, getMembership } from "@/lib/auth";
 
-export default function MemberLayout({
+export default async function MemberLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    const profile = await getUserProfile();
+    const membership = profile ? await getMembership(profile.id) : null;
+
+    const displayName = profile?.full_name ?? 'Member';
+    const memberNo = membership?.member_number ?? '';
+
+    const initials = displayName
+        .split(' ')
+        .filter(n => n)
+        .map((n: string) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+
     return (
         <div className="flex min-h-screen bg-muted/20">
             <PortalSidebar role="member" />
@@ -16,11 +31,11 @@ export default function MemberLayout({
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="text-right">
-                            <p className="text-sm font-medium text-secondary">Grace Obi</p>
-                            <p className="text-xs text-muted-foreground">Membership No: NIC-MEM-5502</p>
+                            <p className="text-sm font-medium text-secondary">{displayName}</p>
+                            <p className="text-xs text-muted-foreground">{memberNo ? `Membership No: ${memberNo}` : (profile?.email ?? '')}</p>
                         </div>
                         <div className="h-10 w-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold">
-                            GO
+                            {initials || 'M'}
                         </div>
                     </div>
                 </header>

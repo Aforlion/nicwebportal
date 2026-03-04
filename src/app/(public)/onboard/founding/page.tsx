@@ -47,7 +47,7 @@ function FoundingOnboardingFlow() {
     })
     const [uploading, setUploading] = useState(false)
     const [includeRecapitalization, setIncludeRecapitalization] = useState(true)
-    const paymentAmount = includeRecapitalization ? 115000 : 15000
+    const paymentAmount = includeRecapitalization ? 112000 : 12000
 
     useEffect(() => {
         if (!token) {
@@ -288,7 +288,7 @@ function FoundingOnboardingFlow() {
                                         </div>
                                     </div>
                                     <p className="text-sm text-muted-foreground mb-3">Mandatory yearly professional membership renewal fee.</p>
-                                    <span className="text-xl font-bold text-secondary">₦15,000</span>
+                                    <span className="text-xl font-bold text-secondary">₦12,000</span>
                                 </div>
 
                                 {/* Optional Recapitalization Fee */}
@@ -319,7 +319,7 @@ function FoundingOnboardingFlow() {
                                     email={invitation.email}
                                     amount={paymentAmount}
                                     useRedirect={true}
-                                    callbackUrl={`${window.location.host.includes('localhost') ? 'http://' : 'https://'}${window.location.host}/payment/callback`}
+                                    callbackUrl={`${window.location.origin}/payment/callback`}
                                     metadata={{
                                         registration_type: 'founding',
                                         token: token,

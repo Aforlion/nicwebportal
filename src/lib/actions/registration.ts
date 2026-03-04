@@ -1,10 +1,13 @@
 "use server"
 
-import { createClient } from "@/lib/supabase"
 import { createClient as createServerClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { verifyTransaction } from "@/lib/payments/paystack"
 import { sendRegistrationEmail } from "../email"
+import { FoundingRegistrationSchema, IndividualRegistrationSchema, FacilityRegistrationSchema } from "../validations"
+import logger from "@/lib/logger"
+import { env } from "@/env"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function savePendingRegistrationAction(data: {
     email: string,
@@ -12,7 +15,23 @@ export async function savePendingRegistrationAction(data: {
     registrationType: string
 }) {
     try {
-        const supabase = createClient()
+        const headerList = await headers();
+        const ip = headerList.get('x-forwarded-for') ?? 'unknown';
+        const isAllowed = await checkRateLimit('auth', `pending-reg:${ip}`);
+        if (!isAllowed) {
+            logger.warn("Rate limit exceeded for pending registration", { ip, email: data.email });
+            return { success: false, error: "Too many requests. Please try again later." };
+        }
+
+        logger.info("Saving pending registration", { email: data.email, type: data.registrationType });
+        // Validation based on type
+        if (data.registrationType === 'individual') {
+            IndividualRegistrationSchema.parse(data.formData)
+        } else if (data.registrationType === 'facility') {
+            FacilityRegistrationSchema.parse(data.formData)
+        }
+
+        const supabase = createServerClient(await cookies())
         const { data: record, error } = await supabase
             .from('pending_registrations')
             .insert({
@@ -26,16 +45,26 @@ export async function savePendingRegistrationAction(data: {
         if (error) throw error
         return { success: true, id: record.id }
     } catch (e: any) {
-        console.error("Save Pending Error:", e)
-        return { success: false, error: e.message }
+        logger.error("Save Pending Error", { error: e.message, email: data.email });
+        return { success: false, error: e.message || "Validation failed" }
     }
 }
 
 export async function finalizeRegistrationAction(reference: string) {
     try {
+        const headerList = await headers();
+        const ip = headerList.get('x-forwarded-for') ?? 'unknown';
+        const isAllowed = await checkRateLimit('auth', `finalize-reg:${ip}`);
+        if (!isAllowed) {
+            logger.warn("Rate limit exceeded for registration finalization", { ip, reference });
+            return { success: false, message: "Too many requests. Please try again later." };
+        }
+
+        logger.info("Finalizing registration payment", { reference });
         // 1. Verify Transaction with Paystack
         const verification = await verifyTransaction(reference)
         if (!verification.success || verification.data.status !== "success") {
+            logger.warn("Paystack verification failed", { reference, verification });
             return { success: false, message: "Payment verification failed." }
         }
 
@@ -43,7 +72,9 @@ export async function finalizeRegistrationAction(reference: string) {
         const email = verification.data.customer.email
         const type = metadata?.registration_type
 
-        const supabase = createClient()
+        logger.info("Payment verified", { reference, type, email });
+
+        const supabase = createServerClient(await cookies())
 
         if (type === 'founding') {
             const token = metadata?.token
@@ -65,21 +96,25 @@ export async function finalizeRegistrationAction(reference: string) {
                     paid_at: new Date().toISOString(),
                     payment_reference: reference,
                     payment_amount: verification.data.amount / 100, // Convert back from kobo
-                    paid_recapitalization: (verification.data.amount / 100) > 200
+                    paid_recapitalization: (verification.data.amount / 100) > 12000
                 })
                 .eq('token', token)
 
             if (updateError) {
-                console.error("Update Invitation Error:", updateError)
+                logger.error("Update Invitation Error", { error: updateError, token, reference });
                 return { success: false, message: "Failed to update payment status." }
             }
 
+            logger.info("Founding registration finalized", { token, reference });
             return { success: true, type: 'founding', token: token }
         }
 
         if (type === 'individual') {
             const pendingId = metadata?.pending_id
-            if (!pendingId) return { success: false, message: "Missing registration context." }
+            if (!pendingId) {
+                logger.error("Missing pending_id in metadata", { reference });
+                return { success: false, message: "Missing registration context." }
+            }
 
             // 1. Get Pending Data
             const { data: pending, error: pError } = await supabase
@@ -88,38 +123,65 @@ export async function finalizeRegistrationAction(reference: string) {
                 .eq('id', pendingId)
                 .single()
 
-            if (pError || !pending) return { success: false, message: "Registration record not found." }
-            if (pending.status === 'completed') return { success: true, message: "Already completed." }
+            if (pError || !pending) {
+                logger.error("Registration record not found", { pendingId, error: pError });
+                return { success: false, message: "Registration record not found." }
+            }
+            if (pending.status === 'completed') {
+                logger.info("Registration already completed", { pendingId });
+                return { success: true, message: "Already completed." }
+            }
 
             const fd = pending.form_data
 
-            // 2. Create User Profile (assuming Auth is handled by user login or we create a ghost account)
-            // For MVP, we might just update the pending record and wait for admin approval
-            // OR create the membership record if the user already has an account.
+            // Validate form data again
+            try {
+                IndividualRegistrationSchema.parse(fd);
+            } catch (err: any) {
+                return { success: false, message: "Invalid form data: " + err.message };
+            }
 
-            // 3. Create User Account if not exists (or update status)
-            // For MVP, we generate a temporary password for the email
+            // 3. Create User Account in Supabase Auth
             const tempPassword = `NIC-${Math.random().toString(36).slice(-6)}${Math.floor(Math.random() * 10)}`;
+
+            const { error: signUpError } = await supabase.auth.signUp({
+                email: email,
+                password: tempPassword,
+                options: {
+                    data: {
+                        full_name: fd.fullName,
+                        role: 'student'
+                    }
+                }
+            });
+
+            if (signUpError) {
+                logger.error("Student Auth Creation Error", { error: signUpError, email, pendingId });
+                return { success: false, message: "Failed to create account: " + signUpError.message };
+            }
 
             await supabase
                 .from('pending_registrations')
                 .update({
                     status: 'paid',
                     payment_reference: reference,
-                    // We can store the temp password temporarily in metadata if we want, 
-                    // but for now we just send it in the email.
                 })
                 .eq('id', pendingId)
 
-            // 4. Send Confirmation Email with Access Details
-            await sendRegistrationEmail(email, fd.fullName, tempPassword)
+            // 4. Send Confirmation Email
+            const baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
+            await sendRegistrationEmail(email, fd.fullName, tempPassword, `${baseUrl}/login`)
 
+            logger.info("Individual registration finalized", { email, pendingId, reference });
             return { success: true, type: 'individual', fullName: fd.fullName }
         }
 
         if (type === 'facility') {
             const pendingId = metadata?.pending_id
-            if (!pendingId) return { success: false, message: "Missing registration context." }
+            if (!pendingId) {
+                logger.error("Missing pending_id for facility registration", { reference });
+                return { success: false, message: "Missing registration context." }
+            }
 
             // 1. Get Pending Data
             const { data: pending, error: pError } = await supabase
@@ -128,15 +190,25 @@ export async function finalizeRegistrationAction(reference: string) {
                 .eq('id', pendingId)
                 .single()
 
-            if (pError || !pending) return { success: false, message: "Registration record not found." }
-            if (pending.status === 'completed') return { success: true, message: "Already completed." }
+            if (pError || !pending) {
+                logger.error("Facility registration record not found", { pendingId, error: pError });
+                return { success: false, message: "Registration record not found." }
+            }
+            if (pending.status === 'completed') {
+                logger.info("Facility registration already completed", { pendingId });
+                return { success: true, message: "Already completed." }
+            }
 
             const fd = pending.form_data
 
+            // Validate form data again
+            try {
+                FacilityRegistrationSchema.parse(fd);
+            } catch (err: any) {
+                return { success: false, message: "Invalid facility data: " + err.message };
+            }
+
             // 2. Create the Auth User (Owner)
-            // Note: On server side we use the admin client or standard client
-            // We'll use the supabase-js signUp which is already handled by the trigger 
-            // for profile creation.
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: fd.ownerEmail,
                 password: fd.password,
@@ -149,8 +221,7 @@ export async function finalizeRegistrationAction(reference: string) {
             })
 
             if (authError || !authData.user) {
-                console.error("Facility Owner Signup Error during callback:", authError)
-                // If user already exists, we might need to link them, but for now we error
+                logger.error("Facility Owner Signup Error", { error: authError, email: fd.ownerEmail, pendingId });
                 return { success: false, message: authError?.message || "Failed to create owner account." }
             }
 
@@ -199,8 +270,7 @@ export async function finalizeRegistrationAction(reference: string) {
 export async function sendWelcomeEmailAction(email: string, fullName: string, temporaryPassword?: string) {
     try {
         const { sendRegistrationEmail } = await import("../email")
-        await sendRegistrationEmail(email, fullName, temporaryPassword)
-        return { success: true }
+        return await sendRegistrationEmail(email, fullName, temporaryPassword)
     } catch (error: any) {
         console.error("Welcome Email Action Error:", error)
         return { success: false, error: error.message }
@@ -256,8 +326,7 @@ export async function sendFacilityStatusAction(
 export async function sendFoundingInvitationAction(email: string, fullName: string, onboardingUrl: string) {
     try {
         const { sendFoundingInvitationEmail } = await import("../email")
-        await sendFoundingInvitationEmail(email, fullName, onboardingUrl)
-        return { success: true }
+        return await sendFoundingInvitationEmail(email, fullName, onboardingUrl)
     } catch (error: any) {
         console.error("Founding Invitation Action Error:", error)
         return { success: false, error: error.message }
@@ -267,8 +336,7 @@ export async function sendFoundingInvitationAction(email: string, fullName: stri
 export async function sendFoundingWelcomeAction(email: string, fullName: string) {
     try {
         const { sendFoundingWelcomeEmail } = await import("../email")
-        await sendFoundingWelcomeEmail(email, fullName)
-        return { success: true }
+        return await sendFoundingWelcomeEmail(email, fullName)
     } catch (error: any) {
         console.error("Founding Welcome Action Error:", error)
         return { success: false, error: error.message }

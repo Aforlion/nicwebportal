@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -40,16 +40,30 @@ import { toast } from "sonner"
 import { format } from "date-fns"
 import { sendFoundingInvitationAction } from "@/lib/actions/registration"
 
-export default function AdminMembersPage() {
+import { useSearchParams } from "next/navigation"
+import { MemberDetailsSheet } from "@/components/admin/member-details-sheet"
+
+function AdminMembersContent() {
+    const searchParams = useSearchParams()
+    const urlCategory = searchParams.get("category")
+    const urlStatus = searchParams.get("status")
+
     const [members, setMembers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
-    const [statusFilter, setStatusFilter] = useState("all")
-    const [categoryFilter, setCategoryFilter] = useState("all")
+    const [statusFilter, setStatusFilter] = useState(urlStatus || "all")
+    const [categoryFilter, setCategoryFilter] = useState(urlCategory || "all")
+    const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
 
     useEffect(() => {
         loadMembers()
     }, [])
+
+    // Sync state with URL params if they change
+    useEffect(() => {
+        if (urlCategory) setCategoryFilter(urlCategory)
+        if (urlStatus) setStatusFilter(urlStatus)
+    }, [urlCategory, urlStatus])
 
     async function loadMembers() {
         setLoading(true)
@@ -74,21 +88,24 @@ export default function AdminMembersPage() {
         return matchesSearch && matchesStatus && matchesCategory
     })
 
+    const pageTitle = categoryFilter === 'student' ? "Student Management" : "Member Management"
+    const pageDescription = categoryFilter === 'student' ? "View and manage all registered NIC students" : "View and manage all professional NIC members"
+
     const stats = {
-        total: members.length,
-        active: members.filter(m => m.status.toLowerCase() === 'active').length,
-        pending: members.filter(m => m.status.toLowerCase() === 'pending').length,
-        suspended: members.filter(m => m.status.toLowerCase() === 'suspended').length
+        total: filteredMembers.length,
+        active: filteredMembers.filter(m => m.status.toLowerCase() === 'active').length,
+        pending: filteredMembers.filter(m => m.status.toLowerCase() === 'pending').length,
+        suspended: filteredMembers.filter(m => m.status.toLowerCase() === 'suspended').length
     }
 
     const getStatusBadge = (status: string) => {
         switch (status) {
             case "Active":
-                return <Badge className="bg-emerald-500 hover:bg-emerald-600"><CheckCircle2 className="h-3 w-3 mr-1" />{status}</Badge>
+                return <Badge className="bg-emerald-500 hover:bg-emerald-600 font-medium"><CheckCircle2 className="h-3 w-3 mr-1" />{status}</Badge>
             case "Pending":
-                return <Badge className="bg-amber-500 hover:bg-amber-600"><Clock className="h-3 w-3 mr-1" />{status}</Badge>
+                return <Badge className="bg-amber-500 hover:bg-amber-600 font-medium"><Clock className="h-3 w-3 mr-1" />{status}</Badge>
             case "Suspended":
-                return <Badge className="bg-red-500 hover:bg-red-600"><XCircle className="h-3 w-3 mr-1" />{status}</Badge>
+                return <Badge className="bg-red-500 hover:bg-red-600 font-medium"><XCircle className="h-3 w-3 mr-1" />{status}</Badge>
             default:
                 return <Badge variant="outline">{status}</Badge>
         }
@@ -98,8 +115,8 @@ export default function AdminMembersPage() {
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 font-serif">Member Management</h1>
-                    <p className="text-slate-500">View and manage all NIC members</p>
+                    <h1 className="text-3xl font-bold text-slate-900 font-serif tracking-tight">{pageTitle}</h1>
+                    <p className="text-slate-500 mt-1">{pageDescription}</p>
                 </div>
                 <div className="flex gap-3">
                     <Dialog>
@@ -120,46 +137,58 @@ export default function AdminMembersPage() {
 
             {/* Stats Cards */}
             <div className="grid gap-6 md:grid-cols-4">
-                <Card className="border-none shadow-sm bg-white">
+                <Card className="border-none shadow-sm bg-white overflow-hidden relative">
+                    <div className="absolute -right-4 -bottom-4 opacity-5">
+                        <Users className="h-24 w-24" />
+                    </div>
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Members</p>
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total {categoryFilter === 'student' ? 'Students' : 'Members'}</p>
                             <p className="text-3xl font-bold text-slate-900 mt-1">{stats.total}</p>
                         </div>
-                        <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center relative">
                             <Users className="h-6 w-6 text-blue-600" />
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="border-none shadow-sm bg-white">
+                <Card className="border-none shadow-sm bg-white overflow-hidden relative">
+                    <div className="absolute -right-4 -bottom-4 opacity-5">
+                        <CheckCircle2 className="h-24 w-24" />
+                    </div>
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Active</p>
                             <p className="text-3xl font-bold text-emerald-600 mt-1">{stats.active}</p>
                         </div>
-                        <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center">
                             <CheckCircle2 className="h-6 w-6 text-emerald-600" />
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="border-none shadow-sm bg-white">
+                <Card className="border-none shadow-sm bg-white overflow-hidden relative">
+                    <div className="absolute -right-4 -bottom-4 opacity-5">
+                        <Clock className="h-24 w-24" />
+                    </div>
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Pending</p>
                             <p className="text-3xl font-bold text-amber-600 mt-1">{stats.pending}</p>
                         </div>
-                        <div className="h-12 w-12 rounded-full bg-amber-50 flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center">
                             <Clock className="h-6 w-6 text-amber-600" />
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="border-none shadow-sm bg-white">
+                <Card className="border-none shadow-sm bg-white overflow-hidden relative">
+                    <div className="absolute -right-4 -bottom-4 opacity-5">
+                        <XCircle className="h-24 w-24" />
+                    </div>
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Suspended</p>
                             <p className="text-3xl font-bold text-red-600 mt-1">{stats.suspended}</p>
                         </div>
-                        <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-xl bg-red-50 flex items-center justify-center">
                             <XCircle className="h-6 w-6 text-red-600" />
                         </div>
                     </CardContent>
@@ -174,7 +203,7 @@ export default function AdminMembersPage() {
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                             <Input
                                 placeholder="Search by name, email, or member ID..."
-                                className="pl-10 bg-white border-slate-200 w-full"
+                                className="pl-10 bg-white border-slate-200 w-full shadow-sm"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -183,7 +212,7 @@ export default function AdminMembersPage() {
                             <select
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
-                                className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm transition-all"
                             >
                                 <option value="all">All Status</option>
                                 <option value="active">Active</option>
@@ -193,10 +222,11 @@ export default function AdminMembersPage() {
                             <select
                                 value={categoryFilter}
                                 onChange={(e) => setCategoryFilter(e.target.value)}
-                                className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm transition-all"
                             >
                                 <option value="all">All Categories</option>
                                 <option value="student">Student</option>
+                                <option value="professional">Professional</option>
                                 <option value="associate">Associate</option>
                                 <option value="full">Full Member</option>
                                 <option value="trainer">Trainer</option>
@@ -206,9 +236,9 @@ export default function AdminMembersPage() {
                     </div>
 
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                            <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                            <p>Loading members...</p>
+                        <div className="flex-1 flex flex-col items-center justify-center py-20 bg-white">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary/30 mb-4" />
+                            <p className="text-slate-400 animate-pulse font-medium">Updating member list...</p>
                         </div>
                     ) : (
                         <>
@@ -218,7 +248,7 @@ export default function AdminMembersPage() {
                                     <div key={member.id} className="p-4 space-y-3">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold bg-primary/10 text-primary">
+                                                <div className="h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold bg-primary/10 text-primary">
                                                     {member.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
                                                 </div>
                                                 <div>
@@ -230,20 +260,27 @@ export default function AdminMembersPage() {
                                         </div>
                                         <div className="flex items-center justify-between text-xs pt-2">
                                             <div className="space-y-1">
-                                                <p className="text-slate-400 font-bold uppercase tracking-wider">Category</p>
+                                                <p className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Category</p>
                                                 <p className="font-medium text-slate-700 capitalize">{member.category}</p>
                                             </div>
                                             <div className="text-right space-y-1">
-                                                <p className="text-slate-400 font-bold uppercase tracking-wider">Joined</p>
+                                                <p className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Joined</p>
                                                 <p className="font-medium text-slate-700">{format(new Date(member.joinDate), 'MMM yyyy')}</p>
                                             </div>
                                         </div>
                                         <div className="flex gap-2 pt-2">
-                                            <Button variant="outline" size="sm" className="flex-1 gap-2 h-9">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex-1 gap-2 h-9"
+                                                onClick={() => setSelectedMemberId(member.id)}
+                                            >
                                                 <Eye className="h-4 w-4" /> View Profile
                                             </Button>
-                                            <Button variant="outline" size="sm" className="flex-1 gap-2 h-9">
-                                                <Mail className="h-4 w-4" /> Message
+                                            <Button variant="outline" size="sm" className="flex-1 gap-2 h-9" asChild>
+                                                <a href={`mailto:${member.email}`}>
+                                                    <Mail className="h-4 w-4" /> Message
+                                                </a>
                                             </Button>
                                         </div>
                                     </div>
@@ -253,51 +290,81 @@ export default function AdminMembersPage() {
                             {/* Desktop View: Table */}
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-sm text-left">
-                                    <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-xs">
+                                    <thead className="bg-slate-50/50 text-slate-500 uppercase font-bold text-[10px] tracking-widest border-b border-slate-100">
                                         <tr>
-                                            <th className="px-6 py-4 font-bold tracking-wider">Member</th>
-                                            <th className="px-6 py-4 font-bold tracking-wider">ID / Category</th>
-                                            <th className="px-6 py-4 font-bold tracking-wider">Status</th>
-                                            <th className="px-6 py-4 font-bold tracking-wider">Joined Date</th>
-                                            <th className="px-6 py-4 text-right font-bold tracking-wider">Actions</th>
+                                            <th className="px-6 py-4 font-bold">Member Details</th>
+                                            <th className="px-6 py-4 font-bold">ID / Category</th>
+                                            <th className="px-6 py-4 font-bold text-center">Status</th>
+                                            <th className="px-6 py-4 font-bold text-center">Joined Date</th>
+                                            <th className="px-6 py-4 text-right font-bold">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {filteredMembers.map((member) => (
-                                            <tr key={member.id} className="group hover:bg-slate-50/80 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold bg-primary/10 text-primary">
-                                                            {member.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-semibold text-slate-900">{member.name}</p>
-                                                            <p className="text-xs text-slate-500">{member.email}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="font-mono text-xs font-medium text-slate-600">{member.memberID}</p>
-                                                    <Badge variant="outline" className="mt-1 font-normal text-xs bg-slate-50 border-slate-200 text-slate-600 capitalize">
-                                                        {member.category}
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-6 py-4">{getStatusBadge(member.status)}</td>
-                                                <td className="px-6 py-4 text-slate-500 font-medium">
-                                                    {format(new Date(member.joinDate), 'MMM d, yyyy')}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex justify-end gap-2 opacity-100 group-hover:opacity-100 transition-opacity">
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10">
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 text-slate-400 hover:text-amber-600 hover:bg-amber-50">
-                                                            <Mail className="h-4 w-4" />
+                                        {filteredMembers.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={5} className="px-6 py-20 text-center">
+                                                    <div className="flex flex-col items-center gap-2 text-slate-400">
+                                                        <Search className="h-10 w-10 opacity-20" />
+                                                        <p className="text-sm font-medium">No results found matching your filters</p>
+                                                        <Button variant="link" className="text-primary" onClick={() => {
+                                                            setSearchQuery("")
+                                                            setCategoryFilter("all")
+                                                            setStatusFilter("all")
+                                                        }}>
+                                                            Reset all filters
                                                         </Button>
                                                     </div>
                                                 </td>
                                             </tr>
-                                        ))}
+                                        ) : (
+                                            filteredMembers.map((member) => (
+                                                <tr key={member.id} className="group hover:bg-slate-50/80 transition-all duration-200">
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold bg-primary/10 text-primary transition-transform group-hover:scale-105">
+                                                                {member.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-semibold text-slate-900 group-hover:text-primary transition-colors">{member.name}</p>
+                                                                <p className="text-xs text-slate-400">{member.email}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <p className="font-mono text-xs font-medium text-slate-600 tracking-tight">{member.memberID}</p>
+                                                        <Badge variant="outline" className="mt-1 font-normal text-[10px] bg-slate-50 border-slate-200 text-slate-500 capitalize px-1.5 py-0">
+                                                            {member.category}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">{getStatusBadge(member.status)}</td>
+                                                    <td className="px-6 py-4 text-slate-500 font-medium text-center">
+                                                        {format(new Date(member.joinDate), 'MMM d, yyyy')}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-full"
+                                                                onClick={() => setSelectedMemberId(member.id)}
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-full"
+                                                                asChild
+                                                            >
+                                                                <a href={`mailto:${member.email}`}>
+                                                                    <Mail className="h-4 w-4" />
+                                                                </a>
+                                                            </Button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -305,6 +372,12 @@ export default function AdminMembersPage() {
                     )}
                 </CardContent>
             </Card>
+
+            <MemberDetailsSheet
+                membershipId={selectedMemberId}
+                onClose={() => setSelectedMemberId(null)}
+                onStatusUpdate={loadMembers}
+            />
         </div>
     )
 }
@@ -418,5 +491,17 @@ function InviteFounderModal() {
                 )}
             </DialogFooter>
         </DialogContent>
+    )
+}
+
+export default function AdminMembersPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        }>
+            <AdminMembersContent />
+        </Suspense>
     )
 }

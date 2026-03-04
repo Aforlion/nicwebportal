@@ -17,6 +17,8 @@ import { NICFoundingWelcomeEmail } from '../emails/NIC_FoundingWelcome'
 import { NICInspectionScheduledEmail } from '../emails/NIC_InspectionScheduled'
 import { NICFoundingPaymentReceiptEmail } from '../emails/NIC_FoundingPaymentReceipt'
 import * as React from 'react'
+import { env } from '@/env'
+import logger from '@/lib/logger'
 
 interface SendEmailParams {
     to: string;
@@ -30,7 +32,7 @@ interface SendEmailParams {
  * Production-hardened with rate limiting, sanitization, and restricted logging.
  */
 export async function sendEmail({ to, subject, html, template }: SendEmailParams) {
-    const apiKey = process.env.RESEND_API_KEY;
+    const apiKey = env.RESEND_API_KEY;
 
     // 1. Rate Limiting (Production Only/Upstash Enabled)
     const headerList = await headers()
@@ -88,11 +90,12 @@ export async function sendEmail({ to, subject, html, template }: SendEmailParams
     }
 }
 
+
 export async function sendRegistrationEmail(email: string, fullName: string, temporaryPassword?: string, loginUrl?: string) {
-    // Sanitize user inputs to prevent XSS/HTML injection if using raw html
-    // But NICWelcomeEmail is a React component which handles escaping by default.
     const safeName = sanitize(fullName);
     const subject = "Welcome to the National Institute of Caregivers!";
+    const baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
+    const finalLoginUrl = loginUrl || `${baseUrl}/login`;
 
     return sendEmail({
         to: email,
@@ -100,12 +103,12 @@ export async function sendRegistrationEmail(email: string, fullName: string, tem
         template: React.createElement(NICWelcomeEmail, {
             fullName: safeName,
             temporaryPassword,
-            loginUrl
+            loginUrl: finalLoginUrl
         })
     });
 }
 export async function sendEnrollmentEmail(email: string, fullName: string, courseTitle: string, courseId: string) {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
+    const baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
     const courseUrl = `${baseUrl}/portal/student/courses/${courseId}`;
     const subject = `Enrollment Confirmed: ${courseTitle}`;
 
@@ -121,7 +124,7 @@ export async function sendEnrollmentEmail(email: string, fullName: string, cours
 }
 
 export async function sendCertificateEmail(email: string, fullName: string, courseTitle: string, certificateCode: string) {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
+    const baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
     const certificateUrl = `${baseUrl}/certificates/${certificateCode}`;
     const subject = `Congratulations! Your certificate for ${courseTitle} is ready`;
 
@@ -256,7 +259,7 @@ export async function sendFoundingInvitationEmail(email: string, fullName: strin
 
 export async function sendFoundingWelcomeEmail(email: string, fullName: string) {
     const subject = "Welcome Pillar of the Institute: Your NIC Founding Membership";
-    const portalUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org') + '/login';
+    const portalUrl = (env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org') + '/login';
 
     return sendEmail({
         to: email,

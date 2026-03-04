@@ -54,8 +54,8 @@ const limiters = {
     assessment: createLimiter(3, 60),
     // General student actions: 20 per minute
     student: createLimiter(20, 60),
-    // Email delivery: 2 per minute per IP (prevent email bombing/spam)
-    email: createLimiter(2, 60),
+    // Email delivery: 10 per minute per IP (allow admin bulk invitations)
+    email: createLimiter(10, 60),
 }
 
 export type LimiterName = keyof typeof limiters

@@ -51,11 +51,11 @@ export default function MemberDashboardClient({ data }: MemberDashboardClientPro
                             <div className="flex justify-between items-start mb-12">
                                 <div>
                                     <div className="flex gap-2 mb-2 flex-wrap">
-                                        <Badge className="bg-accent text-secondary font-bold hover:bg-accent border-none px-3 uppercase">
+                                        <Badge variant="secondary" className="font-bold border-none px-3 uppercase text-secondary">
                                             {member.category} MEMBER
                                         </Badge>
                                         {member.nicId?.includes('FND') && (
-                                            <Badge className="bg-amber-400 text-secondary font-black hover:bg-amber-500 border-none px-3 animate-pulse">
+                                            <Badge variant="warning" className="font-black border-none px-3 animate-pulse text-secondary">
                                                 FOUNDING MEMBER
                                             </Badge>
                                         )}
@@ -71,10 +71,15 @@ export default function MemberDashboardClient({ data }: MemberDashboardClientPro
                             <div className="grid gap-8 md:grid-cols-3 border-t border-white/10 pt-8">
                                 <div>
                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Status</p>
-                                    <p className={`font-bold flex items-center gap-1 mt-1 ${member.status === 'ACTIVE' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                                        <span className={`h-2 w-2 rounded-full animate-pulse ${member.status === 'ACTIVE' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                                        {member.status}
-                                    </p>
+                                    <div className="mt-1">
+                                        <Badge
+                                            variant={member.status === 'ACTIVE' ? 'success' : 'warning'}
+                                            className="font-bold flex items-center gap-1 w-fit"
+                                        >
+                                            <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${member.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                            {member.status}
+                                        </Badge>
+                                    </div>
                                 </div>
                                 <div>
                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Joined</p>
@@ -170,9 +175,9 @@ export default function MemberDashboardClient({ data }: MemberDashboardClientPro
                                 <p className="text-sm font-medium text-muted-foreground">Renewal Date</p>
                                 <p className="text-xl font-bold text-secondary">{member.expiry}</p>
                                 {hasOutstandingDues ? (
-                                    <p className="text-xs text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded w-fit mt-1">DUES OUTSTANDING</p>
+                                    <Badge variant="warning" className="mt-1 font-bold">DUES OUTSTANDING</Badge>
                                 ) : (
-                                    <p className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded w-fit mt-1">NO DUES OUTSTANDING</p>
+                                    <Badge variant="success" className="mt-1 font-bold">NO DUES OUTSTANDING</Badge>
                                 )}
                             </div>
                         </div>

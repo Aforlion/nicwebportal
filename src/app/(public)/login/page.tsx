@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react"
 
+import { loginAction } from "@/lib/actions/auth"
+
 function LoginForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -28,24 +30,19 @@ function LoginForm() {
         setError("")
 
         try {
-            const supabase = createClient()
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            })
+            const formData = new FormData()
+            formData.append("email", email)
+            formData.append("password", password)
 
-            if (error) throw error
+            const result = await loginAction(formData)
 
-            // Check if user has a profile and membership
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', data.user.id)
-                .single()
+            if (!result.success) {
+                throw new Error(result.error)
+            }
 
             // Redirect based on role
             const adminRoles = ['admin', 'super_admin', 'registry_officer', 'inspector', 'auditor', 'instructor']
-            if (profile?.role && adminRoles.includes(profile.role)) {
+            if (result.role && adminRoles.includes(result.role)) {
                 router.push('/admin')
             } else {
                 router.push(redirect)
