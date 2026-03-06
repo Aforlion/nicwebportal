@@ -28,10 +28,14 @@ export async function admitMemberAction(profileId: string) {
     }
 
     // 2. Update membership status to active
+    // Use upsert to handle cases where a membership row doesn't exist yet
     const { error: updateError } = await supabase
       .from('memberships')
-      .update({ status: 'active' })
-      .eq('user_id', profileId)
+      .upsert({
+        user_id: profileId,
+        status: 'active',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' })
 
     if (updateError) {
       console.error('Error admitting member:', updateError)

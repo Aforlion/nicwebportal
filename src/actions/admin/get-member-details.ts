@@ -53,7 +53,7 @@ export async function getMemberDetails(profileId: string) {
         const { data: payments, error: paymentsError } = await supabase
             .from('payments')
             .select('*')
-            .eq('membership_id', membershipId)
+            .eq('membership_id', membership.id)
             .order('created_at', { ascending: false })
 
         if (paymentsError) console.error('Error fetching payments:', paymentsError)
@@ -62,7 +62,7 @@ export async function getMemberDetails(profileId: string) {
         const { data: documents, error: documentsError } = await supabase
             .from('documents')
             .select('*')
-            .eq('membership_id', membershipId)
+            .eq('membership_id', membership.id)
 
         if (documentsError) console.error('Error fetching documents:', documentsError)
 
@@ -70,7 +70,7 @@ export async function getMemberDetails(profileId: string) {
         const { data: cpd_activities, error: cpdError } = await supabase
             .from('cpd_activities')
             .select('*')
-            .eq('membership_id', membershipId)
+            .eq('membership_id', membership.id)
             .order('activity_date', { ascending: false })
 
         if (cpdError) console.error('Error fetching CPD:', cpdError)
