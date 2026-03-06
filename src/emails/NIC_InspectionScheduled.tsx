@@ -22,7 +22,7 @@ interface NICInspectionScheduledEmailProps {
     portalUrl?: string;
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
 
 export const NICInspectionScheduledEmail = ({
     facilityName,

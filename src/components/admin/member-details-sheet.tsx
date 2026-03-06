@@ -118,7 +118,7 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
 
     return (
         <Sheet open={!!membershipId} onOpenChange={(open) => !open && onClose()}>
-            <SheetContent className="sm:max-w-xl w-full p-0 flex flex-col">
+            <SheetContent className="sm:max-w-xl w-full p-0 flex flex-col h-full overflow-hidden">
                 {/* Always-present hidden title satisfies Radix Dialog a11y requirement */}
                 <SheetTitle className="sr-only">
                     {data?.profile?.full_name ?? "Member Details"}
@@ -133,8 +133,8 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                         <p className="text-slate-500 animate-pulse">Fetching member records...</p>
                     </div>
                 ) : data ? (
-                    <>
-                        <SheetHeader className="p-6 border-b bg-slate-50/50">
+                    <div className="flex flex-col h-full overflow-hidden">
+                        <SheetHeader className="p-6 border-b bg-slate-50/50 shrink-0">
                             <div className="flex items-start justify-between">
                                 <div className="space-y-1">
                                     {/* Visible title rendered inside SheetHeader (not using SheetTitle to avoid duplication) */}
@@ -148,9 +148,9 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                             </div>
                         </SheetHeader>
 
-                        <div className="flex-1 flex flex-col min-h-0">
-                            <Tabs defaultValue="info" className="flex-1 flex flex-col">
-                                <div className="px-6 border-b">
+                        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                            <Tabs defaultValue="info" className="flex-1 flex flex-col min-h-0">
+                                <div className="px-6 border-b shrink-0">
                                     <TabsList className="w-full justify-start bg-transparent border-none p-0 h-12">
                                         <TabsTrigger value="info" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">Info</TabsTrigger>
                                         <TabsTrigger value="payments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">Payments</TabsTrigger>
@@ -159,8 +159,8 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                                     </TabsList>
                                 </div>
 
-                                <ScrollArea className="flex-1">
-                                    <div className="p-6 pb-24">
+                                <ScrollArea className="flex-1 min-h-0">
+                                    <div className="p-6">
                                         <TabsContent value="info" className="m-0 space-y-6">
                                             <section className="space-y-4">
                                                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Personal Details</h3>
@@ -341,7 +341,7 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                                 </Button>
                             </div>
                         </div>
-                    </>
+                    </div>
                 ) : null}
             </SheetContent>
         </Sheet>

@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth"
 import { sendEmail } from "@/lib/email"
 import { NICProfileUpdateRequestEmail } from "@/emails/NIC_ProfileUpdateRequest"
 import * as React from "react"
+import { env } from "@/env"
 
 export async function sendProfileUpdateRequestAction(profileId: string) {
   await requireAdmin()
@@ -25,11 +26,15 @@ export async function sendProfileUpdateRequestAction(profileId: string) {
       return { success: false, error: 'Profile not found' }
     }
 
+    const baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org'
+    const portalUrl = `${baseUrl}/portal/member/profile`
+
     await sendEmail({
       to: profile.email,
       subject: 'Action Required: Please Update Your NIC Profile Information',
       template: React.createElement(NICProfileUpdateRequestEmail, {
-        fullName: profile.full_name
+        fullName: profile.full_name,
+        portalUrl
       })
     })
 

@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache"
 import { sendEmail } from "@/lib/email"
 import { NICAdmissionConfirmationEmail } from "@/emails/NIC_AdmissionConfirmation"
 import * as React from "react"
+import { env } from "@/env"
 
 export async function admitMemberAction(profileId: string) {
   await requireAdmin()
@@ -38,11 +39,14 @@ export async function admitMemberAction(profileId: string) {
     }
 
     // 3. Send admission email
+    const baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org'
     await sendEmail({
       to: profile.email,
       subject: 'Congratulations! Your NIC Student Application Has Been Approved',
       template: React.createElement(NICAdmissionConfirmationEmail, {
-        fullName: profile.full_name
+        fullName: profile.full_name,
+        coursesUrl: `${baseUrl}/portal/student/courses`,
+        loginUrl: `${baseUrl}/login`
       })
     })
 
