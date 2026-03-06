@@ -92,6 +92,14 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
     return (
         <Sheet open={!!membershipId} onOpenChange={(open) => !open && onClose()}>
             <SheetContent className="sm:max-w-xl w-full p-0 flex flex-col">
+                {/* Always-present hidden title satisfies Radix Dialog a11y requirement */}
+                <SheetTitle className="sr-only">
+                    {data?.profile?.full_name ?? "Member Details"}
+                </SheetTitle>
+                <SheetDescription className="sr-only">
+                    Detailed profile, payments, documents and CPD records for this member.
+                </SheetDescription>
+
                 {loading ? (
                     <div className="flex-1 flex flex-col items-center justify-center space-y-4">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -102,7 +110,8 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                         <SheetHeader className="p-6 border-b bg-slate-50/50">
                             <div className="flex items-start justify-between">
                                 <div className="space-y-1">
-                                    <SheetTitle className="text-2xl font-bold font-serif">{data.profile?.full_name}</SheetTitle>
+                                    {/* Visible title rendered inside SheetHeader (not using SheetTitle to avoid duplication) */}
+                                    <p className="text-2xl font-bold font-serif" aria-hidden="true">{data.profile?.full_name}</p>
                                     <div className="flex items-center gap-2">
                                         <p className="text-sm text-slate-500 font-mono">{data.nic_id || "No ID assigned"}</p>
                                         <Badge variant="secondary" className="capitalize">{data.category}</Badge>

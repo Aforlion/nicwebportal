@@ -5,7 +5,7 @@ import { cookies } from "next/headers"
 import { requireAdmin } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 
-export async function updateMemberStatusAction(membershipId: string, newStatus: string) {
+export async function updateMemberStatusAction(profileId: string, newStatus: string) {
     await requireAdmin()
 
     try {
@@ -15,7 +15,7 @@ export async function updateMemberStatusAction(membershipId: string, newStatus: 
         const { error } = await supabase
             .from('memberships')
             .update({ status: newStatus })
-            .eq('id', membershipId)
+            .eq('user_id', profileId)
 
         if (error) {
             console.error('Error updating member status:', error)
