@@ -32,6 +32,8 @@ import {
 import { format } from "date-fns"
 import { getMemberDetails } from "@/actions/admin/get-member-details"
 import { updateMemberStatusAction } from "@/actions/admin/update-member-status"
+import { admitMemberAction } from "@/actions/admin/admit-member"
+import { sendProfileUpdateRequestAction } from "@/actions/admin/send-update-request"
 import { toast } from "sonner"
 
 interface MemberDetailsSheetProps {
@@ -44,6 +46,7 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(false)
     const [updating, setUpdating] = useState(false)
+    const [sendingUpdateRequest, setSendingUpdateRequest] = useState(false)
 
     useEffect(() => {
         if (membershipId) {
@@ -74,6 +77,30 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
             toast.error(result.error || "Failed to update status")
         }
         setUpdating(false)
+    }
+
+    async function handleAdmit() {
+        setUpdating(true)
+        const result = await admitMemberAction(membershipId!)
+        if (result.success) {
+            toast.success("Member admitted successfully! Admission email sent.")
+            await loadDetails()
+            if (onStatusUpdate) onStatusUpdate()
+        } else {
+            toast.error(result.error || "Failed to admit member")
+        }
+        setUpdating(false)
+    }
+
+    async function handleSendUpdateRequest() {
+        setSendingUpdateRequest(true)
+        const result = await sendProfileUpdateRequestAction(membershipId!)
+        if (result.success) {
+            toast.success("Profile update request email sent successfully!")
+        } else {
+            toast.error(result.error || "Failed to send update request")
+        }
+        setSendingUpdateRequest(false)
     }
 
     const getStatusBadge = (status: string) => {
@@ -268,7 +295,7 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                                 {data.status === 'pending' && (
                                     <Button
                                         className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                                        onClick={() => handleStatusUpdate('active')}
+                                        onClick={handleAdmit}
                                         disabled={updating}
                                     >
                                         {updating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
@@ -297,6 +324,21 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                                     </Button>
                                 )}
                                 <Button variant="outline" className="flex-1" onClick={onClose}>Close</Button>
+                            </div>
+                            {/* Secondary actions — always visible */}
+                            <div className="pt-1">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full text-slate-600 hover:text-primary hover:border-primary gap-2"
+                                    onClick={handleSendUpdateRequest}
+                                    disabled={sendingUpdateRequest}
+                                >
+                                    {sendingUpdateRequest
+                                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                                        : <Mail className="h-4 w-4" />}
+                                    {sendingUpdateRequest ? "Sending..." : "Request Profile Update"}
+                                </Button>
                             </div>
                         </div>
                     </>
