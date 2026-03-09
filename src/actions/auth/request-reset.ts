@@ -42,7 +42,7 @@ export async function requestPasswordResetAction(email: string) {
             type: 'recovery',
             email: email,
             options: {
-                redirectTo: `${env.NEXT_PUBLIC_APP_URL}/portal/profile/reset-password`
+                redirectTo: `${env.NEXT_PUBLIC_APP_URL}/reset-password`
             }
         })
 

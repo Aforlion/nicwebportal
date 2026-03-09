@@ -38,7 +38,7 @@ export async function inviteMemberAction(profileId: string) {
             type: 'recovery',
             email: profile.email,
             options: {
-                redirectTo: `${env.NEXT_PUBLIC_APP_URL}/portal/profile/reset-password`
+                redirectTo: `${env.NEXT_PUBLIC_APP_URL}/reset-password`
             }
         })
 
