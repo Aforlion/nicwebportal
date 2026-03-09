@@ -28,18 +28,41 @@ export async function admitMemberAction(profileId: string) {
     }
 
     // 2. Update membership status to active
-    // Use upsert to handle cases where a membership row doesn't exist yet
-    const { error: updateError } = await supabase
+    // We check for existence first because the database lacks a unique constraint on user_id for upsert
+    const { data: existingMembership, error: checkError } = await supabase
       .from('memberships')
-      .upsert({
-        user_id: profileId,
-        status: 'active',
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' })
+      .select('id')
+      .eq('user_id', profileId)
+      .maybeSingle()
 
-    if (updateError) {
-      console.error('Error admitting member:', updateError)
-      return { success: false, error: `Database error: ${updateError.message} (${updateError.code})` }
+    if (checkError) {
+      console.error('Error checking membership:', checkError)
+      return { success: false, error: `Database error checking existing record: ${checkError.message}` }
+    }
+
+    let result;
+    if (existingMembership) {
+      result = await supabase
+        .from('memberships')
+        .update({
+          status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingMembership.id)
+    } else {
+      result = await supabase
+        .from('memberships')
+        .insert({
+          user_id: profileId,
+          status: 'active',
+          category: 'student', // default for admitted members
+          joined_date: new Date().toISOString().split('T')[0]
+        })
+    }
+
+    if (result.error) {
+      console.error('Error updating/inserting membership:', result.error)
+      return { success: false, error: `Failed to update membership status: ${result.error.message}` }
     }
 
     // 3. Send admission email
