@@ -39,7 +39,7 @@ export async function admitMemberAction(profileId: string) {
 
     if (updateError) {
       console.error('Error admitting member:', updateError)
-      return { success: false, error: 'Failed to update membership status' }
+      return { success: false, error: `Database error: ${updateError.message} (${updateError.code})` }
     }
 
     // 3. Send admission email
