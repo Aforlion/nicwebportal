@@ -142,11 +142,9 @@ export async function finalizeRegistrationAction(reference: string) {
             }
 
             // 3. Create User Account in Supabase Auth
-            const tempPassword = `NIC-${Math.random().toString(36).slice(-6)}${Math.floor(Math.random() * 10)}`;
-
             const { error: signUpError } = await supabase.auth.signUp({
                 email: email,
-                password: tempPassword,
+                password: fd.password,
                 options: {
                     data: {
                         full_name: fd.fullName,
@@ -170,7 +168,7 @@ export async function finalizeRegistrationAction(reference: string) {
 
             // 4. Send Confirmation Email
             const baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
-            await sendRegistrationEmail(email, fd.fullName, tempPassword, `${baseUrl}/login`)
+            await sendRegistrationEmail(email, fd.fullName, undefined, `${baseUrl}/login`)
 
             logger.info("Individual registration finalized", { email, pendingId, reference });
             return { success: true, type: 'individual', fullName: fd.fullName }

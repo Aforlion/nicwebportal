@@ -48,6 +48,10 @@ export function MemberRegistrationForm() {
         gender: "",
         qualification: "",
         experience: "",
+        state: "",
+        city: "",
+        password: "",
+        confirmPassword: "",
     })
 
     const [files, setFiles] = useState<{
@@ -66,6 +70,20 @@ export function MemberRegistrationForm() {
     }
 
     const handleNext = () => {
+        if (currentStep === 2) {
+            if (!formData.password || formData.password.length < 8) {
+                toast.error("Password must be at least 8 characters long")
+                return
+            }
+            if (formData.password !== formData.confirmPassword) {
+                toast.error("Passwords do not match")
+                return
+            }
+            if (!formData.state || !formData.city) {
+                toast.error("State and City are required")
+                return
+            }
+        }
         if (currentStep < STEPS.length) {
             setCurrentStep(currentStep + 1)
         }
@@ -234,6 +252,44 @@ export function MemberRegistrationForm() {
                                     placeholder="0"
                                     value={formData.experience}
                                     onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="state">State *</Label>
+                                <Input
+                                    id="state"
+                                    placeholder="e.g. Lagos"
+                                    value={formData.state}
+                                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="city">City *</Label>
+                                <Input
+                                    id="city"
+                                    placeholder="e.g. Ikeja"
+                                    value={formData.city}
+                                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Create Password *</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    placeholder="Password"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                                <Input
+                                    id="confirmPassword"
+                                    type="password"
+                                    placeholder="Confirm Password"
+                                    value={formData.confirmPassword}
+                                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                                 />
                             </div>
                         </div>

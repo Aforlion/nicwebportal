@@ -52,7 +52,7 @@ export const NICPasswordResetEmail = ({
                 </Section>
 
                 <Text style={detailsText}>
-                    This link will expire in 24 hours. If you didn't request a password reset, you can safely ignore this email.
+                    This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.
                 </Text>
 
                 <Hr style={hr} />

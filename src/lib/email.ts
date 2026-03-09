@@ -102,7 +102,7 @@ export async function sendRegistrationEmail(email: string, fullName: string, tem
         subject,
         template: React.createElement(NICWelcomeEmail, {
             fullName: safeName,
-            temporaryPassword,
+            temporaryPassword: temporaryPassword || undefined,
             loginUrl: finalLoginUrl
         })
     });

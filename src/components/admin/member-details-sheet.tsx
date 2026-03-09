@@ -34,6 +34,7 @@ import { getMemberDetails } from "@/actions/admin/get-member-details"
 import { updateMemberStatusAction } from "@/actions/admin/update-member-status"
 import { admitMemberAction } from "@/actions/admin/admit-member"
 import { sendProfileUpdateRequestAction } from "@/actions/admin/send-update-request"
+import { inviteMemberAction } from "@/actions/admin/invite-member"
 import { toast } from "sonner"
 
 interface MemberDetailsSheetProps {
@@ -101,6 +102,18 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
             toast.error(result.error || "Failed to send update request")
         }
         setSendingUpdateRequest(false)
+    }
+
+    const [inviting, setInviting] = useState(false)
+    async function handleInvite() {
+        setInviting(true)
+        const result = await inviteMemberAction(membershipId!)
+        if (result.success) {
+            toast.success("Account setup invitation sent successfully!")
+        } else {
+            toast.error(result.error || "Failed to send invitation")
+        }
+        setInviting(false)
     }
 
     const getStatusBadge = (status: string) => {
@@ -326,7 +339,19 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                                 <Button variant="outline" className="flex-1" onClick={onClose}>Close</Button>
                             </div>
                             {/* Secondary actions — always visible */}
-                            <div className="pt-1">
+                            <div className="pt-1 flex flex-col gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full text-slate-600 hover:text-primary hover:border-primary gap-2"
+                                    onClick={handleInvite}
+                                    disabled={inviting}
+                                >
+                                    {inviting
+                                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                                        : <Shield className="h-4 w-4" />}
+                                    {inviting ? "Sending..." : "Invite to Login / Setup Account"}
+                                </Button>
                                 <Button
                                     variant="outline"
                                     size="sm"

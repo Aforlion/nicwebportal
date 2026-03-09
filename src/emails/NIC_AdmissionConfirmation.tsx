@@ -18,6 +18,7 @@ interface NICAdmissionConfirmationEmailProps {
     fullName: string;
     coursesUrl?: string;
     loginUrl?: string;
+    resetUrl?: string;
 }
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
@@ -26,6 +27,7 @@ export const NICAdmissionConfirmationEmail = ({
     fullName,
     coursesUrl = `${baseUrl}/portal/student/courses`,
     loginUrl = `${baseUrl}/login`,
+    resetUrl,
 }: NICAdmissionConfirmationEmailProps) => (
     <Html>
         <Head />
@@ -60,15 +62,25 @@ export const NICAdmissionConfirmationEmail = ({
 
                     <Section style={infoBlock}>
                         <Heading as="h3" style={h3}>📋 What to do next</Heading>
-                        <Text style={stepText}>1. Log in to your student portal</Text>
-                        <Text style={stepText}>2. Browse our available courses and programmes</Text>
-                        <Text style={stepText}>3. Enrol in a course to begin your professional caregiver journey</Text>
-                        <Text style={stepText}>4. Complete your profile with updated personal information</Text>
+                        {resetUrl ? (
+                            <>
+                                <Text style={stepText}>1. Finalize your account by setting your password</Text>
+                                <Text style={stepText}>2. Browse our available courses and programmes</Text>
+                                <Text style={stepText}>3. Enrol in a course to begin your journey</Text>
+                            </>
+                        ) : (
+                            <>
+                                <Text style={stepText}>1. Log in to your student portal</Text>
+                                <Text style={stepText}>2. Browse our available courses and programmes</Text>
+                                <Text style={stepText}>3. Enrol in a course to begin your professional caregiver journey</Text>
+                                <Text style={stepText}>4. Complete your profile with updated personal information</Text>
+                            </>
+                        )}
                     </Section>
 
                     <Section style={ctaSection}>
-                        <Button href={coursesUrl} style={button}>
-                            Browse &amp; Register for a Course →
+                        <Button href={resetUrl || coursesUrl} style={button}>
+                            {resetUrl ? "Set Up Your Account & Password →" : "Browse & Register for a Course →"}
                         </Button>
                     </Section>
 

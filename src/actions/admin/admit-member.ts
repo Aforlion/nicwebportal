@@ -8,6 +8,7 @@ import { sendEmail } from "@/lib/email"
 import { NICAdmissionConfirmationEmail } from "@/emails/NIC_AdmissionConfirmation"
 import * as React from "react"
 import { env } from "@/env"
+import { createClient as createAdminClient } from "@supabase/supabase-js"
 
 export async function admitMemberAction(profileId: string) {
   await requireAdmin()
@@ -65,15 +66,33 @@ export async function admitMemberAction(profileId: string) {
       return { success: false, error: `Failed to update membership status: ${result.error.message}` }
     }
 
-    // 3. Send admission email
+    // 3. Send admission email & trigger account setup (Consolidated & Reliable)
     const baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org'
+
+    // Generate the recovery/setup link using Admin API
+    const supabaseAdmin = createAdminClient(
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
+    const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: profile.email,
+      options: {
+        redirectTo: `${env.NEXT_PUBLIC_APP_URL}/portal/profile/reset-password`
+      }
+    })
+
+    // Send the consolidated confirmation email
     await sendEmail({
       to: profile.email,
       subject: 'Congratulations! Your NIC Student Application Has Been Approved',
       template: React.createElement(NICAdmissionConfirmationEmail, {
         fullName: profile.full_name,
         coursesUrl: `${baseUrl}/portal/student/courses`,
-        loginUrl: `${baseUrl}/login`
+        loginUrl: `${baseUrl}/login`,
+        resetUrl: linkData?.properties?.action_link
       })
     })
 

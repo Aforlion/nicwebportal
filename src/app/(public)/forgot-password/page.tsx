@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Mail, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react"
+import { requestPasswordResetAction } from "@/actions/auth/request-reset"
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("")
@@ -22,15 +23,14 @@ export default function ForgotPasswordPage() {
         setError("")
 
         try {
-            const supabase = createClient()
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/auth/callback?next=/portal/profile/reset-password`,
-            })
-
-            if (error) throw error
+            const { success, error: resetError } = await requestPasswordResetAction(email)
+            if (!success) {
+                setError(resetError || "Failed to send reset email")
+                return
+            }
             setSuccess(true)
         } catch (error: any) {
-            setError(error.message || "Failed to send reset email")
+            setError("An unexpected error occurred. Please try again.")
         } finally {
             setLoading(false)
         }

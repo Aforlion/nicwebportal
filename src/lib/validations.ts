@@ -77,6 +77,7 @@ export const IndividualRegistrationSchema = z.object({
     state: z.string().min(1, "State is required"),
     city: z.string().min(1, "City is required"),
     category: z.enum(['student', 'associate', 'full', 'professional']),
+    password: z.string().min(8, "Password must be at least 8 characters"),
 })
 
 export const FacilityRegistrationSchema = z.object({
