@@ -54,7 +54,8 @@ export async function inviteMemberAction(profileId: string) {
             subject: 'Action Required: Set Up Your NIC Member Portal Account',
             template: React.createElement(NICWelcomeEmail, {
                 fullName: profile.full_name,
-                loginUrl: linkData?.properties?.action_link || `${baseUrl}/login`
+                loginUrl: linkData?.properties?.action_link || `${baseUrl}/login`,
+                mode: 'invitation'
             })
         })
 

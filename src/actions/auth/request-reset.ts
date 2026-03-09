@@ -23,15 +23,21 @@ export async function requestPasswordResetAction(email: string) {
         )
 
         // 2. Check if user exists and get their profile name
+        console.log(`[requestPasswordResetAction] Checking profile for: ${email}`)
         const cookieStore = await cookies()
         const supabase = createServerClient(cookieStore)
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('full_name')
             .eq('email', email)
             .single()
 
+        if (profileError) {
+            console.warn(`[requestPasswordResetAction] Profile check warning (might not exist):`, profileError.message)
+        }
+
         // 3. Generate the recovery link
+        console.log(`[requestPasswordResetAction] Generating recovery link for: ${email}`)
         const { data, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
             type: 'recovery',
             email: email,
@@ -42,22 +48,31 @@ export async function requestPasswordResetAction(email: string) {
 
         if (linkError) {
             console.error("[requestPasswordResetAction] Link Generation Error:", linkError)
-            // Still return success to prevent email enumeration, or return a generic message
-            return { success: true }
+            return { success: false, error: `Auth link error: ${linkError.message}` }
         }
 
         // 4. Send custom email via Resend
         if (data?.properties?.action_link) {
-            await sendPasswordResetEmail(
+            console.log(`[requestPasswordResetAction] Sending email via Resend to: ${email}`)
+            const emailResult = await sendPasswordResetEmail(
                 email,
                 profile?.full_name || "Member",
                 data.properties.action_link
             )
+
+            if (!emailResult.success) {
+                console.error("[requestPasswordResetAction] Resend Error:", emailResult.error)
+                return { success: false, error: `Email delivery error: ${JSON.stringify(emailResult.error)}` }
+            }
+            console.log(`[requestPasswordResetAction] Email sent successfully.`)
+        } else {
+            console.error("[requestPasswordResetAction] No action link generated in properties")
+            return { success: false, error: "Failed to generate access link" }
         }
 
         return { success: true }
     } catch (err: any) {
         console.error("[requestPasswordResetAction] Unexpected Error:", err)
-        return { success: false, error: "An unexpected error occurred" }
+        return { success: false, error: `Unexpected error: ${err.message}` }
     }
 }

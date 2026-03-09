@@ -10,6 +10,7 @@ import {
     Preview,
     Section,
     Text,
+    Button,
 } from '@react-email/components';
 import * as React from 'react';
 
@@ -17,6 +18,7 @@ interface NICWelcomeEmailProps {
     fullName: string;
     temporaryPassword?: string;
     loginUrl?: string;
+    mode?: 'welcome' | 'invitation';
 }
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
@@ -25,6 +27,7 @@ export const NICWelcomeEmail = ({
     fullName,
     temporaryPassword,
     loginUrl = `${baseUrl}/login`,
+    mode = 'welcome',
 }: NICWelcomeEmailProps) => (
     <Html>
         <Head />
@@ -40,22 +43,36 @@ export const NICWelcomeEmail = ({
                         style={logo}
                     />
                 </Section>
-                <Heading style={h1}>Registration Successful!</Heading>
+                <Heading style={h1}>
+                    {mode === 'invitation' ? "Account Setup Required" : "Registration Successful!"}
+                </Heading>
                 <Text style={textBody}>
-                    Thank you for joining the <strong>National Institute of Caregivers (NIC)</strong>.
+                    {mode === 'invitation'
+                        ? "You have been invited to access the National Institute of Caregivers (NIC) member portal."
+                        : `Thank you for joining the National Institute of Caregivers (NIC).`
+                    }
                 </Text>
 
                 <Section style={sectionsContainer}>
                     <Section style={infoBlock}>
-                        <Heading as="h3" style={h3}>{temporaryPassword ? "Temporary Access Details" : "Account Access"}</Heading>
+                        <Heading as="h3" style={h3}>
+                            {mode === 'invitation' ? "Complete Your Setup" : (temporaryPassword ? "Temporary Access Details" : "Account Access")}
+                        </Heading>
                         <Text style={stepText}>
-                            {temporaryPassword
-                                ? "Your account has been created. Use the details below to access your portal for the first time:"
-                                : "Your account has been successfully created. You can now access your portal using the link below:"
+                            {mode === 'invitation'
+                                ? "Click the button below to set your password and access your profile."
+                                : (temporaryPassword
+                                    ? "Your account has been created. Use the details below to access your portal for the first time:"
+                                    : "Your account has been successfully created. You can now access your portal using the link below:")
                             }
                         </Text>
                         <Section style={accessBox}>
-                            <Text style={accessText}><strong>Login URL:</strong> <Link href={loginUrl} style={link}>{loginUrl}</Link></Text>
+                            <Section style={{ textAlign: 'center' as const, margin: '16px 0' }}>
+                                <Button href={loginUrl} style={buttonStyle}>
+                                    {mode === 'invitation' ? "Set Up Account & Password" : "Access Your Portal"}
+                                </Button>
+                            </Section>
+
                             {temporaryPassword && (
                                 <Text style={accessText}><strong>Temporary Password:</strong> <code style={code}>{temporaryPassword}</code></Text>
                             )}
@@ -159,10 +176,22 @@ const infoBlock = {
 
 const accessBox = {
     backgroundColor: '#f4f7fa',
-    padding: '16px',
-    borderRadius: '8px',
-    margin: '12px 0',
+    padding: '24px 16px',
+    borderRadius: '12px',
+    margin: '16px 0',
     border: '1px solid #e1e8ed',
+};
+
+const buttonStyle = {
+    backgroundColor: '#0d3b66',
+    borderRadius: '8px',
+    color: '#fff',
+    fontSize: '15px',
+    fontWeight: 'bold',
+    textDecoration: 'none',
+    textAlign: 'center' as const,
+    display: 'inline-block',
+    padding: '12px 24px',
 };
 
 const accessText = {
