@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { GoogleAnalytics } from "@/components/google-analytics";
+import { MetaPixel } from "@/components/meta-pixel";
 import { CookieConsent } from "@/components/cookie-consent";
 import { Toaster } from "sonner";
 
@@ -30,6 +31,7 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased`}
       >
         <GoogleAnalytics ga_id="G-BQTQWF4DVY" />
+        <MetaPixel />
         {children}
         <CookieConsent />
         <Toaster position="top-right" />
