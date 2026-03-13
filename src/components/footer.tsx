@@ -22,9 +22,9 @@ export function Footer() {
                             The National Institute of Caregivers (NIC) is Nigeria&apos;s leading professional body for caregiving training, regulation, and advocacy.
                         </p>
                         <div className="flex space-x-4">
-                            <Link href="#" className="hover:text-accent transition-colors"><Facebook className="h-5 w-5" /></Link>
-                            <Link href="#" className="hover:text-accent transition-colors"><Twitter className="h-5 w-5" /></Link>
-                            <Link href="#" className="hover:text-accent transition-colors"><Instagram className="h-5 w-5" /></Link>
+                            <Link href="https://facebook.com/nicnaija" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors"><Facebook className="h-5 w-5" /></Link>
+                            <Link href="https://x.com/nicnaija" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors"><Twitter className="h-5 w-5" /></Link>
+                            <Link href="https://instagram.com/NICNigeria" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors"><Instagram className="h-5 w-5" /></Link>
                             <Link href="#" className="hover:text-accent transition-colors"><Linkedin className="h-5 w-5" /></Link>
                         </div>
                     </div>

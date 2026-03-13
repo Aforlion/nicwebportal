@@ -34,19 +34,19 @@ function SuccessContent() {
                         </li>
                         <li className="flex items-start gap-2">
                             <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] mt-0.5">2</div>
-                            Complete your KYC documentation (if required).
+                            Access your orientation course and materials.
                         </li>
                         <li className="flex items-start gap-2">
                             <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] mt-0.5">3</div>
-                            Access your member portal to view your status.
+                            Claim your digital certificate upon completion.
                         </li>
                     </ul>
                 </div>
 
                 <div className="flex flex-col gap-3">
                     <Button asChild className="bg-primary h-12 text-lg">
-                        <Link href={type === 'founding' ? '/onboard/founding' : '/login'}>
-                            Continue Registration <ArrowRight className="ml-2 h-5 w-5" />
+                        <Link href={type === 'founding' ? '/onboard/founding' : (type === 'individual' ? '/courses' : '/login')}>
+                            {type === 'individual' ? 'Start Orientation Course' : 'Continue Registration'} <ArrowRight className="ml-2 h-5 w-5" />
                         </Link>
                     </Button>
                     <Button variant="ghost" asChild>

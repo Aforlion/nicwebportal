@@ -36,10 +36,16 @@ const STEPS = [
     { id: 4, name: "Payment", icon: CreditCard },
 ]
 
-export function MemberRegistrationForm() {
-    const [currentStep, setCurrentStep] = useState(1)
+export function MemberRegistrationForm({
+    lockCategory,
+    isGraduate
+}: {
+    lockCategory?: string,
+    isGraduate?: boolean
+}) {
+    const [currentStep, setCurrentStep] = useState(lockCategory ? 2 : 1)
     const [formData, setFormData] = useState({
-        category: "",
+        category: lockCategory || "",
         fullName: "",
         email: "",
         phone: "",
@@ -134,15 +140,15 @@ export function MemberRegistrationForm() {
                 <CardHeader>
                     <CardTitle>
                         {currentStep === 1 && "Select Membership Category"}
-                        {currentStep === 2 && "Personal Information"}
-                        {currentStep === 3 && "Upload Documents"}
+                        {currentStep === 2 && (isGraduate ? "Graduate Student Onboarding" : "Personal Information")}
+                        {currentStep === 3 && (isGraduate ? "Academic Records" : "Upload Documents")}
                         {currentStep === 4 && "Payment & Confirmation"}
                     </CardTitle>
                     <CardDescription>
                         {currentStep === 1 && "Choose the membership category that best fits your professional status"}
-                        {currentStep === 2 && "Provide your personal and professional details"}
-                        {currentStep === 3 && "Upload required documents for verification"}
-                        {currentStep === 4 && "Complete payment to activate your membership"}
+                        {currentStep === 2 && (isGraduate ? "Complete your professional profile as a NIC graduate" : "Provide your personal and professional details")}
+                        {currentStep === 3 && (isGraduate ? "Upload your credentials for professional verification" : "Upload required documents for verification")}
+                        {currentStep === 4 && "Complete payment to activate your membership and access orientation"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -409,7 +415,7 @@ export function MemberRegistrationForm() {
                         <Button
                             variant="outline"
                             onClick={handlePrevious}
-                            disabled={currentStep === 1}
+                            disabled={currentStep === (lockCategory ? 2 : 1)}
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Previous

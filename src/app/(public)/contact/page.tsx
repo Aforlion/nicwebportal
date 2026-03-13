@@ -1,7 +1,8 @@
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { MapPin, Phone, Mail, Clock, Send } from "lucide-react"
+import { MapPin, Phone, Mail, Clock, Send, Facebook, Twitter, Instagram } from "lucide-react"
 
 export default function ContactPage() {
     return (
@@ -112,6 +113,21 @@ export default function ContactPage() {
                                 <p className="text-sm text-muted-foreground">
                                     Interested in partnering with the National Institute of Caregivers? Please send a formal proposal to <span className="font-medium text-primary">info@nicnigeria.com</span>
                                 </p>
+                            </div>
+
+                            <div className="rounded-2xl border bg-primary/5 p-8">
+                                <h3 className="mb-4 font-bold text-secondary">Follow Our Community</h3>
+                                <div className="flex gap-4">
+                                    <Link href="https://facebook.com/nicnaija" target="_blank" rel="noopener noreferrer" className="h-10 w-10 flex items-center justify-center rounded-full bg-white shadow-sm hover:text-primary transition-colors text-slate-600">
+                                        <Facebook className="h-5 w-5" />
+                                    </Link>
+                                    <Link href="https://x.com/nicnaija" target="_blank" rel="noopener noreferrer" className="h-10 w-10 flex items-center justify-center rounded-full bg-white shadow-sm hover:text-primary transition-colors text-slate-600">
+                                        <Twitter className="h-5 w-5" />
+                                    </Link>
+                                    <Link href="https://instagram.com/NICNigeria" target="_blank" rel="noopener noreferrer" className="h-10 w-10 flex items-center justify-center rounded-full bg-white shadow-sm hover:text-primary transition-colors text-slate-600">
+                                        <Instagram className="h-5 w-5" />
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     </div>
