@@ -12,6 +12,13 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion"
 import { CollapsibleRichText } from "@/components/ui/collapsible-rich-text"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
@@ -113,17 +120,51 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                                             </div>
                                             <div className="divide-y">
                                                 {[...(module.lessons || [])].sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => (
-                                                    <div key={lesson.id} className="px-6 py-3 flex items-center justify-between hover:bg-muted/10 transition-colors">
-                                                        <div className="flex items-center gap-3">
-                                                            {lesson.is_preview ? (
-                                                                <PlayCircle className="h-4 w-4 text-primary" />
-                                                            ) : (
-                                                                <Lock className="h-4 w-4 text-muted-foreground" />
-                                                            )}
-                                                            <span className={lesson.is_preview ? "text-foreground font-medium" : "text-muted-foreground"}>{lesson.title}</span>
-                                                        </div>
+                                                    <div key={lesson.id} className="px-6 py-3 flex items-center justify-between hover:bg-muted/10 transition-colors group/lesson">
+                                                        {lesson.is_preview ? (
+                                                            <Dialog>
+                                                                <DialogTrigger className="flex flex-1 items-center gap-3 text-left hover:text-primary transition-colors focus:outline-none">
+                                                                    <PlayCircle className="h-4 w-4 text-primary shrink-0" />
+                                                                    <span className="text-foreground font-medium group-hover/lesson:underline">{lesson.title}</span>
+                                                                </DialogTrigger>
+                                                                <DialogContent className="max-w-4xl p-0 overflow-hidden bg-background">
+                                                                    <DialogHeader className="p-6 pb-2 border-b bg-muted/20">
+                                                                        <DialogTitle className="text-xl">{lesson.title}</DialogTitle>
+                                                                        <div className="text-sm border rounded-full px-2 py-0.5 w-fit text-primary font-medium mt-2 bg-primary/10">Free Preview</div>
+                                                                    </DialogHeader>
+                                                                    <div className="p-6 overflow-y-auto max-h-[80vh] space-y-6">
+                                                                        {lesson.video_url && (
+                                                                            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-md">
+                                                                                <iframe
+                                                                                    src={lesson.video_url}
+                                                                                    className="w-full h-full border-0"
+                                                                                    allowFullScreen
+                                                                                    title={lesson.title}
+                                                                                />
+                                                                            </div>
+                                                                        )}
+                                                                        {lesson.content ? (
+                                                                            <div className="prose max-w-none">
+                                                                                <RichText content={lesson.content} />
+                                                                            </div>
+                                                                        ) : (
+                                                                            !lesson.video_url && (
+                                                                                <div className="text-center py-12 text-muted-foreground border-dashed border-2 rounded-lg">
+                                                                                    No content available for this preview.
+                                                                                </div>
+                                                                            )
+                                                                        )}
+                                                                    </div>
+                                                                </DialogContent>
+                                                            </Dialog>
+                                                        ) : (
+                                                            <div className="flex flex-1 items-center gap-3">
+                                                                <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+                                                                <span className="text-muted-foreground line-clamp-1">{lesson.title}</span>
+                                                            </div>
+                                                        )}
                                                         {lesson.duration_minutes && (
-                                                            <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded-full">
+                                                            <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded-full shrink-0 ml-4">
                                                                 {lesson.duration_minutes} min
                                                             </span>
                                                         )}

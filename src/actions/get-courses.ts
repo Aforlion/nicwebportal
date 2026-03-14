@@ -52,6 +52,8 @@ export async function getCourseBySlug(slug: string) {
                         id,
                         title,
                         slug,
+                        content,
+                        video_url,
                         duration_minutes,
                         is_preview,
                         sort_order
