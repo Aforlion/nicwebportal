@@ -21,9 +21,22 @@ export async function getPublishedCourses() {
     return courses
 }
 
+import { createServerClient } from "@supabase/ssr"
+
 export async function getCourseBySlug(slug: string) {
     const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
+    // Use service role key to bypass RLS for curriculum fetching,
+    // as public users need to see the syllabus but RLS on modules blocks anon.
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            cookies: {
+                getAll: () => cookieStore.getAll(),
+                setAll: () => { },
+            }
+        }
+    )
 
     const { data: course, error } = await supabase
         .from('courses')
