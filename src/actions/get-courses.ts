@@ -58,10 +58,11 @@ export async function getCourseBySlug(slug: string) {
     // Flatten modular structure
     if (course.course_modules) {
         course.modules = course.course_modules
+            .filter((cm: any) => cm.module)
             .map((cm: any) => ({
                 ...cm.module,
                 sort_order: cm.sort_order,
-                lessons: (cm.module.lessons || []).sort((a: any, b: any) => Number(a.sort_order) - Number(b.sort_order))
+                lessons: [...(cm.module.lessons || [])].sort((a: any, b: any) => Number(a.sort_order) - Number(b.sort_order))
             }))
             .sort((a: any, b: any) => Number(a.sort_order) - Number(b.sort_order))
     }

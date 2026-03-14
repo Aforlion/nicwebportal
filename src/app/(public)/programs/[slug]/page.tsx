@@ -112,7 +112,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                                                 )}
                                             </div>
                                             <div className="divide-y">
-                                                {(module.lessons || []).sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => (
+                                                {[...(module.lessons || [])].sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => (
                                                     <div key={lesson.id} className="px-6 py-3 flex items-center justify-between hover:bg-muted/10 transition-colors">
                                                         <div className="flex items-center gap-3">
                                                             {lesson.is_preview ? (
