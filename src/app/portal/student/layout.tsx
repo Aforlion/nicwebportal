@@ -1,5 +1,6 @@
 import { PortalSidebar } from "@/components/portal-sidebar";
 import { getUserProfile } from "@/lib/auth";
+import { AutoLogout } from "@/components/auto-logout";
 
 export default async function StudentLayout({
     children,
@@ -17,6 +18,7 @@ export default async function StudentLayout({
 
     return (
         <div className="flex min-h-screen bg-muted/20">
+            <AutoLogout timeoutMinutes={60} />
             <PortalSidebar role="student" />
             <div className="flex-grow pl-64">
                 {/* Portal Header */}

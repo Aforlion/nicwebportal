@@ -3,6 +3,7 @@
 import { PortalSidebar } from "@/components/portal-sidebar";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
+import { AutoLogout } from "@/components/auto-logout";
 
 export default function FacilityLayout({
     children,
@@ -32,6 +33,7 @@ export default function FacilityLayout({
 
     return (
         <div className="flex min-h-screen bg-muted/20">
+            <AutoLogout timeoutMinutes={30} />
             <PortalSidebar role="facility" />
             <div className="flex-grow pl-64">
                 {/* Portal Header */}

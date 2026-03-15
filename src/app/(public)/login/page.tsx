@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react"
+import { toast } from "sonner"
 
 import { loginAction } from "@/lib/actions/auth"
 
@@ -17,12 +18,23 @@ function LoginForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const redirect = searchParams.get('redirect') || '/portal/member'
+    const expired = searchParams.get('expired')
 
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
     const [showPassword, setShowPassword] = useState(false)
+
+    useEffect(() => {
+        if (expired === 'true') {
+            toast.error("Session Expired", {
+                description: "You have been logged out due to inactivity."
+            })
+            // Remove the param from the URL visually without triggering a reload
+            router.replace('/login', { scroll: false })
+        }
+    }, [expired, router])
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()

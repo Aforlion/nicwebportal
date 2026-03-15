@@ -1,5 +1,6 @@
 import { PortalSidebar } from "@/components/portal-sidebar";
 import { getUserProfile, getMembership } from "@/lib/auth";
+import { AutoLogout } from "@/components/auto-logout";
 
 export default async function MemberLayout({
     children,
@@ -14,7 +15,7 @@ export default async function MemberLayout({
 
     const initials = displayName
         .split(' ')
-        .filter(n => n)
+        .filter((n: string) => n)
         .map((n: string) => n[0])
         .slice(0, 2)
         .join('')
@@ -22,6 +23,7 @@ export default async function MemberLayout({
 
     return (
         <div className="flex min-h-screen bg-muted/20">
+            <AutoLogout timeoutMinutes={30} />
             <PortalSidebar role="member" />
             <div className="flex-grow pl-64">
                 {/* Portal Header */}
