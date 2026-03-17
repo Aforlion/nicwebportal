@@ -22,8 +22,7 @@ export async function getMemberProfile() {
                 status,
                 is_active,
                 expiry_date,
-                created_at,
-                verified_at
+                created_at
             )
         `)
         .eq('id', user.id)
@@ -48,13 +47,18 @@ export async function getMemberProfile() {
             experience: profile.years_experience || '',
             membershipCategory: membership?.category || '',
             memberID: membership?.nic_id || 'Pending',
-            joinedDate: membership?.created_at ? new Date(membership.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '',
-            expiryDate: membership?.expiry_date ? new Date(membership.expiry_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '',
+            joinedDate: membership?.created_at
+                ? new Date(membership.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                : 'Pending',
+            expiryDate: membership?.expiry_date
+                ? new Date(membership.expiry_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                : 'Pending',
             status: membership?.is_active ? 'Active' : 'Inactive',
             membershipId: membership?.id
         }
     }
 }
+
 
 export async function updateMemberProfile(formData: any) {
     const cookieStore = await cookies()

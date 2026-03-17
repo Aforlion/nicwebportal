@@ -46,6 +46,7 @@ export default function PaystackPaymentHandler({
         email: email,
         amount: amount * 100, // Paystack works in kobo
         publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
+        split_code: "SPL_8b8sZKPgRb",
         metadata: {
             ...metadata,
             custom_fields: metadata.custom_fields || []

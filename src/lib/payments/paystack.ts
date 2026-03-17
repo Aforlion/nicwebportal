@@ -2,9 +2,8 @@
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_LIVE_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY
 
-if (!PAYSTACK_SECRET_KEY) {
-    console.warn("PAYSTACK_SECRET_KEY is not defined in environment variables.")
-}
+const PAYSTACK_SPLIT_CODE = 'SPL_8b8sZKPgRb'
+
 
 /**
  * Initialize a Paystack transaction
@@ -30,6 +29,7 @@ export async function initializeTransaction(
                 email,
                 amount: amount * 100, // Paystack expects amount in kobo
                 metadata,
+                split_code: PAYSTACK_SPLIT_CODE,
                 callback_url: callbackUrl || `${process.env.NEXT_PUBLIC_SITE_URL || ''}/payment/verify`,
             }),
         })

@@ -71,9 +71,13 @@ export async function getMemberDashboardData() {
             nicId: membership.nic_id,
             category: membership.category,
             status: membership.is_active ? 'ACTIVE' : 'INACTIVE',
-            joined: new Date(membership.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-            expiry: new Date(membership.expiry_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-            renewalDate: membership.expiry_date
+            joined: membership.created_at
+                ? new Date(membership.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                : 'Pending',
+            expiry: membership.expiry_date
+                ? new Date(membership.expiry_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                : 'Pending',
+            renewalDate: membership.expiry_date || null
         },
         cpd: {
             points: totalCPDPoints,
