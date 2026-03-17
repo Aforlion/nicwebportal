@@ -127,7 +127,7 @@ export async function finalizeRegistrationAction(reference: string) {
                 logger.error("Registration record not found", { pendingId, error: pError });
                 return { success: false, message: "Registration record not found." }
             }
-            if (pending.status === 'completed') {
+            if (pending.status === 'completed' || pending.status === 'paid') {
                 logger.info("Registration already completed", { pendingId });
                 return { success: true, message: "Already completed." }
             }
@@ -141,6 +141,12 @@ export async function finalizeRegistrationAction(reference: string) {
                 return { success: false, message: "Invalid form data: " + err.message };
             }
 
+            // Map category to role appropriately
+            let assignedRole = 'member';
+            if (fd.category === 'student') {
+                assignedRole = 'student';
+            }
+
             // 3. Create User Account in Supabase Auth
             const { error: signUpError } = await supabase.auth.signUp({
                 email: email,
@@ -148,7 +154,7 @@ export async function finalizeRegistrationAction(reference: string) {
                 options: {
                     data: {
                         full_name: fd.fullName,
-                        role: 'student'
+                        role: assignedRole
                     }
                 }
             });
@@ -161,7 +167,7 @@ export async function finalizeRegistrationAction(reference: string) {
             await supabase
                 .from('pending_registrations')
                 .update({
-                    status: 'paid',
+                    status: 'completed', // Using completed to match facility behavior and ensure idempotency
                     payment_reference: reference,
                 })
                 .eq('id', pendingId)
