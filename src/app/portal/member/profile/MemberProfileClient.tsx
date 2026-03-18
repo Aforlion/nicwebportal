@@ -105,15 +105,26 @@ export default function MemberProfileClient({ initialData }: MemberProfileClient
                 .from('avatars')
                 .getPublicUrl(filePath)
 
-            // Save the URL to the profiles table
-            const { error: updateError } = await supabase
+            // Update Profiles table (avatar_url)
+            const { error: profileUpdateError } = await supabase
                 .from('profiles')
-                .update({ photo_url: publicUrl })
+                .update({ avatar_url: publicUrl })
                 .eq('id', user.id)
 
-            if (updateError) {
-                console.error("Profile photo_url update error:", updateError)
-                toast.error("Photo uploaded but failed to save. Please try again.")
+            if (profileUpdateError) {
+                console.error("Profile avatar_url update error:", profileUpdateError)
+                // Continue anyway as we'll try membership next
+            }
+
+            // Update Memberships table (photo_url)
+            const { error: membershipUpdateError } = await supabase
+                .from('memberships')
+                .update({ photo_url: publicUrl })
+                .eq('user_id', user.id)
+
+            if (membershipUpdateError) {
+                console.error("Membership photo_url update error:", membershipUpdateError)
+                toast.error("Photo uploaded but failed to save to membership. Please contact support.")
                 return
             }
 

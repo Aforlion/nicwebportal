@@ -22,7 +22,13 @@ export async function getMemberProfile() {
                 status,
                 is_active,
                 expiry_date,
-                created_at
+                created_at,
+                address,
+                date_of_birth,
+                gender,
+                qualification,
+                years_of_experience,
+                photo_url
             )
         `)
         .eq('id', user.id)
@@ -40,11 +46,12 @@ export async function getMemberProfile() {
             fullName: profile.full_name,
             email: profile.email,
             phone: profile.phone || '',
-            address: profile.address || '',
-            dateOfBirth: profile.date_of_birth || '',
-            gender: profile.gender || '',
-            qualification: profile.qualifications || '',
-            experience: profile.years_experience || '',
+            // Fetch from membership instead of profile
+            address: membership?.address || '',
+            dateOfBirth: membership?.date_of_birth || '',
+            gender: membership?.gender || '',
+            qualification: membership?.qualification || '',
+            experience: membership?.years_of_experience || '',
             membershipCategory: membership?.category || '',
             memberID: membership?.nic_id || 'Pending',
             joinedDate: membership?.created_at
@@ -55,7 +62,8 @@ export async function getMemberProfile() {
                 : 'Pending',
             status: membership?.is_active ? 'Active' : 'Inactive',
             membershipId: membership?.id,
-            photoUrl: profile.photo_url || null,
+            // Prioritize membership photo_url, fallback to profile avatar_url
+            photoUrl: membership?.photo_url || profile.avatar_url || null,
         }
     }
 }
@@ -68,23 +76,37 @@ export async function updateMemberProfile(formData: any) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Unauthorized' }
 
-    const { error } = await supabase
+    // 1. Update Profile table (basic info)
+    const { error: profileError } = await supabase
         .from('profiles')
         .update({
             full_name: formData.fullName,
             phone: formData.phone,
-            address: formData.address,
-            date_of_birth: formData.dateOfBirth,
-            gender: formData.gender,
-            qualifications: formData.qualification,
-            years_experience: formData.experience,
             updated_at: new Date().toISOString()
         })
         .eq('id', user.id)
 
-    if (error) {
-        console.error('Error updating profile:', error)
-        return { error: 'Failed to update profile' }
+    if (profileError) {
+        console.error('Error updating basic profile:', profileError)
+        return { error: 'Failed to update basic information' }
+    }
+
+    // 2. Update Memberships table (member details)
+    const { error: membershipError } = await supabase
+        .from('memberships')
+        .update({
+            address: formData.address,
+            date_of_birth: formData.dateOfBirth,
+            gender: formData.gender,
+            qualification: formData.qualification,
+            years_of_experience: formData.experience,
+            updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+
+    if (membershipError) {
+        console.error('Error updating membership info:', membershipError)
+        return { error: 'Failed to update member details' }
     }
 
     revalidatePath('/portal/member/profile')
