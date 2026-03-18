@@ -54,7 +54,8 @@ export async function getMemberProfile() {
                 ? new Date(membership.expiry_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
                 : 'Pending',
             status: membership?.is_active ? 'Active' : 'Inactive',
-            membershipId: membership?.id
+            membershipId: membership?.id,
+            photoUrl: profile.photo_url || null,
         }
     }
 }

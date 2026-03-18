@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, X, User } from "lucide-react"
+import { Menu, X, User, LogOut, LayoutDashboard, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     NavigationMenu,
@@ -19,6 +19,16 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { createClient } from "@/lib/supabase"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 const navItems = [
     { title: "Home", href: "/" },
@@ -61,8 +71,92 @@ const navItems = [
     },
 ]
 
+/** Determines the portal URL for a given user role */
+function getPortalHref(role?: string): string {
+    if (role === 'admin' || role === 'super_admin') return '/admin'
+    if (role === 'student') return '/portal/student'
+    if (role === 'facility_admin') return '/portal/facility'
+    return '/portal/member'
+}
+
+/** User avatar — shows initials in a coloured circle */
+function UserAvatar({ name }: { name: string }) {
+    const initials = name
+        .split(' ')
+        .filter(Boolean)
+        .map(n => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase() || 'U'
+
+    return (
+        <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+            {initials}
+        </div>
+    )
+}
+
 export function Navbar() {
     const [isOpen, setIsOpen] = React.useState(false)
+    const [user, setUser] = React.useState<SupabaseUser | null>(null)
+    const [userRole, setUserRole] = React.useState<string | undefined>()
+    const [displayName, setDisplayName] = React.useState<string>('')
+    const supabase = createClient()
+
+    React.useEffect(() => {
+        const initAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session?.user) {
+                setUser(session.user)
+                const fullName = session.user.user_metadata?.full_name as string | undefined
+                setDisplayName(fullName || session.user.email?.split('@')[0] || 'User')
+
+                // Fetch role from profiles table
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role, full_name')
+                    .eq('id', session.user.id)
+                    .single()
+                if (profile) {
+                    setUserRole(profile.role)
+                    if (profile.full_name) setDisplayName(profile.full_name)
+                }
+            }
+        }
+        initAuth()
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (session?.user) {
+                setUser(session.user)
+                const fullName = session.user.user_metadata?.full_name as string | undefined
+                setDisplayName(fullName || session.user.email?.split('@')[0] || 'User')
+
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role, full_name')
+                    .eq('id', session.user.id)
+                    .single()
+                if (profile) {
+                    setUserRole(profile.role)
+                    if (profile.full_name) setDisplayName(profile.full_name)
+                }
+            } else {
+                setUser(null)
+                setUserRole(undefined)
+                setDisplayName('')
+            }
+        })
+
+        return () => subscription.unsubscribe()
+    }, [])
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut()
+        window.location.href = '/'
+    }
+
+    const portalHref = getPortalHref(userRole)
+    const firstName = displayName.split(' ')[0]
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -126,12 +220,48 @@ export function Navbar() {
                     </NavigationMenu>
 
                     <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="sm" asChild>
-                            <Link href="/login" className="flex items-center gap-2">
-                                <User className="h-4 w-4" />
-                                Login
-                            </Link>
-                        </Button>
+                        {user ? (
+                            // Logged-in user menu
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-secondary hover:bg-muted transition-colors focus:outline-none">
+                                        <UserAvatar name={displayName} />
+                                        <span className="max-w-[120px] truncate">{firstName}</span>
+                                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel className="font-normal">
+                                        <div className="flex flex-col space-y-1">
+                                            <p className="text-sm font-semibold">{displayName}</p>
+                                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                                        </div>
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <Link href={portalHref} className="cursor-pointer">
+                                            <LayoutDashboard className="mr-2 h-4 w-4" />
+                                            My Dashboard
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        onClick={handleLogout}
+                                        className="text-destructive focus:text-destructive cursor-pointer"
+                                    >
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        Log Out
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <Button variant="ghost" size="sm" asChild>
+                                <Link href="/login" className="flex items-center gap-2">
+                                    <User className="h-4 w-4" />
+                                    Login
+                                </Link>
+                            </Button>
+                        )}
                         <Button size="sm" asChild className="bg-primary hover:bg-primary/90">
                             <Link href="/programs">Enrol Now</Link>
                         </Button>
@@ -187,12 +317,38 @@ export function Navbar() {
                         </Accordion>
                         <hr className="my-4" />
                         <div className="flex flex-col gap-3">
-                            <Button variant="outline" className="w-full justify-start gap-2" asChild onClick={() => setIsOpen(false)}>
-                                <Link href="/login">
-                                    <User className="h-4 w-4" />
-                                    Login
-                                </Link>
-                            </Button>
+                            {user ? (
+                                <>
+                                    <div className="flex items-center gap-3 px-1 py-2">
+                                        <UserAvatar name={displayName} />
+                                        <div>
+                                            <p className="text-sm font-semibold">{displayName}</p>
+                                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                                        </div>
+                                    </div>
+                                    <Button variant="outline" className="w-full justify-start gap-2" asChild onClick={() => setIsOpen(false)}>
+                                        <Link href={portalHref}>
+                                            <LayoutDashboard className="h-4 w-4" />
+                                            My Dashboard
+                                        </Link>
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-start gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+                                        onClick={() => { setIsOpen(false); handleLogout() }}
+                                    >
+                                        <LogOut className="h-4 w-4" />
+                                        Log Out
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button variant="outline" className="w-full justify-start gap-2" asChild onClick={() => setIsOpen(false)}>
+                                    <Link href="/login">
+                                        <User className="h-4 w-4" />
+                                        Login
+                                    </Link>
+                                </Button>
+                            )}
                             <Button className="w-full bg-primary" asChild onClick={() => setIsOpen(false)}>
                                 <Link href="/programs">Enrol Now</Link>
                             </Button>

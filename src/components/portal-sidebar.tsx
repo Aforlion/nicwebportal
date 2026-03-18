@@ -16,10 +16,11 @@ import {
     Users,
     UserPlus,
     Contact,
-    ShieldCheck,
     FileText,
     History,
-    CheckSquare
+    CheckSquare,
+    Globe,
+    ExternalLink
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -36,8 +37,6 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
             const supabase = createClient()
             const { error } = await supabase.auth.signOut()
             if (error) throw error
-
-            // Use window.location for a clean state reset on logout
             window.location.href = '/login'
         } catch (error: any) {
             console.error("Logout failed:", error)
@@ -104,6 +103,25 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
                 </nav>
 
                 <div className="mt-auto space-y-1 border-t pt-4">
+                    {/* Course & website shortcuts */}
+                    <Link
+                        href="/programs"
+                        className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+                    >
+                        <BookOpen className="h-5 w-5" />
+                        <span>Browse Courses</span>
+                    </Link>
+                    <Link
+                        href="/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-secondary"
+                    >
+                        <Globe className="h-5 w-5" />
+                        <span className="flex items-center gap-1">
+                            Visit Website <ExternalLink className="h-3 w-3 ml-1" />
+                        </span>
+                    </Link>
                     <Link
                         href={`/portal/${role}/settings`}
                         className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-secondary"
