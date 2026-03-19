@@ -5,13 +5,15 @@ import { Badge } from "@/components/ui/badge"
 import { PlayCircle, Clock, Award, ArrowRight, ShieldCheck, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { getStudentDashboardData } from "@/actions/get-student-progress"
+import { CPDProgress } from "@/components/student/cpd-progress"
+import { CertificationPathway } from "@/components/student/certification-pathway"
 
 import { ErrorBoundary } from "@/components/error-boundary"
 
 export const dynamic = 'force-dynamic'
 
 export default async function StudentDashboard() {
-    const { enrollments, recent, events, tip } = await getStudentDashboardData()
+    const { enrollments, recent, events, tip, cpdCredits, currentLevel } = await getStudentDashboardData()
 
     return (
         <ErrorBoundary>
@@ -141,6 +143,10 @@ export default async function StudentDashboard() {
 
                     {/* Sidebar content for Dashboard */}
                     <div className="space-y-6">
+                        <CPDProgress currentCredits={cpdCredits || 0} level={currentLevel || 1} />
+                        
+                        <CertificationPathway currentLevel={currentLevel || 1} />
+
                         <h2 className="text-xl font-bold text-secondary">Upcoming</h2>
                         <Card>
                             <CardHeader className="pb-3">

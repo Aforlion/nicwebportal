@@ -16,11 +16,13 @@ import {
     Briefcase
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { AccreditationTracker } from "@/components/facility/accreditation-tracker"
 
 export default function FacilityDashboard() {
     const [loading, setLoading] = useState(true)
     const [facility, setFacility] = useState<any>(null)
     const [staffCount, setStaffCount] = useState(0)
+    const [pillarScores, setPillarScores] = useState<any[]>([])
     const supabase = createClient()
 
     useEffect(() => {
@@ -51,6 +53,24 @@ export default function FacilityDashboard() {
                     .eq('is_active', true)
 
                 setStaffCount(count || 0)
+
+                // 3. Fetch Inspection Scores
+                const { data: scores } = await supabase
+                    .from('inspection_scores')
+                    .select('pillar_name, score')
+                    .eq('facility_id', facData.id)
+                    .order('created_at', { ascending: false })
+
+                if (scores) {
+                    // Group by pillar name to get the latest score per pillar
+                    const uniqueScores = Array.from(new Set(scores.map(s => s.pillar_name)))
+                        .map(name => {
+                            const match = scores.find(s => s.pillar_name === name)
+                            return match ? { name: match.pillar_name, score: match.score } : null
+                        })
+                        .filter((s): s is { name: string, score: number } => s !== null)
+                    setPillarScores(uniqueScores)
+                }
             }
         } catch (err) {
             console.error("Error fetching facility dashboard:", err)
@@ -206,6 +226,13 @@ export default function FacilityDashboard() {
                             </Button>
                         </CardContent>
                     </Card>
+
+                    <AccreditationTracker 
+                        level={facility.accreditation_level} 
+                        grade={facility.grade}
+                        expiryDate={facility.license_expiry}
+                        pillarScores={pillarScores}
+                    />
 
                     <Card>
                         <CardHeader>

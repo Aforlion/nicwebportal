@@ -56,10 +56,43 @@ export async function getStudentDashboardData() {
         tip = "Start your first lesson today! Even 15 minutes of study moves you closer to certification."
     }
 
+    // Fetch CPD credits for current year
+    let cpdCredits = 0
+    try {
+        const currentYear = new Date().getFullYear()
+        const { data: cpdData } = await supabase
+            .from('cpd_records')
+            .select('credits')
+            .eq('user_id', user.id)
+            .eq('year', currentYear)
+
+        if (cpdData) {
+            cpdCredits = cpdData.reduce((acc: number, curr: any) => acc + curr.credits, 0)
+        }
+    } catch (e) {
+        console.warn('CPD records table may not exist yet:', e)
+    }
+
+    // Determine current level based on highest completed course level
+    // Fallback to Level 1 if no courses completed
+    let currentLevel = 1
+    const completedLevels = enrollments
+        .filter((e: any) => e.status === 'completed' && e.course?.level)
+        .map((e: any) => {
+            const levelMatch = e.course.level.match(/Level (\d+)/i)
+            return levelMatch ? parseInt(levelMatch[1]) : 1
+        })
+    
+    if (completedLevels.length > 0) {
+        currentLevel = Math.max(...completedLevels)
+    }
+
     return {
         enrollments,
         recent: activeEnrollment || null,
         events: events || [],
-        tip
+        tip,
+        cpdCredits,
+        currentLevel
     }
 }

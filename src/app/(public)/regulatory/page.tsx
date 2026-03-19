@@ -9,8 +9,10 @@ import {
     FileText,
     ArrowRight,
     Gavel,
-    CheckCircle2
+    CheckCircle2,
+    Building2
 } from "lucide-react"
+import { AccreditationSystem } from "@/components/accreditation-system"
 import { Button } from "@/components/ui/button"
 
 export default function RegulatoryLandingPage() {
@@ -112,6 +114,32 @@ export default function RegulatoryLandingPage() {
                                 ))}
                             </div>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Accreditation System Deep-dive */}
+            <section className="pb-20">
+                <div className="container mx-auto px-4">
+                    <AccreditationSystem />
+                </div>
+            </section>
+
+            {/* Facility CTA */}
+            <section className="bg-secondary py-20 text-white">
+                <div className="container mx-auto px-4 text-center">
+                    <Building2 className="h-16 w-16 mx-auto mb-6 text-accent" />
+                    <h2 className="text-3xl font-bold mb-4">Start Your Accreditation Journey</h2>
+                    <p className="text-slate-300 max-w-2xl mx-auto mb-8">
+                        Join the national registry of accredited care facilities and establish your institution as a leader in healthcare quality.
+                    </p>
+                    <div className="flex justify-center gap-4">
+                        <Button size="lg" className="bg-primary hover:bg-primary/90" asChild>
+                            <Link href="/portal/facility/apply">Apply for Accreditation</Link>
+                        </Button>
+                        <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10" asChild>
+                            <Link href="/contact">Speak to an Inspector</Link>
+                        </Button>
                     </div>
                 </div>
             </section>
