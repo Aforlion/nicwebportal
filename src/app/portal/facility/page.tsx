@@ -9,7 +9,7 @@ import {
     ShieldCheck,
     AlertTriangle,
     ArrowRight,
-    History,
+    History as HistoryIcon,
     MapPin,
     Building2,
     CalendarCheck,
@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AccreditationTracker } from "@/components/facility/accreditation-tracker"
+import Image from "next/image"
 
 export default function FacilityDashboard() {
     const [loading, setLoading] = useState(true)
@@ -96,11 +97,21 @@ export default function FacilityDashboard() {
     )
 
     return (
-        <div className="space-y-8">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-secondary">Institutional Dashboard</h1>
-                    <p className="text-muted-foreground">Manage {facility.name} registration and staff compliance.</p>
+        <div className="space-y-8 relative overflow-hidden">
+            {/* Decorative Background Coat of Arms */}
+            <div className="absolute top-0 right-0 w-64 h-64 opacity-[0.03] pointer-events-none -translate-y-12 translate-x-12">
+                <Image src="/coat-of-arm.png" alt="" width={300} height={300} />
+            </div>
+
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between relative z-10">
+                <div className="flex items-center gap-4">
+                    <div className="hidden sm:block p-2 bg-white rounded-xl border shadow-sm">
+                        <Image src="/coat-of-arm.png" alt="COA" width={48} height={48} />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-bold text-secondary">Institutional Dashboard</h1>
+                        <p className="text-muted-foreground">Manage {facility.name} registration and staff compliance.</p>
+                    </div>
                 </div>
                 <div className="flex gap-2">
                     <Badge variant="outline" className={`h-8 px-4 text-xs font-bold ${facility.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
@@ -241,7 +252,7 @@ export default function FacilityDashboard() {
                         <CardContent className="p-0">
                             <div className="divide-y">
                                 <div className="p-4 flex gap-3 hover:bg-muted/30 transition-colors">
-                                    <History className="h-4 w-4 mt-1 text-muted-foreground" />
+                                    <HistoryIcon className="h-4 w-4 mt-1 text-muted-foreground" />
                                     <div>
                                         <p className="text-xs font-medium text-secondary">Facility registered successfully</p>
                                         <p className="text-[10px] text-muted-foreground">{new Date(facility.created_at).toLocaleDateString()}</p>

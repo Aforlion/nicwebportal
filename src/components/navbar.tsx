@@ -163,14 +163,24 @@ export function Navbar() {
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 <div className="flex items-center gap-2">
-                    <Link href="/" className="flex items-center space-x-2">
-                        <Image
-                            src="/logo.jpg"
-                            alt="NIC Logo"
-                            width={40}
-                            height={40}
-                            className="h-10 w-auto rounded"
-                        />
+                    <Link href="/" className="flex items-center space-x-3">
+                        <div className="flex items-center gap-1.5">
+                            <Image
+                                src="/coat-of-arm.png"
+                                alt="Official Coat of Arms"
+                                width={32}
+                                height={32}
+                                className="h-8 w-auto"
+                            />
+                            <div className="h-8 w-[1px] bg-slate-200 mx-1 hidden sm:block" />
+                            <Image
+                                src="/logo.jpg"
+                                alt="NIC Logo"
+                                width={40}
+                                height={40}
+                                className="h-10 w-auto rounded"
+                            />
+                        </div>
                         <span className="text-2xl font-bold tracking-tighter text-primary">
                             NIC
                         </span>

@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { PlayCircle, Clock, Award, ArrowRight, ShieldCheck, BookOpen } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { getStudentDashboardData } from "@/actions/get-student-progress"
 import { CPDProgress } from "@/components/student/cpd-progress"
 import { CertificationPathway } from "@/components/student/certification-pathway"
@@ -17,14 +18,24 @@ export default async function StudentDashboard() {
 
     return (
         <ErrorBoundary>
-            <div className="space-y-8">
+            <div className="space-y-8 relative overflow-hidden">
+                {/* Decorative Background Coat of Arms */}
+                <div className="absolute top-0 right-0 w-64 h-64 opacity-[0.03] pointer-events-none -translate-y-12 translate-x-12">
+                    <Image src="/coat-of-arm.png" alt="" width={300} height={300} />
+                </div>
+
                 {/* Welcome Header */}
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-secondary">Welcome back!</h1>
-                        <p className="text-muted-foreground">
-                            You have {enrollments.filter((e: any) => e.status === 'active').length} courses in progress.
-                        </p>
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between relative z-10">
+                    <div className="flex items-center gap-4">
+                        <div className="hidden sm:block p-2 bg-white rounded-xl border shadow-sm">
+                            <Image src="/coat-of-arm.png" alt="COA" width={48} height={48} />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold text-secondary">Welcome back!</h1>
+                            <p className="text-muted-foreground">
+                                You have {enrollments.filter((e: any) => e.status === 'active').length} courses in progress.
+                            </p>
+                        </div>
                     </div>
                     {recent && (
                         <Button className="bg-primary" asChild>

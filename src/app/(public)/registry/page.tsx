@@ -1,6 +1,7 @@
 import { getAccreditedFacilities } from "@/actions/public-registry"
 import { RegistryClient } from "@/components/registry-client"
 import { Building2, ShieldCheck, Map } from "lucide-react"
+import Image from "next/image"
 
 export default async function RegistryPage() {
     const facilities = await getAccreditedFacilities()
@@ -8,9 +9,14 @@ export default async function RegistryPage() {
     return (
         <div className="min-h-screen bg-slate-50/50">
             {/* Hero Section */}
-            <div className="bg-secondary px-6 py-16 md:py-24 text-center">
-                <div className="max-w-4xl mx-auto space-y-6">
-                    <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-white/90 text-xs font-bold uppercase tracking-widest backdrop-blur-sm border border-white/10">
+            <div className="bg-secondary px-6 py-16 md:py-24 text-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-64 h-64 opacity-5 pointer-events-none -translate-x-1/4 -translate-y-1/4">
+                    <Image src="/coat-of-arm.png" alt="" width={300} height={300} />
+                </div>
+                <div className="max-w-4xl mx-auto space-y-6 relative z-10">
+                    <div className="inline-flex items-center gap-3 bg-white/10 px-4 py-2 rounded-full text-white/90 text-xs font-bold uppercase tracking-widest backdrop-blur-sm border border-white/10">
+                        <Image src="/coat-of-arm.png" alt="COA" width={20} height={20} />
+                        <div className="h-4 w-[1px] bg-white/20" />
                         <ShieldCheck className="h-4 w-4 text-emerald-400" />
                         Official NIC Accreditation Registry
                     </div>
