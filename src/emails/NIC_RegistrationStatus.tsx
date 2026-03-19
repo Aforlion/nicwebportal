@@ -74,7 +74,7 @@ export const NICRegistrationStatusEmail = ({
                                 </Section>
                             )}
                             <Text style={text}>
-                                You can now access your full member portal to download your digital membership card, access training materials, and track your CPD points.
+                                You can now access your professional member portal to download your digital membership card, access training materials, and track your CPD points.
                             </Text>
                             <Section style={btnContainer}>
                                 <Link href={portalUrl} style={button}>Access Your Portal</Link>

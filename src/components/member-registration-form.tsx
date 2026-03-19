@@ -26,7 +26,7 @@ import { savePendingRegistrationAction } from "@/lib/actions/registration"
 const MEMBERSHIP_CATEGORIES = [
     { id: "student", name: "Student Member", fee: 5000, description: "For enrolled students" },
     { id: "associate", name: "Associate Member", fee: 25000, description: "Less than 3 years experience" },
-    { id: "full", name: "Full Member (MNIC)", fee: 50000, description: "3+ years experience" },
+    { id: "full", name: "Professional Member (MNIC)", fee: 50000, description: "3+ years experience" },
 ]
 
 const STEPS = [

@@ -34,6 +34,7 @@ export const adminNavItems = [
     // { title: "Payments", href: "/admin/payments", icon: CreditCard }, // Disabled until route exists
     { title: "Inspections", href: "/admin/inspections", icon: FileCheck },
     { title: "News & Events", href: "/admin/news", icon: Newspaper },
+    { title: "Resources", href: "/admin/resources", icon: BookOpen },
     { title: "Advocacy/Docs", href: "/admin/advocacy", icon: FileText },
     { title: "Gallery", href: "/admin/gallery", icon: ImageIcon },
     { title: "Reports", href: "/admin/reports", icon: BarChart3 },

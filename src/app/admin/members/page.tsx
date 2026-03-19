@@ -228,7 +228,7 @@ function AdminMembersContent() {
                                 <option value="student">Student</option>
                                 <option value="professional">Professional</option>
                                 <option value="associate">Associate</option>
-                                <option value="full">Full Member</option>
+                                <option value="full">Professional Member</option>
                                 <option value="trainer">Trainer</option>
                                 <option value="institutional">Institutional</option>
                             </select>
@@ -333,7 +333,7 @@ function AdminMembersContent() {
                                                     <td className="px-6 py-4">
                                                         <p className="font-mono text-xs font-medium text-slate-600 tracking-tight">{member.memberID}</p>
                                                         <Badge variant="outline" className="mt-1 font-normal text-[10px] bg-slate-50 border-slate-200 text-slate-500 capitalize px-1.5 py-0">
-                                                            {member.category}
+                                                            {member.category === 'full' ? 'professional' : member.category}
                                                         </Badge>
                                                     </td>
                                                     <td className="px-6 py-4 text-center">{getStatusBadge(member.status)}</td>

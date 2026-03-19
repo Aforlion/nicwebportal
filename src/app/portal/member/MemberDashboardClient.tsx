@@ -52,7 +52,7 @@ export default function MemberDashboardClient({ data }: MemberDashboardClientPro
                                 <div>
                                     <div className="flex gap-2 mb-2 flex-wrap">
                                         <Badge variant="secondary" className="font-bold border-none px-3 uppercase text-secondary">
-                                            {member.category} MEMBER
+                                            {member.category === 'full' ? 'PROFESSIONAL' : member.category} MEMBER
                                         </Badge>
                                         {member.nicId?.includes('FND') && (
                                             <Badge variant="warning" className="font-black border-none px-3 animate-pulse text-secondary">

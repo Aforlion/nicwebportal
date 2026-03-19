@@ -105,10 +105,17 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
                 <div className="mt-auto space-y-1 border-t pt-4">
                     {/* Course & website shortcuts */}
                     <Link
+                        href="/resources"
+                        className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-secondary"
+                    >
+                        <BookOpen className="h-5 w-5" />
+                        <span>Knowledge Center</span>
+                    </Link>
+                    <Link
                         href="/programs"
                         className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
                     >
-                        <BookOpen className="h-5 w-5" />
+                        <GraduationCap className="h-5 w-5" />
                         <span>Browse Courses</span>
                     </Link>
                     <Link

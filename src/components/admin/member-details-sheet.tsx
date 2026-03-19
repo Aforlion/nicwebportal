@@ -154,7 +154,9 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                                     <p className="text-2xl font-bold font-serif" aria-hidden="true">{data.profile?.full_name}</p>
                                     <div className="flex items-center gap-2">
                                         <p className="text-sm text-slate-500 font-mono">{data.nic_id || "No ID assigned"}</p>
-                                        <Badge variant="secondary" className="capitalize">{data.category}</Badge>
+                                        <Badge variant="secondary" className="capitalize">
+                                            {data.category === 'full' ? 'professional' : data.category}
+                                        </Badge>
                                     </div>
                                 </div>
                                 {getStatusBadge(data.status)}

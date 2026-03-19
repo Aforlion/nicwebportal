@@ -128,7 +128,7 @@ export default function ReportsClient({ data }: ReportsClientProps) {
                         </div>
                         <div className="space-y-3">
                             {[
-                                { label: "Full Members", count: breakdown.full, color: "bg-primary" },
+                                { label: "Professional Members", count: breakdown.full, color: "bg-primary" },
                                 { label: "Associate", count: breakdown.associate, color: "bg-accent" },
                                 { label: "Students", count: breakdown.student, color: "bg-slate-200" },
                             ].map((item) => (

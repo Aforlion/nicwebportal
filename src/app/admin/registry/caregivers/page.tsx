@@ -403,7 +403,7 @@ export default function AdminRegistryPage() {
                                 <option value="all">All Categories</option>
                                 <option value="student">Student</option>
                                 <option value="associate">Associate</option>
-                                <option value="full">Full Member</option>
+                                <option value="full">Professional Member</option>
                                 <option value="trainer">Trainer</option>
                             </select>
                             <Button variant="outline" onClick={handleExport}>
@@ -462,7 +462,9 @@ export default function AdminRegistryPage() {
                                             </span>
                                         </td>
                                         <td className="p-4">
-                                            <Badge variant="secondary" className="capitalize text-[10px]">{caregiver.category}</Badge>
+                                            <Badge variant="secondary" className="capitalize text-[10px]">
+                                                {caregiver.category === 'full' ? 'professional' : caregiver.category}
+                                            </Badge>
                                         </td>
                                         <td className="p-4">
                                             <Badge className={getStatusColor(caregiver.compliance_status)}>

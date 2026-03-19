@@ -25,7 +25,7 @@ const categories = [
     },
     {
         id: "full",
-        title: "Full Member (MNIC)",
+        title: "Professional Member (MNIC)",
         description: "The standard professional designation for experienced, certified caregivers.",
         eligibility: "HCA certification + 3 years experience or Degree in Related field + 1 year experience.",
         fee: "₦50,000 / Year",

@@ -60,13 +60,14 @@ const navItems = [
     },
     { title: "Verify", href: "/verify" },
     {
-        title: "Resources",
-        href: "/store",
+        title: "Knowledge Center",
+        href: "/resources",
         children: [
-            { title: "Digital Store", href: "/store" },
+            { title: "Browse Resources", href: "/resources" },
             { title: "Advocacy & Research", href: "/advocacy" },
             { title: "Media Gallery", href: "/gallery" },
             { title: "News & Events", href: "/news" },
+            { title: "Digital Store", href: "/store" },
         ]
     },
 ]
