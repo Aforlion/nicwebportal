@@ -24,7 +24,7 @@ export async function getDashboardStats() {
             // Certified Members (Active)
             supabase.from('memberships').select('*', { count: 'exact', head: true }).eq('status', 'active'),
             // Active Programs (Published)
-            supabase.from('programs').select('*', { count: 'exact', head: true }).eq('is_published', true),
+            supabase.from('programs').select('*', { count: 'exact', head: true }).eq('is_active', true),
             // Pending Verifications
             supabase.from('pending_registrations').select('*', { count: 'exact', head: true }).eq('status', 'paid'),
             // Total Revenue

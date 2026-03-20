@@ -18,14 +18,14 @@ import {
   ChevronRight, 
   ChevronLeft,
   AlertCircle,
-  SafetyCone
+  Construction
 } from "lucide-react"
 
 const STEPS = [
   { id: 1, title: "Governance", icon: Building2 },
   { id: 2, title: "Staffing", icon: Users },
   { id: 3, title: "Care Practice", icon: Heart },
-  { id: 4, title: "Safety", icon: SafetyCone },
+  { id: 4, title: "Safety", icon: Construction },
   { id: 5, title: "Safeguarding", icon: ShieldCheck },
   { id: 6, title: "Documentation", icon: FileText },
 ]

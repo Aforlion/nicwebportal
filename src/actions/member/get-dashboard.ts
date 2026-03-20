@@ -49,8 +49,8 @@ export async function getMemberDashboardData() {
 
     const totalCPDPoints = cpdData?.reduce((sum, a) => sum + Number(a.points || 0), 0) || 0
     const recentLogs = cpdData?.slice(0, 2).map(a => ({
-        title: a.activity_name,
-        date: new Date(a.date_completed).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        title: a.title, // Fixed column name
+        date: new Date(a.activity_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), // Fixed column name
         points: `+${a.points}`
     })) || []
 
@@ -58,8 +58,8 @@ export async function getMemberDashboardData() {
     const { data: payments } = await supabase
         .from('payments')
         .select('*')
-        .eq('user_id', user.id)
-        .eq('category', 'membership_fee')
+        .eq('membership_id', membership.id) // Fixed column name
+        .eq('payment_type', 'membership_fee') // Fixed column name
         // Check if there's a payment for the current year cycle
         .gte('payment_date', new Date(new Date().getFullYear(), 0, 1).toISOString())
 

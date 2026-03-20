@@ -181,7 +181,7 @@ export default async function StudentDashboard() {
                                                 <div>
                                                     <h4 className="text-sm font-bold text-secondary leading-tight">{event.title}</h4>
                                                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                                        <Clock className="h-3 w-3" /> {time} • <Badge variant="outline" className="text-[10px] h-4 py-0 leading-none">{event.category.toUpperCase()}</Badge>
+                                                        <Clock className="h-3 w-3" /> {time} • <Badge variant="outline" className="text-[10px] h-4 py-0 leading-none">{event.type.toUpperCase()}</Badge>
                                                     </p>
                                                 </div>
                                             </div>

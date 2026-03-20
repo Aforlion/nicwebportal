@@ -24,6 +24,7 @@ export default function FacilityDashboard() {
     const [facility, setFacility] = useState<any>(null)
     const [staffCount, setStaffCount] = useState(0)
     const [pillarScores, setPillarScores] = useState<any[]>([])
+    const [docs, setDocs] = useState<{document_name: string, status: string}[]>([])
     const supabase = createClient()
 
     useEffect(() => {
@@ -45,34 +46,48 @@ export default function FacilityDashboard() {
 
             setFacility(facData)
 
-            if (facData) {
-                // 2. Fetch Staff Count
-                const { count } = await supabase
-                    .from('facility_staff')
-                    .select('*', { count: 'exact', head: true })
+        if (facData) {
+            // 2. Fetch Staff Count
+            const { count } = await supabase
+                .from('facility_staff')
+                .select('*', { count: 'exact', head: true })
+                .eq('facility_id', facData.id)
+                .eq('is_active', true)
+
+            setStaffCount(count || 0)
+
+            // 3. Fetch Latest Inspection Scores
+            const { data: scores } = await supabase
+                .from('inspection_scores')
+                .select('pillar, score')
+                .eq('inspection_id', (
+                    await supabase
+                    .from('inspections')
+                    .select('id')
                     .eq('facility_id', facData.id)
-                    .eq('is_active', true)
+                    .order('conducted_at', { ascending: false })
+                    .limit(1)
+                    .single()
+                ).data?.id)
 
-                setStaffCount(count || 0)
-
-                // 3. Fetch Inspection Scores
-                const { data: scores } = await supabase
-                    .from('inspection_scores')
-                    .select('pillar_name, score')
-                    .eq('facility_id', facData.id)
-                    .order('created_at', { ascending: false })
-
-                if (scores) {
-                    // Group by pillar name to get the latest score per pillar
-                    const uniqueScores = Array.from(new Set(scores.map(s => s.pillar_name)))
-                        .map(name => {
-                            const match = scores.find(s => s.pillar_name === name)
-                            return match ? { name: match.pillar_name, score: match.score } : null
-                        })
-                        .filter((s): s is { name: string, score: number } => s !== null)
-                    setPillarScores(uniqueScores)
-                }
+            if (scores) {
+                setPillarScores(scores.map(s => ({ name: s.pillar, score: s.score })))
             }
+
+            // 4. Fetch Documents Status
+            const { data: docData } = await supabase
+                .from('documents')
+                .select('document_name, status')
+                .eq('membership_id', (
+                    await supabase
+                    .from('memberships')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .single()
+                ).data?.id)
+            
+            if (docData) setDocs(docData)
+        }
         } catch (err) {
             console.error("Error fetching facility dashboard:", err)
         } finally {
@@ -139,7 +154,7 @@ export default function FacilityDashboard() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Compliance Score</p>
-                                <p className="text-2xl font-bold text-emerald-600">{facility.compliance_score || 0}%</p>
+                                <p className="text-2xl font-bold text-emerald-600">{facility.score || 0}%</p>
                             </div>
                             <ShieldCheck className="h-8 w-8 text-emerald-600" />
                         </div>
@@ -220,20 +235,26 @@ export default function FacilityDashboard() {
                             <CardTitle className="text-sm">Compliance Status</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between text-xs">
-                                <span>Regulatory License</span>
-                                <Badge className="bg-emerald-100 text-emerald-700 border-none px-2 h-5">VALID</Badge>
-                            </div>
-                            <div className="flex items-center justify-between text-xs">
-                                <span>Insurance Policy</span>
-                                <Badge className="bg-emerald-100 text-emerald-700 border-none px-2 h-5">VALID</Badge>
-                            </div>
-                            <div className="flex items-center justify-between text-xs">
-                                <span>Fire Safety Cert</span>
-                                <Badge className="bg-yellow-100 text-yellow-700 border-none px-2 h-5">EXPIRING</Badge>
-                            </div>
-                            <Button className="w-full text-xs" variant="outline" size="sm">
-                                Manage Documents
+                            {[
+                                { name: "Regulatory License", type: "license" },
+                                { name: "Insurance Policy", type: "insurance" },
+                                { name: "Fire Safety Cert", type: "fire_safety" }
+                            ].map(item => {
+                                const doc = docs.find(d => d.document_name.toLowerCase().includes(item.type))
+                                const status = doc?.status?.toUpperCase() || "MISSING"
+                                return (
+                                    <div key={item.name} className="flex items-center justify-between text-xs">
+                                        <span>{item.name}</span>
+                                        <Badge className={`border-none px-2 h-5 ${
+                                            status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' :
+                                            status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                            'bg-red-100 text-red-700'
+                                        }`}>{status}</Badge>
+                                    </div>
+                                )
+                            })}
+                            <Button className="w-full text-xs" variant="outline" size="sm" asChild>
+                                <a href="/portal/facility/settings">Manage Documents</a>
                             </Button>
                         </CardContent>
                     </Card>

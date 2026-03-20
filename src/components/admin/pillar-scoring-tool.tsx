@@ -15,7 +15,7 @@ import {
   FileText, 
   CheckCircle2, 
   AlertCircle,
-  SafetyCone,
+  Construction,
   Save,
   ChevronRight,
   ChevronLeft
@@ -28,7 +28,7 @@ const PILLARS = [
   { name: "Governance", icon: Building2, desc: "Leadership, policies, and organizational structure." },
   { name: "Staffing", icon: Users, desc: "Qualification levels, ratios, and training compliance." },
   { name: "Care Practice", icon: Heart, desc: "Personalized care plans and patient dignity." },
-  { name: "Environment", icon: SafetyCone, desc: "Facility safety, risk assessment, and cleanliness." },
+  { name: "Environment", icon: Construction, desc: "Facility safety, risk assessment, and cleanliness." },
   { name: "Safeguarding", icon: ShieldCheck, desc: "Vulnerable adult protection and reporting." },
   { name: "Documentation", icon: FileText, desc: "Record keeping, audits, and quality assurance." },
 ]
@@ -102,7 +102,7 @@ export function PillarScoringTool({ facilityId, inspectorId }: { facilityId: str
   const currentPillar = PILLARS[step]
   const Icon = currentPillar.icon
 
-  const avgScore = Object.values(scores).reduce((acc: any, curr: any) => acc + curr.score, 0) / PILLARS.length
+  const avgScore = (Object.values(scores) as any[]).reduce((acc: any, curr: any) => acc + curr.score, 0) / PILLARS.length
 
   return (
     <div className="grid lg:grid-cols-3 gap-8">

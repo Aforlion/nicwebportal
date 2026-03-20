@@ -36,11 +36,11 @@ export async function getStudentDashboardData() {
     // Determined "Continue Learning" (most recent active course)
     const activeEnrollment = enrollments.find((e: any) => e.status === 'active')
 
-    // Fetch upcoming events from news_events where category is event
+    // Fetch upcoming events from news_events where type is event
     const { data: events } = await supabase
         .from('news_events')
         .select('*')
-        .eq('category', 'event')
+        .eq('type', 'event')
         .gte('published_at', new Date().toISOString())
         .order('published_at', { ascending: true })
         .limit(2)

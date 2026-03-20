@@ -148,7 +148,7 @@ export async function finalizeRegistrationAction(reference: string) {
             }
 
             // 3. Create User Account in Supabase Auth
-            const { error: signUpError } = await supabase.auth.signUp({
+            const { data: authData, error: signUpError } = await supabase.auth.signUp({
                 email: email,
                 password: fd.password,
                 options: {
@@ -159,9 +159,27 @@ export async function finalizeRegistrationAction(reference: string) {
                 }
             });
 
-            if (signUpError) {
+            if (signUpError || !authData.user) {
                 logger.error("Student Auth Creation Error", { error: signUpError, email, pendingId });
-                return { success: false, message: "Failed to create account: " + signUpError.message };
+                return { success: false, message: "Failed to create account: " + (signUpError?.message || "User creation failed.") };
+            }
+
+            // 3.5 Create Membership Record
+            const { error: membershipError } = await supabase
+                .from('memberships')
+                .insert({
+                    user_id: authData.user.id,
+                    category: fd.category, // Matches DB enum now
+                    status: 'active',
+                    is_active: true,
+                    paid_at: new Date().toISOString(),
+                    last_payment_reference: reference,
+                    expiry_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
+                });
+
+            if (membershipError) {
+                logger.error("Membership Creation Error", { error: membershipError, email, pendingId });
+                // We'll continue anyway as auth is created, but log it
             }
 
             await supabase
@@ -246,6 +264,23 @@ export async function finalizeRegistrationAction(reference: string) {
 
             if (!result.success) {
                 return { success: false, message: result.error || "Failed to create facility record." }
+            }
+
+            // 4. Create Institutional Membership
+            const { error: membershipError } = await supabase
+                .from('memberships')
+                .insert({
+                    user_id: authData.user.id,
+                    category: 'institutional',
+                    status: 'active',
+                    is_active: true,
+                    paid_at: new Date().toISOString(),
+                    last_payment_reference: reference,
+                    expiry_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
+                });
+
+            if (membershipError) {
+                logger.error("Facility Membership Creation Error", { error: membershipError, pendingId });
             }
 
             // 4. Mark Pending as Completed
