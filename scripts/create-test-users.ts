@@ -78,7 +78,8 @@ async function createTestAccount(name: string, email: string, category: string, 
 async function main() {
   const users = [
     { name: 'Olamide Adigun', email: 'olamide.adigun@nic.org.ng', category: 'associate' },
-    { name: 'Tope Stephen', email: 'tope.stephen@nic.org.ng', category: 'professional' }
+    { name: 'Tope Stephen', email: 'tope.stephen@nic.org.ng', category: 'professional' },
+    { name: 'OKORIE CHINWENDU NNENA', email: 'okoriechiwendu@outlook.com', category: 'professional' }
   ]
 
   const results = []
