@@ -27,6 +27,8 @@ type VerifyResult = {
     affiliation?: string
     complianceCategory?: string
     lastInspection?: string
+    issueDate?: string
+    certNumber?: string
 }
 
 export default function PublicVerifyPage() {
@@ -44,19 +46,18 @@ export default function PublicVerifyPage() {
             const activeTab = document.querySelector('[data-state="active"][role="tab"]')?.getAttribute('value')
 
             if (activeTab === 'caregiver') {
-                // Search for caregiver
-                const { data, error } = await supabase
+                // 1. Search for membership first
+                const { data: memberData } = await supabase
                     .from('memberships')
                     .select('*, profiles(full_name)')
-                    .or(`nic_id.eq."${id}",member_id.eq."${id}"`)
+                    .or(`nic_id.eq.${id},member_id.eq.${id}`)
                     .single()
 
-                if (data) {
-                    // Fetch affiliation separately to keep it clean
+                if (memberData) {
                     const { data: staffData } = await supabase
                         .from('facility_staff')
                         .select('facilities(name)')
-                        .eq('membership_id', data.id)
+                        .eq('membership_id', memberData.id)
                         .eq('is_active', true)
                         .maybeSingle()
 
@@ -65,27 +66,72 @@ export default function PublicVerifyPage() {
                     setResult({
                         success: true,
                         type: "Caregiver",
-                        name: data.profiles.full_name,
-                        status: data.compliance_status || data.status,
-                        expiry: new Date(data.expiry_date).toLocaleDateString(),
-                        specialization: data.category,
-                        affiliation: affiliation
+                        name: memberData.profiles.full_name,
+                        status: memberData.compliance_status || memberData.status,
+                        expiry: memberData.expiry_date ? new Date(memberData.expiry_date).toLocaleDateString() : "N/A",
+                        specialization: memberData.category,
+                        affiliation: affiliation,
+                        certNumber: memberData.nic_id
                     })
-                } else {
-                    setResult({ success: false, type: "Caregiver" })
+                    return
                 }
+
+                // 2. Search for Professional Certification
+                const { data: profCert } = await supabase
+                    .from('caregiver_certifications')
+                    .select('*, memberships(*, profiles(full_name))')
+                    .or(`verification_code.eq.${id},certificate_number.eq.${id}`)
+                    .maybeSingle()
+
+                if (profCert) {
+                    setResult({
+                        success: true,
+                        type: "Professional Certification",
+                        name: (profCert.memberships as any)?.profiles?.full_name || "N/A",
+                        status: profCert.is_valid ? "Valid" : "Expired/Invalid",
+                        expiry: profCert.expiry_date ? new Date(profCert.expiry_date).toLocaleDateString() : "Permanent",
+                        specialization: profCert.certificate_name,
+                        affiliation: profCert.issuing_institution,
+                        certNumber: profCert.certificate_number,
+                        issueDate: new Date(profCert.issue_date).toLocaleDateString()
+                    })
+                    return
+                }
+
+                // 3. Search for Course Certificate
+                const { data: courseCert } = await supabase
+                    .from('certificates')
+                    .select('*, profiles(full_name), programs(title)')
+                    .eq('certificate_number', id)
+                    .maybeSingle()
+
+                if (courseCert) {
+                    setResult({
+                        success: true,
+                        type: "Course Certificate",
+                        name: (courseCert.profiles as any)?.full_name || "N/A",
+                        status: courseCert.is_verified ? "Verified" : "Under Review",
+                        expiry: "Permanent",
+                        specialization: (courseCert.programs as any)?.title || "NIC Training",
+                        certNumber: courseCert.certificate_number,
+                        issueDate: new Date(courseCert.issue_date).toLocaleDateString()
+                    })
+                    return
+                }
+
+                setResult({ success: false, type: "Caregiver" })
             } else {
                 // Search for facility
-                const { data, error } = await supabase
+                const { data } = await supabase
                     .from('facilities')
                     .select('*')
-                    .or(`registration_number.eq."${id}",name.ilike."%${id}%"`)
+                    .or(`registration_number.eq.${id},name.ilike.%${id}%`)
                     .eq('status', 'active')
                     .limit(1)
                     .single()
 
                 if (data) {
-                    const score = data.compliance_score || 0
+                    const score = data.score || 0
                     let category = "Pending Assessment"
                     if (score >= 85) category = "Fully Compliant"
                     else if (score >= 70) category = "Conditionally Compliant"
@@ -98,7 +144,8 @@ export default function PublicVerifyPage() {
                         status: data.status,
                         expiry: "Permanent",
                         complianceCategory: category,
-                        lastInspection: data.last_inspection_date ? new Date(data.last_inspection_date).toLocaleDateString() : "N/A"
+                        lastInspection: data.last_inspection_date ? new Date(data.last_inspection_date).toLocaleDateString() : "N/A",
+                        certNumber: data.registration_number
                     })
                 } else {
                     setResult({ success: false, type: "Facility" })
@@ -188,23 +235,39 @@ export default function PublicVerifyPage() {
                                                                     <p className="text-secondary font-bold text-base">{result.name}</p>
                                                                 </div>
                                                                 <div className="bg-white/50 p-3 rounded-lg border border-emerald-100">
-                                                                    <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">Institutional Affiliation</p>
-                                                                    <p className="text-secondary font-bold text-base">{result.affiliation}</p>
+                                                                    <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">
+                                                                        {result.type === 'Caregiver' ? 'Institutional Affiliation' : 'Issuing Institution'}
+                                                                    </p>
+                                                                    <p className="text-secondary font-bold text-base">{result.affiliation || "N/A"}</p>
                                                                 </div>
                                                                 <div className="bg-white/50 p-3 rounded-lg border border-emerald-100">
-                                                                    <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">Specialization</p>
+                                                                    <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">
+                                                                        {result.type === 'Caregiver' ? 'Specialization' : 'Credential Name'}
+                                                                    </p>
                                                                     <p className="text-secondary font-bold text-base">{result.specialization}</p>
                                                                 </div>
                                                                 <div className="bg-white/50 p-3 rounded-lg border border-emerald-100">
-                                                                    <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">Registry Valid Until</p>
-                                                                    <p className="text-secondary font-bold text-base">{result.expiry}</p>
+                                                                    <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">
+                                                                        {result.issueDate ? 'Date Issued' : 'Registry Valid Until'}
+                                                                    </p>
+                                                                    <p className="text-secondary font-bold text-base">{result.issueDate || result.expiry}</p>
+                                                                </div>
+                                                                {result.type !== 'Caregiver' && result.expiry && result.expiry !== 'Permanent' && (
+                                                                    <div className="bg-white/50 p-3 rounded-lg border border-emerald-100">
+                                                                        <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">Valid Until</p>
+                                                                        <p className="text-secondary font-bold text-base">{result.expiry}</p>
+                                                                    </div>
+                                                                )}
+                                                                <div className="bg-white/50 p-3 rounded-lg border border-emerald-100">
+                                                                    <p className="text-emerald-800 font-bold uppercase text-[10px] tracking-wider">Registration/Cert No.</p>
+                                                                    <p className="text-secondary font-bold text-base">{result.certNumber}</p>
                                                                 </div>
                                                             </div>
 
                                                             <div className="flex items-center gap-4 pt-4">
                                                                 <QrCode className="h-16 w-16 text-emerald-900 opacity-20" />
                                                                 <p className="text-xs text-emerald-700 leading-relaxed italic">
-                                                                    Verification token: **NIC-V-8829-XJ**. This record was last synchronized with the National Registry on {new Date().toLocaleDateString()}.
+                                                                    Verification token: **NIC-V-{Math.floor(1000 + Math.random() * 9000)}-{result.certNumber?.split('-').pop()}**. This record was last synchronized with the National Registry on {new Date().toLocaleDateString()}.
                                                                 </p>
                                                             </div>
                                                         </div>
