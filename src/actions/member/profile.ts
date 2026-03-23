@@ -109,6 +109,6 @@ export async function updateMemberProfile(formData: any) {
         return { error: 'Failed to update member details' }
     }
 
-    revalidatePath('/portal/member/profile')
+    revalidatePath('/portal', 'layout')
     return { success: true }
 }

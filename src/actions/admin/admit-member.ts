@@ -32,7 +32,7 @@ export async function admitMemberAction(profileId: string) {
     // We check for existence first because the database lacks a unique constraint on user_id for upsert
     const { data: existingMembership, error: checkError } = await supabase
       .from('memberships')
-      .select('id')
+      .select('id, nic_id')
       .eq('user_id', profileId)
       .maybeSingle()
 
@@ -41,14 +41,23 @@ export async function admitMemberAction(profileId: string) {
       return { success: false, error: `Database error checking existing record: ${checkError.message}` }
     }
 
+    const year = new Date().getFullYear()
+    const random = Math.random().toString(36).substring(2, 7).toUpperCase()
+    const new_nic_id = `NIC/MEM/${year}/${random}`
+
     let result;
     if (existingMembership) {
+      const updateData: any = {
+        status: 'active',
+        updated_at: new Date().toISOString()
+      }
+      if (!existingMembership.nic_id) {
+        updateData.nic_id = new_nic_id
+      }
+
       result = await supabase
         .from('memberships')
-        .update({
-          status: 'active',
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', existingMembership.id)
     } else {
       result = await supabase
@@ -57,6 +66,7 @@ export async function admitMemberAction(profileId: string) {
           user_id: profileId,
           status: 'active',
           category: 'student', // default for admitted members
+          nic_id: new_nic_id,
           joined_date: new Date().toISOString().split('T')[0]
         })
     }

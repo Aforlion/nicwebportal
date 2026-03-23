@@ -35,6 +35,7 @@ import { updateMemberStatusAction } from "@/actions/admin/update-member-status"
 import { admitMemberAction } from "@/actions/admin/admit-member"
 import { sendProfileUpdateRequestAction } from "@/actions/admin/send-update-request"
 import { inviteMemberAction } from "@/actions/admin/invite-member"
+import { assignNicIdAction } from "@/actions/admin/assign-nic-id"
 import { toast } from "sonner"
 
 interface MemberDetailsSheetProps {
@@ -89,6 +90,19 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
             if (onStatusUpdate) onStatusUpdate()
         } else {
             toast.error(result.error || "Failed to admit member")
+        }
+        setUpdating(false)
+    }
+
+    async function handleAssignNicId() {
+        setUpdating(true)
+        const result = await assignNicIdAction(membershipId!)
+        if (result.success) {
+            toast.success("NIC ID assigned successfully!")
+            await loadDetails()
+            if (onStatusUpdate) onStatusUpdate()
+        } else {
+            toast.error(result.error || "Failed to assign NIC ID")
         }
         setUpdating(false)
     }
@@ -336,6 +350,17 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                                     >
                                         {updating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
                                         Restore Active
+                                    </Button>
+                                )}
+                                {!data.nic_id && data.status === 'active' && (
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 border-blue-200"
+                                        onClick={handleAssignNicId}
+                                        disabled={updating}
+                                    >
+                                        {updating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Award className="h-4 w-4 mr-2" />}
+                                        Assign NIC ID
                                     </Button>
                                 )}
                                 <Button variant="outline" className="flex-1" onClick={onClose}>Close</Button>

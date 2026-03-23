@@ -45,6 +45,8 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
 
     const studentNavItems = [
         { title: "Dashboard", href: "/portal/student", icon: LayoutDashboard },
+        { title: "Profile", href: "/portal/student/profile", icon: User },
+        { title: "Documents", href: "/portal/student/documents", icon: FileText },
         { title: "My Courses", href: "/portal/student/courses", icon: BookOpen },
         { title: "Exams", href: "/portal/student/exams", icon: GraduationCap },
         { title: "Internship", href: "/portal/student/internship", icon: Calendar },
