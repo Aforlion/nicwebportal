@@ -73,19 +73,7 @@ export async function getStudentDashboardData() {
         console.warn('CPD records table may not exist yet:', e)
     }
 
-    // Determine current level based on highest completed course level
-    // Fallback to Level 1 if no courses completed
-    let currentLevel = 1
-    const completedLevels = enrollments
-        .filter((e: any) => e.status === 'completed' && e.course?.level)
-        .map((e: any) => {
-            const levelMatch = e.course.level.match(/Level (\d+)/i)
-            return levelMatch ? parseInt(levelMatch[1]) : 1
-        })
-    
-    if (completedLevels.length > 0) {
-        currentLevel = Math.max(...completedLevels)
-    }
+    const currentLevel = await getStudentLevel(supabase, user.id, enrollments)
 
     return {
         enrollments,
@@ -95,4 +83,38 @@ export async function getStudentDashboardData() {
         cpdCredits,
         currentLevel
     }
+}
+
+export async function getStudentLevel(supabase: any, userId: string, enrollments?: any[]) {
+    let localEnrollments: any[] = enrollments || []
+    
+    if (localEnrollments.length === 0) {
+        const { data } = await supabase
+            .from('enrollments')
+            .select('status, course:courses (level)')
+            .eq('user_id', userId)
+        localEnrollments = data || []
+    }
+
+    // Determine current level based on highest completed course level
+    // Fallback to Level 1 if no courses completed
+    let currentLevel = 1
+    const completedLevels = localEnrollments
+        .filter((e: any) => e.status === 'completed' && e.course?.level)
+        .map((e: any) => {
+            const levelMatch = e.course.level.match(/Level (\d+)/i)
+            if (levelMatch) return parseInt(levelMatch[1])
+            
+            // Map string levels
+            if (e.course.level === 'Foundation') return 1
+            if (e.course.level === 'Intermediate') return 2
+            if (e.course.level === 'Advanced') return 3
+            return 1
+        })
+    
+    if (completedLevels.length > 0) {
+        currentLevel = Math.max(...completedLevels)
+    }
+
+    return currentLevel
 }

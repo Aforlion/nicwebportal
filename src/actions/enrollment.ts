@@ -1,8 +1,8 @@
-'use server'
-
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
+import { getStudentLevel } from "./get-student-progress"
+import { isEligibleForCourse } from "@/lib/level-utils"
 import { redirect } from "next/navigation"
 import { sendEnrollmentEmail } from "@/lib/email"
 
@@ -40,6 +40,32 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
         if (!verifyData.status || verifyData.data.status !== 'success') {
             console.error("Payment not successful:", verifyData)
             return { error: verifyData.message || "Payment verification failed" }
+        }
+
+        // Check Eligibility
+        const { data: course } = await supabase
+            .from('courses')
+            .select('level')
+            .eq('id', courseId)
+            .single()
+
+        const { data: member } = await supabase
+            .from('memberships')
+            .select('category')
+            .eq('user_id', user.id)
+            .single()
+
+        const academicLevel = await getStudentLevel(supabase, user.id)
+        const eligibility = isEligibleForCourse({
+            membershipCategory: member?.category || 'student',
+            academicLevel,
+            courseLevel: course?.level || 'Foundation'
+        })
+
+        if (!eligibility.eligible) {
+            return {
+                error: `Prerequisite Required: You must complete ${eligibility.requiredLevel} or upgrade your membership to enroll in this course.`
+            }
         }
 
         // 2. Check if already enrolled
@@ -107,15 +133,35 @@ export async function enrollFreeCourse(courseId: string) {
         return { error: "User not authenticated" }
     }
 
-    // Verify course is actually free
+    // Verify course is actually free and check level
     const { data: course } = await supabase
         .from('courses')
-        .select('price')
+        .select('price, level')
         .eq('id', courseId)
         .single()
 
     if (!course || course.price > 0) {
         return { error: "This course is not free" }
+    }
+
+    // Check Eligibility
+    const { data: member } = await supabase
+        .from('memberships')
+        .select('category')
+        .eq('user_id', user.id)
+        .single()
+
+    const academicLevel = await getStudentLevel(supabase, user.id)
+    const eligibility = isEligibleForCourse({
+        membershipCategory: member?.category || 'student',
+        academicLevel,
+        courseLevel: course.level || 'Foundation'
+    })
+
+    if (!eligibility.eligible) {
+        return {
+            error: `Prerequisite Required: You must complete ${eligibility.requiredLevel} or upgrade your membership to enroll in this course.`
+        }
     }
 
     // Check if already enrolled

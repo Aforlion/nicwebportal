@@ -2,6 +2,8 @@
 
 import React from "react"
 import { cn } from "@/lib/utils"
+import parse, { HTMLReactParserOptions, Element } from 'html-react-parser'
+import { StudentChartView } from "./student-chart-view"
 
 interface RichTextProps {
     content: string
@@ -11,12 +13,44 @@ interface RichTextProps {
 export function RichText({ content, className }: RichTextProps) {
     if (!content) return null
 
-    // Simple parser for basic formatting
+    // Check if content is HTML (from new Tiptap editor) or legacy Markdown string
+    const isHtml = /<[a-z][\s\S]*>/i.test(content)
+
+    if (isHtml) {
+        const options: HTMLReactParserOptions = {
+            replace: (domNode) => {
+                if (domNode instanceof Element && domNode.name === 'chart-component') {
+                    const type = domNode.attribs.type || 'bar'
+                    const dataStr = domNode.attribs['data-data'] || '[]'
+                    const title = domNode.attribs.title || ''
+                    return <StudentChartView type={type} dataStr={dataStr} title={title} />
+                }
+            }
+        }
+
+        return (
+            <div 
+                className={cn(
+                    "prose prose-sm sm:prose-base dark:prose-invert max-w-none text-balanced",
+                    // Table styles for Tiptap
+                    "prose-table:border-collapse prose-table:w-full prose-table:m-0 border-border",
+                    "prose-td:border prose-td:border-border prose-td:p-2",
+                    "prose-th:border prose-th:border-border prose-th:p-2 prose-th:bg-muted prose-th:text-left",
+                    "prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto",
+                    className
+                )}
+            >
+                {parse(content, options)}
+            </div>
+        )
+    }
+
+    // Legacy parser for existing plain text / markdown content
     // 1. Split into paragraphs by double newlines
     const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim() !== "")
 
     return (
-        <div className={cn("space-y-4 text-balanced", className)}>
+        <div className={cn("space-y-4 text-balanced prose prose-sm sm:prose-base dark:prose-invert max-w-none", className)}>
             {paragraphs.map((para, i) => {
                 // Handle headings
                 if (para.startsWith("### ")) {

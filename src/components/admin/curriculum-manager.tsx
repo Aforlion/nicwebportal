@@ -38,6 +38,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { FileUpload } from "@/components/ui/file-upload"
 import { MarkdownHint } from "@/components/ui/markdown-hint"
+import { TiptapEditor } from "@/components/ui/tiptap-editor"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -466,12 +467,17 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                                 </div>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="content">Lesson Content / Notes (Markdown)</Label>
-                                <Textarea
-                                    id="content"
-                                    name="content"
-                                    className="min-h-[150px]"
-                                    defaultValue={isEditingLesson.content}
+                                <Label htmlFor="content">Lesson Content</Label>
+                                <input type="hidden" name="content" value={isEditingLesson.content || ""} id="hidden-content-input" />
+                                <TiptapEditor
+                                    content={isEditingLesson.content || ""}
+                                    onChange={(html) => {
+                                        setIsEditingLesson({ ...isEditingLesson, content: html })
+                                        const hiddenInput = document.getElementById('hidden-content-input') as HTMLInputElement
+                                        if (hiddenInput) {
+                                            hiddenInput.value = html
+                                        }
+                                    }}
                                 />
                             </div>
                             <div className="flex items-center gap-2">
