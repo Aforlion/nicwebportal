@@ -76,7 +76,62 @@ export async function admitMemberAction(profileId: string) {
       return { success: false, error: `Failed to update membership status: ${result.error.message}` }
     }
 
-    // 3. Send admission email & trigger account setup (Consolidated & Reliable)
+    // 3. Process Pending Registration (Courses & Payments)
+    const { data: pendingReg } = await supabase
+      .from('pending_registrations')
+      .select('*')
+      .eq('email', profile.email)
+      .maybeSingle()
+
+    if (pendingReg && pendingReg.form_data) {
+      const formData = pendingReg.form_data as any
+      const membershipRecordId = existingMembership?.id || (result.data as any)?.id
+
+      // a. Create Enrollments
+      if (Array.isArray(formData.courses_paid)) {
+        for (const course of formData.courses_paid) {
+          await supabase.from('enrollments').upsert({
+            user_id: profileId,
+            course_id: course.id,
+            status: 'active'
+          }, { onConflict: 'user_id,course_id' })
+        }
+      }
+
+      // b. Create Payment Records (if membership ID exists)
+      if (membershipRecordId) {
+        // Membership Payment
+        if (formData.membership_paid) {
+          await supabase.from('payments').insert({
+            membership_id: membershipRecordId,
+            amount: formData.category === 'student' ? 35000 : 50000,
+            payment_type: 'membership_dues',
+            payment_method: 'bank_transfer',
+            status: 'completed',
+            transaction_reference: `AUTO-ADMIT-MEM-${profileId.substring(0, 5)}`,
+            payment_date: pendingReg.updated_at || new Date().toISOString()
+          })
+        }
+
+        // Course Payment
+        if (formData.total_paid && Number(formData.total_paid) > 0) {
+          await supabase.from('payments').insert({
+            membership_id: membershipRecordId,
+            amount: Number(formData.total_paid),
+            payment_type: 'course_fee',
+            payment_method: 'bank_transfer',
+            status: 'completed',
+            transaction_reference: `AUTO-ADMIT-COURSE-${profileId.substring(0, 5)}`,
+            payment_date: pendingReg.updated_at || new Date().toISOString()
+          })
+        }
+      }
+
+      // c. Update pending registration status
+      await supabase.from('pending_registrations').update({ status: 'admitted' }).eq('id', pendingReg.id)
+    }
+
+    // 4. Send admission email & trigger account setup (Consolidated & Reliable)
     const baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org'
 
     // Generate the recovery/setup link using Admin API

@@ -24,7 +24,7 @@ export async function assignNicIdAction(membershipId: string) {
         nic_id,
         updated_at: new Date().toISOString()
       })
-      .eq('id', membershipId)
+      .eq('user_id', membershipId)
 
     if (error) {
       console.error('Error assigning NIC ID:', error)
