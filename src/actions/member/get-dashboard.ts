@@ -78,7 +78,7 @@ export async function getMemberDashboardData() {
                 thumbnail_url
             )
         `)
-        .eq('student_id', user.id)
+        .eq('user_id', user.id)
         .in('status', ['active', 'enrolled'])
         .order('enrolled_at', { ascending: false })
 

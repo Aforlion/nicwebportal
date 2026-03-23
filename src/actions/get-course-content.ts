@@ -19,30 +19,33 @@ export async function getCourseContent(courseId: string) {
 
     if (!enrollment) return null
 
-    // fetch full course content
+    // fetch full course content via modular relationship
     const { data: course, error } = await supabase
         .from('courses')
         .select(`
             id,
             title,
-            modules (
-                id,
-                title,
+            course_modules (
                 sort_order,
-                lessons (
+                modules (
                     id,
                     title,
-                    slug,
-                    video_url,
-                    content,
-                    duration_minutes,
-                    sort_order,
-                    assessments (
+                    description,
+                    lessons (
                         id,
                         title,
-                        description,
-                        passing_score,
-                        questions
+                        slug,
+                        video_url,
+                        content,
+                        duration_minutes,
+                        sort_order,
+                        assessments (
+                            id,
+                            title,
+                            description,
+                            passing_score,
+                            questions
+                        )
                     )
                 )
             )
@@ -50,9 +53,21 @@ export async function getCourseContent(courseId: string) {
         .eq('id', courseId)
         .single()
 
-    if (error) {
+    if (error || !course) {
         console.error('Error fetching course content:', error)
         return null
+    }
+
+    // Flatten modular structure: course_modules -> modules
+    const courseWithModules = {
+        ...course,
+        modules: (course.course_modules as any[])
+            ?.map(cm => ({
+                ...cm.modules,
+                sort_order: cm.sort_order // use the link's sort order
+            }))
+            .filter(m => !!m)
+            .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)) || []
     }
 
     // fetch progress map
@@ -68,7 +83,7 @@ export async function getCourseContent(courseId: string) {
     }, {})
 
     return {
-        course,
+        course: courseWithModules,
         enrollmentId: enrollment.id,
         progress: progressMap,
         overallProgress: enrollment.progress

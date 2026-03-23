@@ -74,7 +74,8 @@ const navItems = [
 
 /** Determines the portal URL for a given user role */
 function getPortalHref(role?: string): string {
-    if (role === 'admin' || role === 'super_admin') return '/admin'
+    const adminRoles = ['admin', 'super_admin', 'registry_officer', 'inspector', 'auditor', 'instructor']
+    if (role && adminRoles.includes(role)) return '/admin'
     if (role === 'student') return '/portal/student'
     if (role === 'facility_admin') return '/portal/facility'
     return '/portal/member'
@@ -182,7 +183,7 @@ export function Navbar() {
                             />
                         </div>
                         <span className="text-2xl font-bold tracking-tighter text-primary">
-                            NIC
+                            NIC Portal
                         </span>
                     </Link>
                 </div>
