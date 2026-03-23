@@ -90,6 +90,8 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
                 user_id: user.id,
                 course_id: courseId,
                 payment_reference: reference,
+                status: 'active',
+                payment_status: 'paid',
                 progress: 0,
                 completed_lessons: [],
                 enrolled_at: new Date().toISOString()
@@ -184,6 +186,8 @@ export async function enrollFreeCourse(courseId: string) {
         .insert({
             user_id: user.id,
             course_id: courseId,
+            status: 'active',
+            payment_status: 'free',
             progress: 0,
             completed_lessons: [],
             enrolled_at: new Date().toISOString()

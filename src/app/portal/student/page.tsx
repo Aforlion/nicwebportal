@@ -33,7 +33,7 @@ export default async function StudentDashboard() {
                         <div>
                             <h1 className="text-3xl font-bold text-secondary">Welcome back!</h1>
                             <p className="text-muted-foreground">
-                                You have {enrollments.filter((e: any) => e.status === 'active').length} courses in progress.
+                                You have {enrollments.filter((e: any) => e.status === 'active' || e.status === 'enrolled').length} courses in progress.
                             </p>
                         </div>
                     </div>
@@ -125,7 +125,7 @@ export default async function StudentDashboard() {
                                                                 variant={enrollment.status === 'completed' ? 'success' : 'info'}
                                                                 className="mb-2"
                                                             >
-                                                                {enrollment.status === 'active' ? 'In Progress' : enrollment.status}
+                                                                {enrollment.status === 'active' || enrollment.status === 'enrolled' ? 'In Progress' : enrollment.status}
                                                             </Badge>
                                                             <h3 className="text-lg font-bold text-secondary line-clamp-1">{enrollment.course?.title}</h3>
                                                             <p className="text-sm text-muted-foreground">{enrollment.course?.level || "Certification"}</p>

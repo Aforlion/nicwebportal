@@ -26,7 +26,7 @@ export async function getStudentDashboardData() {
             )
         `)
         .eq('user_id', user.id)
-        .order('last_accessed_at', { ascending: false, foreignTable: '' }) // Note: last_accessed is on progress, simplified for now
+        .order('enrolled_at', { ascending: false })
 
     if (error) {
         console.error('Error fetching enrollments:', error)
@@ -34,7 +34,7 @@ export async function getStudentDashboardData() {
     }
 
     // Determined "Continue Learning" (most recent active course)
-    const activeEnrollment = enrollments.find((e: any) => e.status === 'active')
+    const activeEnrollment = enrollments.find((e: any) => e.status === 'active' || e.status === 'enrolled')
 
     // Fetch upcoming events from news_events where type is event
     const { data: events } = await supabase
