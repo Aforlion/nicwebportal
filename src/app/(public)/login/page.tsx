@@ -52,10 +52,14 @@ function LoginForm() {
                 throw new Error(result.error)
             }
 
-            // Redirect based on role
+            // Redirect based on role and category
             const adminRoles = ['admin', 'super_admin', 'registry_officer', 'inspector', 'auditor', 'instructor']
             if (result.role && adminRoles.includes(result.role)) {
                 router.push('/admin')
+            } else if (result.category === 'student') {
+                router.push('/portal/student')
+            } else if (result.role === 'member' || result.category === 'professional' || result.category === 'full' || result.category === 'associate') {
+                router.push('/portal/member')
             } else {
                 router.push(redirect)
             }

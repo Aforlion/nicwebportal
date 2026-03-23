@@ -10,7 +10,9 @@ import {
     Calendar,
     Download,
     Mail,
-    ArrowUpRight
+    ArrowUpRight,
+    GraduationCap,
+    BookOpen
 } from "lucide-react"
 import Link from "next/link"
 
@@ -32,6 +34,13 @@ interface MemberDashboardClientProps {
             logs: Array<{ title: string; date: string; points: string }>
         }
         hasOutstandingDues: boolean
+        activeEnrollments?: Array<{
+            id: string
+            courseId: string
+            title: string
+            thumbnail: string
+            status: string
+        }>
     }
 }
 
@@ -110,11 +119,18 @@ export default function MemberDashboardClient({ data }: MemberDashboardClientPro
                                     <CreditCard className="mr-2 h-4 w-4" /> Pay Annual Dues
                                 </Link>
                             </Button>
-                            <Button variant="outline" className="w-full justify-start" asChild>
+                            <Button variant="outline" className="w-full justify-start border-primary/20 hover:bg-primary/5 text-primary" asChild>
                                 <Link href="/portal/member/profile">
                                     <Mail className="mr-2 h-4 w-4" /> Update Contact Info
                                 </Link>
                             </Button>
+                            {data.activeEnrollments && data.activeEnrollments.length > 0 && (
+                                <Button variant="secondary" className="w-full justify-start bg-accent/10 text-accent hover:bg-accent/20" asChild>
+                                    <Link href="/portal/student">
+                                        <GraduationCap className="mr-2 h-4 w-4" /> Go to Learning Portal
+                                    </Link>
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
@@ -193,6 +209,55 @@ export default function MemberDashboardClient({ data }: MemberDashboardClientPro
                     </CardContent>
                 </Card>
             </div>
+            {/* Active Training (Unification) */}
+            {data.activeEnrollments && data.activeEnrollments.length > 0 && (
+                <div className="space-y-4">
+                    <h3 className="text-xl font-bold text-secondary flex items-center gap-2">
+                        <GraduationCap className="h-6 w-6 text-primary" />
+                        Active Training
+                    </h3>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {data.activeEnrollments.map((enrollment) => (
+                            <Card key={enrollment.id} className="overflow-hidden border-primary/10 hover:border-primary/30 transition-all group">
+                                <CardContent className="p-0">
+                                    <div className="flex gap-4 p-4">
+                                        <div className="h-16 w-16 rounded-lg bg-muted flex-shrink-0 overflow-hidden relative">
+                                            {enrollment.thumbnail ? (
+                                                <Image 
+                                                    src={enrollment.thumbnail} 
+                                                    alt={enrollment.title} 
+                                                    fill 
+                                                    className="object-cover" 
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-primary/5">
+                                                    <BookOpen className="h-8 w-8 text-primary/20" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-bold text-secondary truncate mb-1 group-hover:text-primary transition-colors">
+                                                {enrollment.title}
+                                            </h4>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="secondary" className="text-[10px] uppercase font-bold px-1.5 py-0 h-4">
+                                                    {enrollment.status}
+                                                </Badge>
+                                                <Link 
+                                                    href={`/portal/student/courses/${enrollment.courseId}`}
+                                                    className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5"
+                                                >
+                                                    Continue <ArrowUpRight className="h-3 w-3" />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

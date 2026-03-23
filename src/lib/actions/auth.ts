@@ -38,16 +38,24 @@ export async function loginAction(formData: FormData) {
         // Fetch profile to determine role for redirection if needed on the client
         const { data: profile } = await supabase
             .from('profiles')
-            .select('role')
+            .select(`
+                role,
+                memberships (
+                    category
+                )
+            `)
             .eq('id', data.user.id)
             .single()
 
-        logger.info("Login Successful", { email, role: profile?.role, ip })
+        const membershipCategory = (profile as any)?.memberships?.[0]?.category
+
+        logger.info("Login Successful", { email, role: profile?.role, category: membershipCategory, ip })
 
         return {
             success: true,
             user: data.user,
-            role: profile?.role
+            role: profile?.role,
+            category: membershipCategory
         }
     } catch (e: any) {
         logger.error("Login Unexpected Error", { error: e.message, email })

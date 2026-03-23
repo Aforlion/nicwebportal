@@ -65,6 +65,31 @@ export async function getMemberDashboardData() {
 
     const hasOutstandingDues = !payments || payments.length === 0
 
+    // 4. Fetch Active Enrollments (Unification)
+    const { data: enrollments } = await supabase
+        .from('enrollments')
+        .select(`
+            id,
+            status,
+            enrolled_at,
+            courses (
+                id,
+                title,
+                thumbnail_url
+            )
+        `)
+        .eq('student_id', user.id)
+        .in('status', ['active', 'enrolled'])
+        .order('enrolled_at', { ascending: false })
+
+    const activeEnrollments = enrollments?.map((e: any) => ({
+        id: e.id,
+        courseId: e.courses.id,
+        title: e.courses.title,
+        thumbnail: e.courses.thumbnail_url,
+        status: e.status
+    })) || []
+
     return {
         member: {
             name: profileData.full_name,
@@ -85,6 +110,7 @@ export async function getMemberDashboardData() {
             progress: Math.min(Math.round((totalCPDPoints / 30) * 100), 100),
             logs: recentLogs
         },
-        hasOutstandingDues
+        hasOutstandingDues,
+        activeEnrollments
     }
 }

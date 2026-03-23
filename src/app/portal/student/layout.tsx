@@ -1,6 +1,7 @@
 import { PortalSidebar } from "@/components/portal-sidebar";
 import { getUserProfile } from "@/lib/auth";
 import { AutoLogout } from "@/components/auto-logout";
+import Image from "next/image";
 
 export default async function StudentLayout({
     children,
@@ -24,15 +25,25 @@ export default async function StudentLayout({
                 {/* Portal Header */}
                 <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-background px-8">
                     <div className="flex-grow">
-                        <h2 className="text-lg font-semibold text-secondary">Student Learning Portal</h2>
+                        <h2 className="text-lg font-semibold text-secondary">NIC Portal</h2>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="text-right">
                             <p className="text-sm font-medium text-secondary">{displayName}</p>
                             <p className="text-xs text-muted-foreground">{profile?.email ?? ''}</p>
                         </div>
-                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                            {initials}
+                        <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold overflow-hidden border">
+                            {profile?.avatar_url ? (
+                                <Image 
+                                    src={profile.avatar_url} 
+                                    alt={displayName} 
+                                    width={40} 
+                                    height={40} 
+                                    className="h-full w-full object-cover" 
+                                />
+                            ) : (
+                                initials
+                            )}
                         </div>
                     </div>
                 </header>

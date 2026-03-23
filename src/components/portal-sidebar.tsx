@@ -20,7 +20,8 @@ import {
     History,
     CheckSquare,
     Globe,
-    ExternalLink
+    ExternalLink,
+    ShieldCheck
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -76,14 +77,14 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
     return (
         <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-background transition-transform">
             <div className="flex h-full flex-col px-3 py-4">
-                <div className="mb-10 flex items-center gap-2 px-4">
+                <div className="mb-6 flex items-center gap-2 px-4 shrink-0">
                     <Image src="/logo.jpg" alt="NIC Logo" width={32} height={32} className="h-8 w-8 rounded" />
                     <span className="text-2xl font-bold tracking-tighter text-secondary">
-                        NIC {role === 'student' ? 'Portal' : 'Member'}
+                        NIC Portal
                     </span>
                 </div>
 
-                <nav className="flex-grow space-y-1">
+                <nav className="flex-1 overflow-y-auto space-y-1 mb-4 custom-scrollbar">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href
                         return (
@@ -104,7 +105,27 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
                     })}
                 </nav>
 
-                <div className="mt-auto space-y-1 border-t pt-4">
+                <div className="mt-auto space-y-1 border-t pt-4 shrink-0">
+                    {/* Role-based cross links */}
+                    {role === 'member' && (
+                        <Link
+                            href="/portal/student"
+                            className="flex items-center gap-3 rounded-lg px-4 py-1 text-xs font-semibold text-primary/80 transition-colors hover:bg-primary/5"
+                        >
+                            <GraduationCap className="h-4 w-4" />
+                            <span>Learning Portal</span>
+                        </Link>
+                    )}
+                    {role === 'student' && (
+                        <Link
+                            href="/portal/member"
+                            className="flex items-center gap-3 rounded-lg px-4 py-1 text-xs font-semibold text-primary/80 transition-colors hover:bg-primary/5"
+                        >
+                            <ShieldCheck className="h-4 w-4" />
+                            <span>Membership Portal</span>
+                        </Link>
+                    )}
+
                     {/* Course & website shortcuts */}
                     <Link
                         href="/resources"
