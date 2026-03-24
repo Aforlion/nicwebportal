@@ -16,6 +16,7 @@ import {
     Loader2,
     QrCode
 } from "lucide-react"
+import { toast } from "sonner"
 
 type VerifyResult = {
     success: boolean
@@ -35,6 +36,7 @@ export default function PublicVerifyPage() {
     const [loading, setLoading] = useState(false)
     const [result, setResult] = useState<VerifyResult | null>(null)
     const [id, setId] = useState("")
+    const [activeTab, setActiveTab] = useState("caregiver")
 
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -46,19 +48,16 @@ export default function PublicVerifyPage() {
 
         try {
             const supabase = createClient()
-            const activeTab = document.querySelector('[data-state="active"][role="tab"]')?.getAttribute('value')
-
+            
             if (activeTab === 'caregiver') {
                 // 1. Search for membership first
                 const { data: memberData, error: memberError } = await supabase
                     .from('memberships')
                     .select('*, profiles(full_name)')
-                    .or(`nic_id.ilike.${searchId},member_id.ilike.${searchId}`)
+                    .or(`nic_id.ilike.%${searchId}%,member_id.ilike.%${searchId}%`)
                     .maybeSingle()
 
-                if (memberError) {
-                    console.error("Membership search error:", memberError)
-                }
+                if (memberError) console.error("Membership search error:", memberError)
 
                 if (memberData) {
                     const { data: staffData } = await supabase
@@ -80,6 +79,7 @@ export default function PublicVerifyPage() {
                         affiliation: affiliation,
                         certNumber: memberData.nic_id
                     })
+                    toast.success("Caregiver record verified successfully!")
                     return
                 }
 
@@ -87,12 +87,10 @@ export default function PublicVerifyPage() {
                 const { data: profCert, error: profError } = await supabase
                     .from('caregiver_certifications')
                     .select('*, memberships(*, profiles(full_name))')
-                    .or(`verification_code.ilike.${searchId},certificate_number.ilike.${searchId}`)
+                    .or(`verification_code.ilike.%${searchId}%,certificate_number.ilike.%${searchId}%`)
                     .maybeSingle()
 
-                if (profError) {
-                    console.error("Professional cert search error:", profError)
-                }
+                if (profError) console.error("Professional cert search error:", profError)
 
                 if (profCert) {
                     setResult({
@@ -106,6 +104,7 @@ export default function PublicVerifyPage() {
                         certNumber: profCert.certificate_number,
                         issueDate: new Date(profCert.issue_date).toLocaleDateString()
                     })
+                    toast.success("Professional certification verified!")
                     return
                 }
 
@@ -113,12 +112,10 @@ export default function PublicVerifyPage() {
                 const { data: courseCert, error: courseError } = await supabase
                     .from('certificates')
                     .select('*, profiles(full_name), programs(title)')
-                    .ilike('certificate_number', searchId)
+                    .ilike('certificate_number', `%${searchId}%`)
                     .maybeSingle()
 
-                if (courseError) {
-                    console.error("Course cert search error:", courseError)
-                }
+                if (courseError) console.error("Course cert search error:", courseError)
 
                 if (courseCert) {
                     setResult({
@@ -131,21 +128,21 @@ export default function PublicVerifyPage() {
                         certNumber: courseCert.certificate_number,
                         issueDate: new Date(courseCert.issue_date).toLocaleDateString()
                     })
+                    toast.success("Course certificate verified!")
                     return
                 }
 
                 setResult({ success: false, type: "Caregiver" })
+                toast.error("No matching caregiver record found.")
             } else if (activeTab === 'facility') {
                 // Search for facility
                 const { data: facData, error: facError } = await supabase
                     .from('facilities')
                     .select('*')
-                    .or(`registration_number.ilike.${searchId},name.ilike.%${searchId}%`)
+                    .or(`registration_number.ilike.%${searchId}%,name.ilike.%${searchId}%`)
                     .maybeSingle()
 
-                if (facError) {
-                    console.error("Facility search error:", facError)
-                }
+                if (facError) console.error("Facility search error:", facError)
 
                 if (facData) {
                     const score = facData.score || 0
@@ -164,13 +161,16 @@ export default function PublicVerifyPage() {
                         lastInspection: facData.last_inspection_date ? new Date(facData.last_inspection_date).toLocaleDateString() : "N/A",
                         certNumber: facData.registration_number
                     })
+                    toast.success("Care facility record verified!")
                 } else {
                     setResult({ success: false, type: "Facility" })
+                    toast.error("No matching facility record found.")
                 }
             }
         } catch (err) {
             console.error("Verification error:", err)
             setResult({ success: false })
+            toast.error("An error occurred during verification. Please try again.")
         } finally {
             setLoading(false)
         }
@@ -206,7 +206,7 @@ export default function PublicVerifyPage() {
 
             <section className="py-20">
                 <div className="container mx-auto px-4 max-w-2xl">
-                    <Tabs defaultValue="caregiver" className="w-full">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <TabsList className="grid w-full grid-cols-2 mb-8">
                             <TabsTrigger value="caregiver" className="flex items-center gap-2">
                                 <UserCheck className="h-4 w-4" /> Caregiver/Student
