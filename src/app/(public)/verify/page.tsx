@@ -54,9 +54,9 @@ export default function PublicVerifyPage() {
                     .from('memberships')
                     .select('*, profiles(full_name)')
                     .or(`nic_id.ilike.${searchId},member_id.ilike.${searchId}`)
-                    .single()
+                    .maybeSingle()
 
-                if (memberError && memberError.code !== 'PGRST116') {
+                if (memberError) {
                     console.error("Membership search error:", memberError)
                 }
 
@@ -113,7 +113,7 @@ export default function PublicVerifyPage() {
                 const { data: courseCert, error: courseError } = await supabase
                     .from('certificates')
                     .select('*, profiles(full_name), programs(title)')
-                    .eq('certificate_number', searchId)
+                    .ilike('certificate_number', searchId)
                     .maybeSingle()
 
                 if (courseError) {
@@ -135,21 +135,20 @@ export default function PublicVerifyPage() {
                 }
 
                 setResult({ success: false, type: "Caregiver" })
+            } else if (activeTab === 'facility') {
                 // Search for facility
-                const { data, error: facError } = await supabase
+                const { data: facData, error: facError } = await supabase
                     .from('facilities')
                     .select('*')
                     .or(`registration_number.ilike.${searchId},name.ilike.%${searchId}%`)
-                    .eq('status', 'active')
-                    .limit(1)
-                    .single()
+                    .maybeSingle()
 
-                if (facError && facError.code !== 'PGRST116') {
+                if (facError) {
                     console.error("Facility search error:", facError)
                 }
 
-                if (data) {
-                    const score = data.score || 0
+                if (facData) {
+                    const score = facData.score || 0
                     let category = "Pending Assessment"
                     if (score >= 85) category = "Fully Compliant"
                     else if (score >= 70) category = "Conditionally Compliant"
@@ -158,12 +157,12 @@ export default function PublicVerifyPage() {
                     setResult({
                         success: true,
                         type: "Facility",
-                        name: data.name,
-                        status: data.status,
+                        name: facData.name,
+                        status: facData.status,
                         expiry: "Permanent",
                         complianceCategory: category,
-                        lastInspection: data.last_inspection_date ? new Date(data.last_inspection_date).toLocaleDateString() : "N/A",
-                        certNumber: data.registration_number
+                        lastInspection: facData.last_inspection_date ? new Date(facData.last_inspection_date).toLocaleDateString() : "N/A",
+                        certNumber: facData.registration_number
                     })
                 } else {
                     setResult({ success: false, type: "Facility" })

@@ -22,10 +22,13 @@ import {
     Check,
     Ban,
     AlertTriangle,
-    Calendar
+    Calendar,
+    Loader2
 } from "lucide-react"
 import { sendFacilityStatusAction } from "@/lib/actions/registration"
+import { assignFacilityIdAction } from "@/actions/admin/assign-facility-id"
 import { FacilityDetailsSheet } from "@/components/admin/facility-details-sheet"
+import { toast } from "sonner"
 
 type Facility = {
     id: string
@@ -56,6 +59,7 @@ export default function AdminFacilitiesPage() {
         pending: 0,
         suspended: 0
     })
+    const [assigningId, setAssigningId] = useState<string | null>(null)
 
     const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null)
 
@@ -256,6 +260,25 @@ export default function AdminFacilitiesPage() {
         }
     }
 
+    const handleAssignId = async (facilityId: string) => {
+        if (!confirm("Are you sure you want to assign a standardized NIC Facility ID?")) return
+
+        setAssigningId(facilityId)
+        try {
+            const result = await assignFacilityIdAction(facilityId)
+            if (result.success) {
+                toast.success(`Broadcasting update: Facility ID assigned successfully!`)
+                fetchFacilities()
+            } else {
+                toast.error(result.error || "Failed to assign ID")
+            }
+        } catch (err: any) {
+            toast.error(err.message || "An unexpected error occurred")
+        } finally {
+            setAssigningId(null)
+        }
+    }
+
     const filteredFacilities = facilities.filter(f =>
         f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         f.registration_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -441,6 +464,24 @@ export default function AdminFacilitiesPage() {
                                                     <Search className="h-4 w-4 mr-1" />
                                                     View Details
                                                 </Button>
+                                                {!f.registration_number?.startsWith('NIC/FAC') && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 font-bold"
+                                                        onClick={() => handleAssignId(f.id)}
+                                                        disabled={assigningId === f.id}
+                                                    >
+                                                        {assigningId === f.id ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <>
+                                                                <Check className="h-4 w-4 mr-1" />
+                                                                Standardize ID
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                )}
                                                 {f.status === 'pending' && (
                                                     <Button
                                                         size="sm"

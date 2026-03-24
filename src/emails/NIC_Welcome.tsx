@@ -125,10 +125,10 @@ const main = {
 
 const container = {
     backgroundColor: '#ffffff',
-    backgroundImage: `url(${baseUrl}/coat-of-arm.png)`,
+    backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0.97)), url(${baseUrl}/coat-of-arm.png)`,
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'center',
-    backgroundSize: '300px',
+    backgroundSize: '400px',
     margin: '0 auto',
     padding: '20px 0 48px',
     marginBottom: '64px',
