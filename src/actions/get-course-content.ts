@@ -25,6 +25,7 @@ export async function getCourseContent(courseId: string) {
         .select(`
             id,
             title,
+            description,
             course_modules (
                 sort_order,
                 modules (
@@ -36,6 +37,7 @@ export async function getCourseContent(courseId: string) {
                         title,
                         slug,
                         video_url,
+                        resource_url,
                         content,
                         duration_minutes,
                         sort_order,

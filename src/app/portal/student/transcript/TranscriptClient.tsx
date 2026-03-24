@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Printer, Download, BookOpen, CheckCircle2, Clock, Mail, User as UserIcon } from "lucide-react"
+import Image from "next/image"
 
 interface TranscriptProps {
     data: {
@@ -39,14 +40,17 @@ export default function TranscriptClient({ data }: TranscriptProps) {
             </div>
 
             {/* Transcript Document */}
-            <Card className="border-t-8 border-t-secondary shadow-lg print:shadow-none print:border-none">
-                <CardHeader className="border-b pb-8">
+            <Card className="border-t-8 border-t-secondary shadow-lg print:shadow-none print:border-none relative overflow-hidden">
+                {/* Background Watermark Coat of Arms */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none z-0">
+                    <Image src="/coat-of-arm.png" alt="" width={600} height={600} />
+                </div>
+
+                <CardHeader className="border-b pb-8 relative z-10 bg-white/50 backdrop-blur-[1px]">
                     <div className="flex justify-between items-start">
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="h-10 w-10 bg-slate-900 rounded-lg flex items-center justify-center text-white font-bold">
-                                    NIC
-                                </div>
+                            <div className="flex items-center gap-3 mb-4">
+                                <Image src="/logo.jpg" alt="NIC" width={48} height={48} className="rounded-lg shadow-sm" />
                                 <span className="text-2xl font-black tracking-tighter text-slate-900">
                                     National Institute Content
                                 </span>

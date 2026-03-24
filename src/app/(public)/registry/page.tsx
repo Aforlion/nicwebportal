@@ -7,7 +7,19 @@ export default async function RegistryPage() {
     const facilities = await getAccreditedFacilities()
 
     return (
-        <div className="min-h-screen bg-slate-50/50">
+        <div className="min-h-screen bg-slate-50/50 relative overflow-hidden">
+            {/* Background Watermark */}
+            <div className="fixed inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-0">
+                <Image 
+                    src="/coat-of-arm.png" 
+                    alt="" 
+                    width={800} 
+                    height={800} 
+                    className="object-contain"
+                />
+            </div>
+
+            <div className="relative z-10">
             {/* Hero Section */}
             <div className="bg-secondary px-6 py-16 md:py-24 text-center relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-64 h-64 opacity-5 pointer-events-none -translate-x-1/4 -translate-y-1/4">
@@ -15,7 +27,7 @@ export default async function RegistryPage() {
                 </div>
                 <div className="max-w-4xl mx-auto space-y-6 relative z-10">
                     <div className="inline-flex items-center gap-3 bg-white/10 px-4 py-2 rounded-full text-white/90 text-xs font-bold uppercase tracking-widest backdrop-blur-sm border border-white/10">
-                        <Image src="/coat-of-arm.png" alt="COA" width={20} height={20} />
+                        <Image src="/logo.jpg" alt="NIC" width={20} height={20} className="rounded-sm" />
                         <div className="h-4 w-[1px] bg-white/20" />
                         <ShieldCheck className="h-4 w-4 text-emerald-400" />
                         Official NIC Accreditation Registry
@@ -46,6 +58,7 @@ export default async function RegistryPage() {
                    </div>
                 </div>
             </div>
+        </div>
         </div>
     )
 }

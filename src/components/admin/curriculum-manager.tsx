@@ -419,9 +419,8 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                 </DialogContent>
             </Dialog>
 
-            {/* Edit Lesson Dialog */}
             <Dialog open={!!isEditingLesson} onOpenChange={(open) => !open && setIsEditingLesson(null)}>
-                <DialogContent className="max-w-xl">
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Edit Lesson</DialogTitle>
                     </DialogHeader>
@@ -503,7 +502,7 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
             </Dialog>
             {/* Edit Module Dialog */}
             <Dialog open={!!isEditingModule} onOpenChange={(open) => !open && setIsEditingModule(null)}>
-                <DialogContent className="max-w-xl">
+                <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Edit Module</DialogTitle>
                     </DialogHeader>

@@ -261,7 +261,7 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     return (
         <div className="border rounded-md bg-background overflow-hidden flex flex-col focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
             <MenuBar editor={editor} />
-            <EditorContent editor={editor} className="flex-1 bg-background" />
+            <EditorContent editor={editor} className="flex-1 bg-background max-h-[600px] overflow-y-auto" />
             {/* Custom CSS for Table sizing inside Prose */}
             <style jsx global>{`
                 .ProseMirror table {

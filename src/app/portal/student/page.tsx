@@ -18,17 +18,25 @@ export default async function StudentDashboard() {
 
     return (
         <ErrorBoundary>
-            <div className="space-y-8 relative overflow-hidden">
-                {/* Decorative Background Coat of Arms */}
-                <div className="absolute top-0 right-0 w-64 h-64 opacity-[0.03] pointer-events-none -translate-y-12 translate-x-12">
-                    <Image src="/coat-of-arm.png" alt="" width={300} height={300} />
+            <div className="space-y-8 relative min-h-[calc(100vh-100px)]">
+                {/* Background Watermark */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-0">
+                    <Image 
+                        src="/coat-of-arm.png" 
+                        alt="" 
+                        width={600} 
+                        height={600} 
+                        className="object-contain"
+                    />
                 </div>
+
+                <div className="relative z-10">
 
                 {/* Welcome Header */}
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between relative z-10">
                     <div className="flex items-center gap-4">
                         <div className="hidden sm:block p-2 bg-white rounded-xl border shadow-sm">
-                            <Image src="/coat-of-arm.png" alt="COA" width={48} height={48} />
+                            <Image src="/logo.jpg" alt="NIC" width={48} height={48} />
                         </div>
                         <div>
                             <h1 className="text-3xl font-bold text-secondary">Welcome back!</h1>
@@ -214,6 +222,7 @@ export default async function StudentDashboard() {
                     </div>
                 </div>
             </div>
+        </div>
         </ErrorBoundary>
     )
 }

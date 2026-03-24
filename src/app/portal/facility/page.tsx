@@ -121,7 +121,7 @@ export default function FacilityDashboard() {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between relative z-10">
                 <div className="flex items-center gap-4">
                     <div className="hidden sm:block p-2 bg-white rounded-xl border shadow-sm">
-                        <Image src="/coat-of-arm.png" alt="COA" width={48} height={48} />
+                        <Image src="/logo.jpg" alt="NIC" width={48} height={48} />
                     </div>
                     <div>
                         <h1 className="text-3xl font-bold text-secondary">Institutional Dashboard</h1>

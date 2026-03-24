@@ -125,6 +125,10 @@ const main = {
 
 const container = {
     backgroundColor: '#ffffff',
+    backgroundImage: `url(${baseUrl}/coat-of-arm.png)`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
+    backgroundSize: '300px',
     margin: '0 auto',
     padding: '20px 0 48px',
     marginBottom: '64px',

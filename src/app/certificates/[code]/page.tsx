@@ -32,7 +32,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
             {/* Action Bar (Hidden in Print) */}
             <div className="w-full max-w-[800px] mb-6 flex justify-between items-center print:hidden">
                 <Link href="/" className="font-bold text-lg flex items-center gap-2">
-                    <Image src="/coat-of-arm.png" alt="COA" width={24} height={24} />
+                    <Image src="/logo.jpg" alt="NIC" width={24} height={24} className="rounded" />
                     NIC Portal
                 </Link>
                 <div className="flex gap-2">
@@ -55,11 +55,11 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
                     {/* Logo Area */}
                     <div className="mx-auto flex flex-col items-center mb-6">
                         <Image 
-                            src="/coat-of-arm.png" 
-                            alt="Official Coat of Arms" 
+                            src="/logo.jpg" 
+                            alt="NIC Logo" 
                             width={80} 
                             height={80} 
-                            className="mb-4"
+                            className="mb-4 rounded-lg shadow-sm"
                         />
                         <div className="h-0.5 w-24 bg-slate-900 mb-2" />
                         <span className="text-slate-900 font-bold text-2xl tracking-tighter">NIC</span>

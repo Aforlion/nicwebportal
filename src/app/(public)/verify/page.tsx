@@ -38,6 +38,9 @@ export default function PublicVerifyPage() {
 
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault()
+        const searchId = id.trim()
+        if (!searchId) return
+
         setLoading(true)
         setResult(null)
 
@@ -47,11 +50,15 @@ export default function PublicVerifyPage() {
 
             if (activeTab === 'caregiver') {
                 // 1. Search for membership first
-                const { data: memberData } = await supabase
+                const { data: memberData, error: memberError } = await supabase
                     .from('memberships')
                     .select('*, profiles(full_name)')
-                    .or(`nic_id.eq.${id},member_id.eq.${id}`)
+                    .or(`nic_id.ilike.${searchId},member_id.ilike.${searchId}`)
                     .single()
+
+                if (memberError && memberError.code !== 'PGRST116') {
+                    console.error("Membership search error:", memberError)
+                }
 
                 if (memberData) {
                     const { data: staffData } = await supabase
@@ -77,11 +84,15 @@ export default function PublicVerifyPage() {
                 }
 
                 // 2. Search for Professional Certification
-                const { data: profCert } = await supabase
+                const { data: profCert, error: profError } = await supabase
                     .from('caregiver_certifications')
                     .select('*, memberships(*, profiles(full_name))')
-                    .or(`verification_code.eq.${id},certificate_number.eq.${id}`)
+                    .or(`verification_code.ilike.${searchId},certificate_number.ilike.${searchId}`)
                     .maybeSingle()
+
+                if (profError) {
+                    console.error("Professional cert search error:", profError)
+                }
 
                 if (profCert) {
                     setResult({
@@ -99,11 +110,15 @@ export default function PublicVerifyPage() {
                 }
 
                 // 3. Search for Course Certificate
-                const { data: courseCert } = await supabase
+                const { data: courseCert, error: courseError } = await supabase
                     .from('certificates')
                     .select('*, profiles(full_name), programs(title)')
-                    .eq('certificate_number', id)
+                    .eq('certificate_number', searchId)
                     .maybeSingle()
+
+                if (courseError) {
+                    console.error("Course cert search error:", courseError)
+                }
 
                 if (courseCert) {
                     setResult({
@@ -120,15 +135,18 @@ export default function PublicVerifyPage() {
                 }
 
                 setResult({ success: false, type: "Caregiver" })
-            } else {
                 // Search for facility
-                const { data } = await supabase
+                const { data, error: facError } = await supabase
                     .from('facilities')
                     .select('*')
-                    .or(`registration_number.eq.${id},name.ilike.%${id}%`)
+                    .or(`registration_number.ilike.${searchId},name.ilike.%${searchId}%`)
                     .eq('status', 'active')
                     .limit(1)
                     .single()
+
+                if (facError && facError.code !== 'PGRST116') {
+                    console.error("Facility search error:", facError)
+                }
 
                 if (data) {
                     const score = data.score || 0
@@ -160,7 +178,20 @@ export default function PublicVerifyPage() {
     }
 
     return (
-        <div className="pb-20">
+        <div className="pb-20 relative min-h-screen">
+            {/* Background Watermark */}
+            <div className="fixed inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-0">
+                <Image 
+                    src="/coat-of-arm.png" 
+                    alt="" 
+                    width={800} 
+                    height={800} 
+                    className="object-contain"
+                />
+            </div>
+
+            {/* Content wrapped in relative z-10 */}
+            <div className="relative z-10">
             {/* Header */}
             <section className="bg-secondary py-20 text-white">
                 <div className="container mx-auto px-4 text-center">
@@ -375,6 +406,7 @@ export default function PublicVerifyPage() {
                     </div>
                 </div>
             </section>
+        </div>
         </div>
     )
 }

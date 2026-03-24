@@ -167,14 +167,6 @@ export function Navbar() {
                     <Link href="/" className="flex items-center space-x-3">
                         <div className="flex items-center gap-1.5">
                             <Image
-                                src="/coat-of-arm.png"
-                                alt="Official Coat of Arms"
-                                width={32}
-                                height={32}
-                                className="h-8 w-auto"
-                            />
-                            <div className="h-8 w-[1px] bg-slate-200 mx-1 hidden sm:block" />
-                            <Image
                                 src="/logo.jpg"
                                 alt="NIC Logo"
                                 width={40}

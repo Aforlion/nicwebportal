@@ -27,7 +27,7 @@ export default function RegulatoryLandingPage() {
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="max-w-3xl">
                         <div className="flex items-center gap-3 text-accent mb-6">
-                            <Image src="/coat-of-arm.png" alt="COA" width={32} height={32} />
+                            <Image src="/logo.jpg" alt="NIC" width={32} height={32} className="rounded" />
                             <div className="h-6 w-[1px] bg-white/20" />
                             <span className="font-bold uppercase tracking-wider text-sm flex items-center gap-2">
                                 <Scale className="h-4 w-4" /> Regulatory Framework

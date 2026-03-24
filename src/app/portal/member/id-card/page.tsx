@@ -134,15 +134,20 @@ export default function MemberIDCardPage() {
                     id="id-card-printable"
                     className="w-full max-w-[450px] rounded-[24px] bg-secondary text-white shadow-2xl overflow-hidden relative border-4 border-slate-700/50"
                 >
-                    {/* Background Patterns */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
-                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
+                    {/* Background Patterns & Watermark */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl opacity-50" />
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl opacity-50" />
+                    
+                    {/* Centered Coat of Arms Watermark */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.07] pointer-events-none">
+                        <img src="/coat-of-arm.png" alt="" className="w-1/2 h-auto" />
+                    </div>
 
-                    <div className="h-full flex flex-col relative z-10">
+                    <div className="h-full flex flex-col relative z-20">
                         {/* ID Header */}
-                        <div className="bg-white/5 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-white/10">
-                            <div className="flex items-center gap-2">
-                                <ShieldCheck className="h-6 w-6 text-accent" />
+                        <div className="bg-white/10 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-white/10">
+                            <div className="flex items-center gap-3">
+                                <img src="/logo.jpg" alt="NIC" className="h-8 w-8 rounded shadow-sm" />
                                 <span className="font-bold tracking-tighter text-lg">NIC NIGERIA</span>
                             </div>
                             <Badge className="bg-accent text-secondary font-bold text-[10px] px-2 py-0">
