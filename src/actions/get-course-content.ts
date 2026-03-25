@@ -60,13 +60,16 @@ export async function getCourseContent(courseId: string) {
         return null
     }
 
-    // Flatten modular structure: course_modules -> modules
     const courseWithModules = {
         ...course,
         modules: (course.course_modules as any[])
             ?.map(cm => ({
                 ...cm.modules,
-                sort_order: cm.sort_order // use the link's sort order
+                lessons: cm.modules.lessons.map((l: any) => ({
+                    ...l,
+                    assessments: l.assessments?.[0] || null // Flatten assessments array to single object
+                })),
+                sort_order: cm.sort_order
             }))
             .filter(m => !!m)
             .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)) || []

@@ -67,7 +67,7 @@ export async function updateCourseProgress(enrollmentId: string) {
     const completedCount = completedLessonIds.length
 
     // 5. Calculate Percentage
-    const percentage = Math.min(100, Math.round((completedCount / totalLessons) * 100))
+    const percentage = totalLessons > 0 ? Math.min(100, Math.round((completedCount / totalLessons) * 100)) : 0
 
     // 6. Update Enrollment
     const { error: updateError } = await supabase
@@ -76,8 +76,9 @@ export async function updateCourseProgress(enrollmentId: string) {
             progress: percentage,
             completed_lessons: completedLessonIds,
             status: percentage === 100 ? 'completed' : 'active',
-            completed_at: percentage === 100 ? new Date().toISOString() : null
-        })
+            completed_at: percentage === 100 ? new Date().toISOString() : null,
+            // Ensure we don't accidentally set progress to NULL
+        } as any)
         .eq('id', enrollmentId)
 
     if (updateError) {
