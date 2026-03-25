@@ -309,7 +309,7 @@ export default async function LessonPlayerPage({
                                 )}
 
                                 {/* Assessment / Quiz Section */}
-                                {activeContent.assessments && (
+                                {activeContent.assessments && !progress[activeContent.id] && (
                                     <div className="mt-16 pt-10 border-t-2 border-muted/30">
                                         <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4">Assessment</div>
                                         <h2 className="text-2xl font-black mb-8 text-secondary">Knowledge Check</h2>
@@ -318,6 +318,13 @@ export default async function LessonPlayerPage({
                                             lessonId={activeContent.id}
                                             assessment={activeContent.assessments}
                                         />
+                                    </div>
+                                )}
+                                {activeContent.assessments && !!progress[activeContent.id] && (
+                                    <div className="mt-16 pt-10 border-t-2 border-muted/30 p-10 bg-slate-50 rounded-2xl text-center border">
+                                        <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
+                                        <h2 className="text-2xl font-black text-secondary">Assessment Completed</h2>
+                                        <p className="text-muted-foreground mt-2">You have successfully submitted your assessment for this module. You can now proceed to the next section.</p>
                                     </div>
                                 )}
                             </div>

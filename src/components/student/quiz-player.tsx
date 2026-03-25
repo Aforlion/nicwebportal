@@ -48,8 +48,12 @@ export default function QuizPlayer({ courseId, lessonId, assessment }: QuizPlaye
             const res = await submitAssessment(courseId, lessonId, assessment.id, answers)
             if (res.success) {
                 setResult(res)
-                if (res.passed) {
-                    toast.success("Congratulations! You passed.")
+                if (res.passed || res.pending) {
+                    if (res.passed) {
+                        toast.success("Congratulations! You passed.")
+                    } else {
+                        toast.success("Submission received. Your assessment is under review.")
+                    }
                     router.refresh() // To update progress sidebar
                 } else {
                     toast.error("You didn't pass. Try again.")
@@ -73,22 +77,25 @@ export default function QuizPlayer({ courseId, lessonId, assessment }: QuizPlaye
     if (result) {
         return (
             <div className="bg-card border rounded-lg p-8 text-center space-y-6 animate-in zoom-in-95">
-                <div className={`mx-auto h-20 w-20 rounded-full flex items-center justify-center ${result.passed ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                    {result.passed ? <CheckCircle className="h-10 w-10" /> : <XCircle className="h-10 w-10" />}
+                <div className={`mx-auto h-20 w-20 rounded-full flex items-center justify-center ${result.passed ? 'bg-green-100 text-green-600' : result.pending ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
+                    {result.passed ? <CheckCircle className="h-10 w-10" /> : result.pending ? <CheckCircle className="h-10 w-10" /> : <XCircle className="h-10 w-10" />}
                 </div>
 
                 <div>
-                    <h3 className="text-2xl font-bold">{result.passed ? "Quiz Passed!" : "Quiz Failed"}</h3>
+                    <h3 className="text-2xl font-bold">{result.passed ? "Quiz Passed!" : result.pending ? "Submission Pending Review" : "Quiz Failed"}</h3>
                     <p className="text-muted-foreground mt-2">{result.feedback}</p>
                 </div>
 
-                <div className="text-4xl font-bold">
-                    {result.score}%
-                </div>
+                {!result.pending && (
+                    <>
+                        <div className="text-4xl font-bold">
+                            {result.score}%
+                        </div>
+                        <p className="text-sm text-muted-foreground">Passing Score: {assessment.passing_score}%</p>
+                    </>
+                )}
 
-                <p className="text-sm text-muted-foreground">Passing Score: {assessment.passing_score}%</p>
-
-                {result.passed ? (
+                {result.passed || result.pending ? (
                     <Button onClick={() => router.refresh()} size="lg">Continue Learning</Button>
                 ) : (
                     <Button onClick={handleRetry} variant="outline" size="lg">

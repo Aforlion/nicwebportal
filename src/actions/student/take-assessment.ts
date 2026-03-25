@@ -105,8 +105,8 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
         )
     }
 
-    // 6. Update Lesson Progress if Passed
-    if (passed) {
+    // 6. Update Lesson Progress if Passed or Pending Review
+    if (passed || requiresManualReview) {
         const { error: progressError } = await supabase
             .from('lesson_progress')
             .upsert({
@@ -130,10 +130,11 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
         success: true,
         score: percentage,
         passed,
+        pending: requiresManualReview,
         feedback: passed
             ? "Great job! You passed."
             : requiresManualReview
-                ? "Your submission is under review. You'll be notified once it's graded."
+                ? "Your submission is under review. Please continue with the next module."
                 : "You didn't reach the passing score. Please try again."
     }
 }
