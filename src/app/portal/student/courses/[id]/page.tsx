@@ -29,6 +29,23 @@ export default async function LessonPlayerPage({
     // Sort modules and lessons
     const sortedModules = course.modules?.sort((a: any, b: any) => a.sort_order - b.sort_order)
 
+    // Calculate progression locks
+    const itemStates = new Map<string, { isLocked: boolean }>()
+    itemStates.set(course.id, { isLocked: false })
+
+    let previousItemCompleted = true // The course introduction is always accessible
+
+    sortedModules.forEach((m: any) => {
+        itemStates.set(m.id, { isLocked: !previousItemCompleted })
+
+        m.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).forEach((l: any) => {
+            const isCompleted = !!progress[l.id];
+            itemStates.set(l.id, { isLocked: !previousItemCompleted })
+            // For the next item in the sequence to be unlocked, this lesson MUST be completed
+            previousItemCompleted = isCompleted
+        })
+    })
+
     // Determine active content
     let activeContent: any = null
     let activeType = type
@@ -53,6 +70,9 @@ export default async function LessonPlayerPage({
         }
     }
 
+    // Redirect to nearest unlocked content if user tries to access locked content
+    const isActiveContentLocked = activeContent ? itemStates.get(activeContent.id)?.isLocked : false
+
     // Navigation logic
     const allItems: { id: string, type: string, moduleId?: string }[] = [
         { id: course.id, type: 'course' }
@@ -73,6 +93,7 @@ export default async function LessonPlayerPage({
 
     const prevItem = allItems[currentIndex - 1]
     const nextItem = allItems[currentIndex + 1]
+    const isNextItemLocked = nextItem ? itemStates.get(nextItem.id)?.isLocked : false
 
     const getHref = (item: any) => {
         if (!item) return '#'
@@ -115,29 +136,60 @@ export default async function LessonPlayerPage({
                         </div>
                     </Link>
 
-                    {sortedModules?.map((module: any, idx: number) => (
+                    {sortedModules?.map((module: any, idx: number) => {
+                        const isModuleLocked = itemStates.get(module.id)?.isLocked;
+                        
+                        return (
                         <div key={module.id} className="space-y-2">
                             <div className="px-2">
-                                <Link
-                                    href={getHref({ id: module.id, type: 'module' })}
-                                    className={`group w-full flex flex-col gap-1 p-3 rounded-xl transition-all border
-                                        ${activeType === 'module' && activeContent?.id === module.id ? 'bg-emerald-50 border-emerald-100' : 'hover:bg-muted/50 border-transparent'}
-                                    `}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Module {idx + 1}</span>
-                                        <BookOpen className={`h-3 w-3 ${activeType === 'module' && activeContent?.id === module.id ? 'text-emerald-500' : 'text-muted-foreground opacity-30'}`} />
+                                {isModuleLocked ? (
+                                    <div className="w-full flex flex-col gap-1 p-3 rounded-xl border border-transparent opacity-50 cursor-not-allowed">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Module {idx + 1}</span>
+                                            <svg className="h-3 w-3 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
+                                        </div>
+                                        <span className="text-sm font-bold line-clamp-1 text-muted-foreground">
+                                            {module.title}
+                                        </span>
                                     </div>
-                                    <span className={`text-sm font-bold line-clamp-1 ${activeType === 'module' && activeContent?.id === module.id ? 'text-emerald-900' : 'text-secondary group-hover:text-primary transition-colors'}`}>
-                                        {module.title}
-                                    </span>
-                                </Link>
+                                ) : (
+                                    <Link
+                                        href={getHref({ id: module.id, type: 'module' })}
+                                        className={`group w-full flex flex-col gap-1 p-3 rounded-xl transition-all border
+                                            ${activeType === 'module' && activeContent?.id === module.id ? 'bg-emerald-50 border-emerald-100' : 'hover:bg-muted/50 border-transparent'}
+                                        `}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Module {idx + 1}</span>
+                                            <BookOpen className={`h-3 w-3 ${activeType === 'module' && activeContent?.id === module.id ? 'text-emerald-500' : 'text-muted-foreground opacity-30'}`} />
+                                        </div>
+                                        <span className={`text-sm font-bold line-clamp-1 ${activeType === 'module' && activeContent?.id === module.id ? 'text-emerald-900' : 'text-secondary group-hover:text-primary transition-colors'}`}>
+                                            {module.title}
+                                        </span>
+                                    </Link>
+                                )}
                             </div>
 
                             <div className="space-y-1 ml-4 border-l-2 border-muted/30">
                                 {module.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => {
                                     const isCompleted = progress[lesson.id]
                                     const isActive = activeType === 'lesson' && lesson.id === activeContent?.id
+                                    const isLessonLocked = itemStates.get(lesson.id)?.isLocked;
+
+                                    if (isLessonLocked) {
+                                        return (
+                                            <div key={lesson.id} className="w-full flex items-center gap-3 px-4 py-3 text-sm rounded-r-xl transition-all opacity-50 cursor-not-allowed">
+                                                <div className="shrink-0">
+                                                    <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                    </svg>
+                                                </div>
+                                                <span className="line-clamp-1 text-muted-foreground">{lesson.title}</span>
+                                            </div>
+                                        )
+                                    }
 
                                     return (
                                         <Link
@@ -166,14 +218,28 @@ export default async function LessonPlayerPage({
                                 })}
                             </div>
                         </div>
-                    ))}
+                        )
+                    })}
                 </div>
             </div>
 
             {/* Main Content Area */}
             <div className="flex-1 overflow-y-auto bg-background flex flex-col">
                 <div className="max-w-4xl mx-auto w-full p-6 lg:p-12">
-                    {activeType === 'lesson' && activeContent ? (
+                    {isActiveContentLocked ? (
+                        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-20 text-center bg-muted/5 rounded-3xl border border-dashed border-muted">
+                            <div className="h-20 w-20 rounded-full bg-muted/20 flex items-center justify-center mb-6">
+                                <svg className="h-10 w-10 opacity-40 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-2xl font-black text-secondary mb-3">Content Locked</h3>
+                            <p className="max-w-md text-slate-500 font-medium leading-relaxed">Please complete the previous lessons earlier in the curriculum to unlock this piece of content.</p>
+                            <Button variant="default" asChild className="mt-8 rounded-full px-8 shadow-sm">
+                                <Link href={`/portal/student/courses/${courseId}`}>Go to Curriculum Start</Link>
+                            </Button>
+                        </div>
+                    ) : activeType === 'lesson' && activeContent ? (
                         <>
                             <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl mb-10 relative group border-4 border-muted/10">
                                 {activeContent.video_url ? (
@@ -202,11 +268,19 @@ export default async function LessonPlayerPage({
                                         <span>{sortedModules?.find((m: any) => m.lessons?.some((l: any) => l.id === activeContent.id))?.title}</span>
                                     </div>
                                 </div>
-                                <LessonCompleteButton
-                                    courseId={course.id}
-                                    lessonId={activeContent.id}
-                                    isCompleted={!!progress[activeContent.id]}
-                                />
+                                {!activeContent.assessments && (
+                                    <LessonCompleteButton
+                                        courseId={course.id}
+                                        lessonId={activeContent.id}
+                                        isCompleted={!!progress[activeContent.id]}
+                                    />
+                                )}
+                                {activeContent.assessments && !!progress[activeContent.id] && (
+                                    <div className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-lg font-bold shadow-sm">
+                                        <CheckCircle className="h-5 w-5" />
+                                        Completed
+                                    </div>
+                                )}
                             </div>
 
                             <div className="prose prose-slate prose-lg max-w-none">
@@ -319,25 +393,47 @@ export default async function LessonPlayerPage({
                         ) : <div />}
 
                         {nextItem ? (
-                            <Button asChild className="group bg-secondary hover:bg-secondary/90 text-white font-bold h-16 px-8 rounded-2xl shadow-lg transition-all active:scale-95">
-                                <Link href={getHref(nextItem)} className="flex items-center">
-                                    <div className="text-right mr-4">
-                                        <div className="text-[10px] text-white/60 uppercase tracking-widest leading-none mb-1">Next Up</div>
-                                        <div className="line-clamp-1 max-w-[250px]">
-                                            {nextItem.type === 'lesson' 
-                                                ? sortedModules.flatMap((m: any) => m.lessons).find((l: any) => l.id === nextItem.id)?.title 
-                                                : nextItem.type === 'module'
-                                                    ? `Next Module: ${sortedModules.find((m: any) => m.id === nextItem.id)?.title}`
-                                                    : 'Continue Learning'}
+                            isNextItemLocked ? (
+                                <Button disabled className="group bg-muted text-muted-foreground font-bold h-16 px-8 rounded-2xl shadow-none cursor-not-allowed">
+                                    <div className="flex items-center">
+                                        <div className="text-right mr-4">
+                                            <div className="text-[10px] uppercase tracking-widest leading-none mb-1">Next Up (Locked)</div>
+                                            <div className="line-clamp-1 max-w-[250px]">
+                                                {nextItem.type === 'lesson' 
+                                                    ? sortedModules.flatMap((m: any) => m.lessons).find((l: any) => l.id === nextItem.id)?.title 
+                                                    : nextItem.type === 'module'
+                                                        ? `Next Module: ${sortedModules.find((m: any) => m.id === nextItem.id)?.title}`
+                                                        : 'Complete Current Lesson'}
+                                            </div>
+                                        </div>
+                                        <div className="h-8 w-8 rounded-full bg-muted-foreground/10 flex items-center justify-center">
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
                                         </div>
                                     </div>
-                                    <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                                        <svg className="h-5 w-5 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                        </svg>
-                                    </div>
-                                </Link>
-                            </Button>
+                                </Button>
+                            ) : (
+                                <Button asChild className="group bg-secondary hover:bg-secondary/90 text-white font-bold h-16 px-8 rounded-2xl shadow-lg transition-all active:scale-95">
+                                    <Link href={getHref(nextItem)} className="flex items-center">
+                                        <div className="text-right mr-4">
+                                            <div className="text-[10px] text-white/60 uppercase tracking-widest leading-none mb-1">Next Up</div>
+                                            <div className="line-clamp-1 max-w-[250px]">
+                                                {nextItem.type === 'lesson' 
+                                                    ? sortedModules.flatMap((m: any) => m.lessons).find((l: any) => l.id === nextItem.id)?.title 
+                                                    : nextItem.type === 'module'
+                                                        ? `Next Module: ${sortedModules.find((m: any) => m.id === nextItem.id)?.title}`
+                                                        : 'Continue Learning'}
+                                            </div>
+                                        </div>
+                                        <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                                            <svg className="h-5 w-5 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                            </svg>
+                                        </div>
+                                    </Link>
+                                </Button>
+                            )
                         ) : (
                             overallProgress === 100 && (
                                 <CourseCompletionCard courseId={course.id} />

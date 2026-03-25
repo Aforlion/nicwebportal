@@ -67,7 +67,7 @@ export async function getCourseContent(courseId: string) {
                 ...cm.modules,
                 lessons: cm.modules.lessons.map((l: any) => ({
                     ...l,
-                    assessments: l.assessments?.[0] || null // Flatten assessments array to single object
+                    assessments: Array.isArray(l.assessments) ? l.assessments[0] : (l.assessments || null)
                 })),
                 sort_order: cm.sort_order
             }))
