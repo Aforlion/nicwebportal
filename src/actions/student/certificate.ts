@@ -17,17 +17,15 @@ export async function issueCertificate(courseId: string) {
     // 1. Verify Enrollment & Progress
     const { data: enrollment } = await supabase
         .from('enrollments')
-        .select('id, progress')
+        .select('id, progress, program_id')
         .eq('user_id', user.id)
         .eq('course_id', courseId)
         .single()
 
-    if (!enrollment) {
-        return { error: "Enrollment not found" }
+    if (!enrollment || !enrollment.program_id) {
+        return { error: "Enrollment or Program ID not found" }
     }
 
-    // Strict 100% check. (Or we can check if all lessons are completed in progress table if progress is float)
-    // Assuming progress is updated correctly.
     if (enrollment.progress < 100) {
         return { error: "Course not yet completed. Please finish all lessons." }
     }
@@ -35,28 +33,29 @@ export async function issueCertificate(courseId: string) {
     // 2. Check for existing certificate
     const { data: existing } = await supabase
         .from('certificates')
-        .select('certificate_code')
-        .eq('enrollment_id', enrollment.id)
-        .single()
+        .select('certificate_number')
+        .eq('user_id', user.id)
+        .eq('program_id', enrollment.program_id)
+        .maybeSingle()
 
     if (existing) {
-        // 5. Send Confirmation Email
-        const { data: certData } = await supabase
-            .from('enrollments')
-            .select('courses(title)')
-            .eq('id', enrollment.id)
+        // Re-send email or just return success
+        const { data: courseData } = await supabase
+            .from('courses')
+            .select('title')
+            .eq('id', courseId)
             .single()
 
-        if (certData) {
+        if (courseData) {
             await sendCertificateEmail(
                 user.email!,
                 user.user_metadata?.full_name || "Student",
-                (certData.courses as any).title,
-                existing.certificate_code
+                courseData.title,
+                existing.certificate_number
             )
         }
 
-        return { success: true, code: existing.certificate_code }
+        return { success: true, code: existing.certificate_number }
     }
 
     // 3. Generate Unique Code
@@ -69,14 +68,31 @@ export async function issueCertificate(courseId: string) {
     const { error: insertError } = await supabase
         .from('certificates')
         .insert({
-            enrollment_id: enrollment.id,
-            certificate_code: code,
+            user_id: user.id,
+            program_id: enrollment.program_id,
+            certificate_number: code,
             issue_date: new Date().toISOString()
         })
 
     if (insertError) {
         console.error("Certificate issuance error:", insertError)
         return { error: "Failed to generate certificate. Please try again." }
+    }
+
+    // 5. Send initial Email
+    const { data: courseData } = await supabase
+        .from('courses')
+        .select('title')
+        .eq('id', courseId)
+        .single()
+
+    if (courseData) {
+        await sendCertificateEmail(
+            user.email!,
+            user.user_metadata?.full_name || "Student",
+            courseData.title,
+            code
+        )
     }
 
     return { success: true, code }
@@ -86,25 +102,20 @@ export async function getCertificateByCode(code: string) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
-    // Fetch certificate with student and course details
+    // Fetch certificate with student and program details
     const { data: cert, error } = await supabase
         .from('certificates')
         .select(`
             *,
-            enrollments (
-                enrolled_at,
-                completed_at,
-                profiles:user_id (
-                    full_name,
-                    email
-                ),
-                courses (
-                    title,
-                    duration_hours
-                )
+            profiles:user_id (
+                full_name,
+                email
+            ),
+            programs:program_id (
+                title
             )
         `)
-        .eq('certificate_code', code)
+        .eq('certificate_number', code)
         .single()
 
     if (error || !cert) {
@@ -125,11 +136,9 @@ export async function getStudentCertificates() {
         .from('certificates')
         .select(`
             *,
-            enrollments!inner (
-                courses (title)
-            )
+            programs (title)
         `)
-        .eq('enrollments.user_id', user.id)
+        .eq('user_id', user.id)
 
     if (error) {
         console.error("Error fetching certificates:", error)

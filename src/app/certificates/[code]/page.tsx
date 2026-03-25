@@ -14,11 +14,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
         notFound()
     }
 
-    const { enrollments } = cert
-    if (!enrollments) return notFound()
-
-    const studentName = enrollments.profiles?.full_name || enrollments.profiles?.email || "Student"
-    const courseTitle = enrollments.courses?.title || "Course"
+    const studentName = cert.profiles?.full_name || cert.profiles?.email || "Student"
+    const courseTitle = cert.programs?.title || "Program"
     const issueDate = new Date(cert.issue_date).toLocaleDateString("en-GB", {
         day: 'numeric', month: 'long', year: 'numeric'
     })
@@ -101,7 +98,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
 
                     <div className="text-right flex flex-col items-end">
                         <QRCodeDisplay value={verificationUrl} size={84} />
-                        <p className="text-[10px] text-slate-400 font-mono mt-2 tracking-wider">ID: {cert.certificate_code}</p>
+                        <p className="text-[10px] text-slate-400 font-mono mt-2 tracking-wider">ID: {cert.certificate_number}</p>
                     </div>
                 </div>
             </div>

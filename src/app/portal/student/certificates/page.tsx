@@ -44,8 +44,8 @@ export default async function StudentCertificatesPage() {
                                         <ShieldCheck className="mr-1 h-3 w-3" /> Verified
                                     </Badge>
                                 </div>
-                                <CardTitle className="text-xl text-secondary">{cert.enrollments?.courses?.title}</CardTitle>
-                                <CardDescription className="font-mono text-xs">{cert.certificate_code}</CardDescription>
+                                <CardTitle className="text-xl text-secondary">{cert.programs?.title}</CardTitle>
+                                <CardDescription className="font-mono text-xs">{cert.certificate_number}</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -67,12 +67,12 @@ export default async function StudentCertificatesPage() {
                             </CardContent>
                             <CardFooter className="flex gap-3 pt-0">
                                 <Button className="flex-grow bg-primary" asChild>
-                                    <Link href={`/certificates/${cert.certificate_code}`} target="_blank">
+                                    <Link href={`/certificates/${cert.certificate_number}`} target="_blank">
                                         <Download className="mr-2 h-4 w-4" /> View PDF
                                     </Link>
                                 </Button>
                                 <Button variant="outline" size="icon" asChild>
-                                    <Link href={`/certificates/${cert.certificate_code}`} target="_blank" title="Public Verification Link">
+                                    <Link href={`/certificates/${cert.certificate_number}`} target="_blank" title="Public Verification Link">
                                         <ExternalLink className="h-4 w-4 text-primary" />
                                     </Link>
                                 </Button>

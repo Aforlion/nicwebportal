@@ -104,7 +104,7 @@ export function MemberRegistrationForm({
     const selectedCategory = MEMBERSHIP_CATEGORIES.find(cat => cat.id === formData.category)
 
     return (
-        <div className="mx-auto max-w-4xl">
+        <div className="w-full">
             {/* Progress Steps */}
             <div className="mb-12">
                 <div className="flex items-center justify-between">

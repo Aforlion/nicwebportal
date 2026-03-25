@@ -60,6 +60,8 @@ export async function getStudentDashboardData() {
     let cpdCredits = 0
     try {
         const currentYear = new Date().getFullYear()
+        
+        // 1. Get official credits from cpd_records
         const { data: cpdData } = await supabase
             .from('cpd_records')
             .select('credits')
@@ -67,10 +69,30 @@ export async function getStudentDashboardData() {
             .eq('year', currentYear)
 
         if (cpdData) {
-            cpdCredits = cpdData.reduce((acc: number, curr: any) => acc + curr.credits, 0)
+            cpdCredits += cpdData.reduce((acc: number, curr: any) => acc + curr.credits, 0)
+        }
+
+        // 2. Get approved points from cpd_activities
+        const { data: membership } = await supabase
+            .from('memberships')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle()
+
+        if (membership) {
+            const { data: activityData } = await supabase
+                .from('cpd_activities')
+                .select('points')
+                .eq('membership_id', membership.id)
+                .eq('status', 'approved')
+                // Optionally filter by activity_date year if required
+            
+            if (activityData) {
+                cpdCredits += activityData.reduce((acc: number, curr: any) => acc + (curr.points || 0), 0)
+            }
         }
     } catch (e) {
-        console.warn('CPD records table may not exist yet:', e)
+        console.warn('CPD records error:', e)
     }
 
     const currentLevel = await getStudentLevel(supabase, user.id, enrollments)

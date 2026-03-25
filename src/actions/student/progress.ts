@@ -18,23 +18,36 @@ export async function updateCourseProgress(enrollmentId: string) {
     // 1. Get Course ID, current state, AND verify ownership
     const { data: enrollment } = await supabase
         .from('enrollments')
-        .select('course_id, completed_lessons, user_id')
+        .select('course_id, completed_lessons, user_id, program_id')
         .eq('id', enrollmentId)
-        .eq('user_id', user.id) // ownership check - RLS also enforces this, belt-and-suspenders
+        .eq('user_id', user.id)
         .single()
 
     if (!enrollment) return
 
-    // 2. Fetch all modules and lessons for this course
-    const { data: modules } = await supabase
+    // 2. Fetch all modules for this course via junction table
+    const { data: courseModules } = await supabase
+        .from('course_modules')
+        .select('module_id')
+        .eq('course_id', enrollment.course_id)
+
+    const moduleIds = courseModules?.map(cm => cm.module_id) || []
+
+    // Also check if modules are linked directly (legacy/fallback)
+    const { data: directModules } = await supabase
         .from('modules')
         .select('id')
         .eq('course_id', enrollment.course_id)
-
-    const moduleIds = modules?.map(m => m.id) || []
+    
+    if (directModules) {
+        directModules.forEach(m => {
+            if (!moduleIds.includes(m.id)) moduleIds.push(m.id)
+        })
+    }
 
     if (moduleIds.length === 0) return
 
+    // 3. Fetch all lessons for these modules
     const { data: allLessons } = await supabase
         .from('lessons')
         .select('id')
@@ -43,7 +56,7 @@ export async function updateCourseProgress(enrollmentId: string) {
     const totalLessons = allLessons?.length || 0
     if (totalLessons === 0) return
 
-    // 3. Count completed lessons in lesson_progress
+    // 4. Count completed lessons in lesson_progress
     const { data: completedLessonsData } = await supabase
         .from('lesson_progress')
         .select('lesson_id')
@@ -53,22 +66,34 @@ export async function updateCourseProgress(enrollmentId: string) {
     const completedLessonIds = completedLessonsData?.map(l => l.lesson_id) || []
     const completedCount = completedLessonIds.length
 
-    // 4. Calculate Percentage
+    // 5. Calculate Percentage
     const percentage = Math.min(100, Math.round((completedCount / totalLessons) * 100))
 
-    // 5. Update Enrollment
-    const { error } = await supabase
+    // 6. Update Enrollment
+    const { error: updateError } = await supabase
         .from('enrollments')
         .update({
             progress: percentage,
-            completed_lessons: completedLessonIds, // Cache IDs for faster lookup
+            completed_lessons: completedLessonIds,
             status: percentage === 100 ? 'completed' : 'active',
             completed_at: percentage === 100 ? new Date().toISOString() : null
         })
         .eq('id', enrollmentId)
 
-    if (error) {
-        console.error("Error updating course progress:", error)
+    if (updateError) {
+        console.error("Error updating course progress:", updateError)
+        return
+    }
+
+    // 7. Auto-issue Certificate if 100%
+    if (percentage === 100) {
+        try {
+            // Import issueCertificate dynamically to avoid circular dependencies if any
+            const { issueCertificate } = await import("./certificate")
+            await issueCertificate(enrollment.course_id)
+        } catch (e) {
+            console.error("Auto-certificate issuance failed:", e)
+        }
     }
 
     revalidatePath(`/portal/student/courses/${enrollment.course_id}`)
