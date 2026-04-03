@@ -141,6 +141,10 @@ export async function admitMemberAction(profileId: string) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
+    // Confirm the user's email since an admin is admitting them
+    await supabaseAdmin.auth.admin.updateUserById(profileId, { email_confirm: true })
+
+
     const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: profile.email,

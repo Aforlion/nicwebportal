@@ -8,6 +8,7 @@ import { FoundingRegistrationSchema, IndividualRegistrationSchema, FacilityRegis
 import logger from "@/lib/logger"
 import { env } from "@/env"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { createClient } from "@supabase/supabase-js"
 
 export async function savePendingRegistrationAction(data: {
     email: string,
@@ -164,6 +165,14 @@ export async function finalizeRegistrationAction(reference: string) {
                 return { success: false, message: "Failed to create account: " + (signUpError?.message || "User creation failed.") };
             }
 
+            // 3.1 Confirm Email using Admin API (idempotent after payment)
+            const adminClient = createClient(
+                env.NEXT_PUBLIC_SUPABASE_URL,
+                env.SUPABASE_SERVICE_ROLE_KEY,
+                { auth: { autoRefreshToken: false, persistSession: false } }
+            )
+            await adminClient.auth.admin.updateUserById(authData.user.id, { email_confirm: true })
+
             // 3.5 Create Membership Record
             const { error: membershipError } = await supabase
                 .from('memberships')
@@ -246,6 +255,14 @@ export async function finalizeRegistrationAction(reference: string) {
                 logger.error("Facility Owner Signup Error", { error: authError, email: fd.ownerEmail, pendingId });
                 return { success: false, message: authError?.message || "Failed to create owner account." }
             }
+
+            // 2.1 Confirm Email using Admin API
+            const adminClient = createClient(
+                env.NEXT_PUBLIC_SUPABASE_URL,
+                env.SUPABASE_SERVICE_ROLE_KEY,
+                { auth: { autoRefreshToken: false, persistSession: false } }
+            )
+            await adminClient.auth.admin.updateUserById(authData.user.id, { email_confirm: true })
 
             // 3. Create Facility via existing action
             const result = await registerFacilityAction({

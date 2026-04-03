@@ -14,6 +14,7 @@ import dynamic from "next/dynamic"
 
 const PaystackPaymentHandler = dynamic(() => import("@/components/paystack-payment-handler"), { ssr: false })
 import { savePendingRegistrationAction } from "@/lib/actions/registration"
+import { env } from "@/env"
 
 const REGISTRATION_FEE = 100000
 
@@ -330,7 +331,7 @@ export function FacilityRegistrationForm() {
                             email={formData.ownerEmail}
                             amount={REGISTRATION_FEE}
                             useRedirect={true}
-                            callbackUrl={baseUrl ? `${baseUrl}/payment/callback` : undefined}
+                            callbackUrl={env.NEXT_PUBLIC_APP_URL ? `${env.NEXT_PUBLIC_APP_URL}/payment/callback` : (baseUrl ? `${baseUrl}/payment/callback` : undefined)}
                             onBefore={async () => {
                                 // Basic validation before Paystack
                                 if (!formData.facilityName || !formData.ownerEmail || !formData.password) {
