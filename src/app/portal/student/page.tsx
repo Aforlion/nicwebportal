@@ -41,11 +41,11 @@ export default async function StudentDashboard() {
                         <div>
                             <h1 className="text-3xl font-bold text-secondary">Welcome back!</h1>
                             <p className="text-muted-foreground">
-                                You have {enrollments.filter((e: any) => e.status === 'active' || e.status === 'enrolled').length} courses in progress.
+                                You have {(enrollments || []).filter((e: any) => e?.status === 'active' || e?.status === 'enrolled').length} courses in progress.
                             </p>
                         </div>
                     </div>
-                    {recent && (
+                    {recent && (Array.isArray(recent.course) ? recent.course[0] : recent.course)?.id && (
                         <Button className="bg-primary" asChild>
                             <Link href={`/portal/student/courses/${(Array.isArray(recent.course) ? recent.course[0] : recent.course)?.id}`}>
                                 <PlayCircle className="mr-2 h-4 w-4" />
@@ -60,21 +60,21 @@ export default async function StudentDashboard() {
                     {[
                         {
                             title: "Enrolled Courses",
-                            value: enrollments.length.toString(),
+                            value: (enrollments || []).length.toString(),
                             icon: BookOpen,
                             color: "text-blue-600",
                             bg: "bg-blue-50"
                         },
                         {
                             title: "Completion Rate",
-                            value: `${Math.round(enrollments.reduce((acc: number, curr: any) => acc + (curr.progress || 0), 0) / (enrollments.length || 1))}%`,
+                            value: `${Math.round((enrollments || []).reduce((acc: number, curr: any) => acc + (curr?.progress || 0), 0) / (enrollments?.length || 1))}%`,
                             icon: Clock,
                             color: "text-primary",
                             bg: "bg-primary/10"
                         },
                         {
                             title: "Certificates",
-                            value: enrollments.filter((e: any) => e.status === 'completed').length.toString(),
+                            value: (enrollments || []).filter((e: any) => e?.status === 'completed').length.toString(),
                             icon: Award,
                             color: "text-accent",
                             bg: "bg-accent/10"
@@ -105,7 +105,7 @@ export default async function StudentDashboard() {
                         </div>
 
                         <div className="grid gap-6">
-                            {enrollments.length === 0 ? (
+                            {(enrollments || []).length === 0 ? (
                                 <Card className="p-8 text-center bg-muted/20 border-dashed">
                                     <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                                     <h3 className="text-lg font-semibold text-secondary">No courses yet</h3>
@@ -115,13 +115,15 @@ export default async function StudentDashboard() {
                                     </Button>
                                 </Card>
                             ) : (
-                                enrollments.map((enrollment: any) => (
-                                    <Card key={enrollment.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                                enrollments.map((enrollment: any, index: number) => {
+                                    const course = Array.isArray(enrollment?.course) ? enrollment.course[0] : enrollment?.course;
+                                    return (
+                                    <Card key={enrollment?.id || index} className="overflow-hidden hover:shadow-md transition-shadow">
                                         <CardContent className="p-0">
                                             <div className="flex flex-col sm:flex-row">
                                                 <div className="sm:w-48 bg-muted/30 p-6 flex items-center justify-center relative">
-                                                    {enrollment.course?.thumbnail_url ? (
-                                                        <img src={enrollment.course.thumbnail_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80" />
+                                                    {course?.thumbnail_url ? (
+                                                        <img src={course.thumbnail_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80" />
                                                     ) : (
                                                         <BookOpen className="h-12 w-12 text-muted-foreground/40" />
                                                     )}
@@ -130,32 +132,34 @@ export default async function StudentDashboard() {
                                                     <div className="mb-4 flex items-start justify-between">
                                                         <div>
                                                             <Badge
-                                                                variant={enrollment.status === 'completed' ? 'success' : 'info'}
+                                                                variant={enrollment?.status === 'completed' ? 'success' : 'info'}
                                                                 className="mb-2"
                                                             >
-                                                                {enrollment.status === 'active' || enrollment.status === 'enrolled' ? 'In Progress' : enrollment.status}
+                                                                {enrollment?.status === 'active' || enrollment?.status === 'enrolled' ? 'In Progress' : (enrollment?.status || 'Unknown')}
                                                             </Badge>
-                                                            <h3 className="text-lg font-bold text-secondary line-clamp-1">{enrollment.course?.title}</h3>
-                                                            <p className="text-sm text-muted-foreground">{enrollment.course?.level || "Certification"}</p>
+                                                            <h3 className="text-lg font-bold text-secondary line-clamp-1">{course?.title || "Untitled Course"}</h3>
+                                                            <p className="text-sm text-muted-foreground">{course?.level || "Certification"}</p>
                                                         </div>
-                                                        <Button variant="ghost" size="icon" className="shrink-0" asChild>
-                                                            <Link href={`/portal/student/courses/${enrollment.course?.id}`}>
-                                                                <ArrowRight className="h-5 w-5" />
-                                                            </Link>
-                                                        </Button>
+                                                        {course?.id && (
+                                                            <Button variant="ghost" size="icon" className="shrink-0" asChild>
+                                                                <Link href={`/portal/student/courses/${course.id}`}>
+                                                                    <ArrowRight className="h-5 w-5" />
+                                                                </Link>
+                                                            </Button>
+                                                        )}
                                                     </div>
 
                                                     <div className="space-y-2">
                                                         <div className="flex items-center justify-between text-sm">
-                                                            <span className="font-medium text-secondary">{enrollment.progress || 0}% Complete</span>
+                                                            <span className="font-medium text-secondary">{enrollment?.progress || 0}% Complete</span>
                                                         </div>
-                                                        <Progress value={enrollment.progress || 0} className="h-2" />
+                                                        <Progress value={enrollment?.progress || 0} className="h-2" />
                                                     </div>
                                                 </div>
                                             </div>
                                         </CardContent>
                                     </Card>
-                                ))
+                                )})
                             )}
                         </div>
                     </div>
@@ -174,22 +178,22 @@ export default async function StudentDashboard() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {events && events.length > 0 ? (
-                                    events.map((event: any) => {
-                                        const date = new Date(event.published_at)
+                                    events.map((event: any, idx: number) => {
+                                        const date = new Date(event?.published_at || new Date())
                                         const month = date.toLocaleString('default', { month: 'short' })
                                         const day = date.getDate()
                                         const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
                                         return (
-                                            <div key={event.id} className="flex gap-4 items-start border-b border-muted pb-4 last:border-0 last:pb-0">
+                                            <div key={event?.id || idx} className="flex gap-4 items-start border-b border-muted pb-4 last:border-0 last:pb-0">
                                                 <div className="bg-primary/5 rounded px-2 py-1 text-center min-w-[50px]">
                                                     <p className="text-xs font-bold text-primary">{month}</p>
                                                     <p className="text-lg font-bold text-primary leading-none">{day}</p>
                                                 </div>
                                                 <div>
-                                                    <h4 className="text-sm font-bold text-secondary leading-tight">{event.title}</h4>
+                                                    <h4 className="text-sm font-bold text-secondary leading-tight">{event?.title || "Upcoming Event"}</h4>
                                                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                                        <Clock className="h-3 w-3" /> {time} • <Badge variant="outline" className="text-[10px] h-4 py-0 leading-none">{event.type.toUpperCase()}</Badge>
+                                                        <Clock className="h-3 w-3" /> {time} {event?.type && `• `} <Badge variant="outline" className="text-[10px] h-4 py-0 leading-none">{event?.type?.toUpperCase() || ''}</Badge>
                                                     </p>
                                                 </div>
                                             </div>

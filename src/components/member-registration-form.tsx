@@ -22,7 +22,6 @@ import dynamic from "next/dynamic"
 
 const PaystackPaymentHandler = dynamic(() => import("@/components/paystack-payment-handler"), { ssr: false })
 import { savePendingRegistrationAction } from "@/lib/actions/registration"
-import { env } from "@/env"
 
 const MEMBERSHIP_CATEGORIES = [
     { id: "student", name: "Student Member", fee: 5000, description: "For enrolled students" },
@@ -435,7 +434,7 @@ export function MemberRegistrationForm({
                                 email={formData.email}
                                 amount={selectedCategory?.fee || 0}
                                 useRedirect={true}
-                                callbackUrl={`${env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : '')}/payment/callback`}
+                                callbackUrl={`${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : '')}/payment/callback`}
                                 onBefore={async () => {
                                     const res = await savePendingRegistrationAction({
                                         email: formData.email,

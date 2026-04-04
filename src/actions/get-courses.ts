@@ -11,7 +11,7 @@ export async function getPublishedCourses() {
         .from('courses')
         .select('*')
         .eq('is_published', true)
-        .order('created_at', { ascending: false })
+        .order('sort_order', { ascending: true })
 
     if (error) {
         console.error('Error fetching courses:', error)
