@@ -283,10 +283,10 @@ export default async function LessonPlayerPage({
                                 )}
                             </div>
 
-                            <div className="prose prose-slate prose-lg max-w-none">
+                            <div className="max-w-3xl">
                                 <RichText
                                     content={activeContent.content || "No additional text content for this lesson."}
-                                    className="leading-relaxed text-slate-700"
+                                    className="text-base lg:text-[17px]"
                                 />
 
                                 {activeContent.resource_url && (
@@ -351,10 +351,10 @@ export default async function LessonPlayerPage({
                                 )}
                             </div>
 
-                            <div className="prose prose-slate prose-xl max-w-none bg-slate-50 p-10 rounded-3xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                            <div className="bg-slate-50 p-8 lg:p-10 rounded-3xl border border-slate-100 shadow-sm transition-all hover:shadow-md max-w-3xl">
                                 <RichText
                                     content={activeContent.description || "Welcome to this section. Get started by selecting the first lesson in the curriculum."}
-                                    className="leading-loose text-slate-700"
+                                    className="text-base lg:text-[17px]"
                                 />
                             </div>
 
