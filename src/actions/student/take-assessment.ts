@@ -132,7 +132,7 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
         passed: isPassing,
         pending: requiresManualReview && !aiPassed && aiScore === 0, // only pending if AI failed
         feedback: isPassing
-            ? (aiFeedback || feedback || "Great job! You passed.")
-            : (aiFeedback || feedback || "You didn't reach the passing score. Please try again.")
+            ? (aiFeedback || "Great job! You passed.")
+            : (aiFeedback || "You didn't reach the passing score. Please try again.")
     }
 }
