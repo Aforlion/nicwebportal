@@ -149,7 +149,7 @@ export async function admitMemberAction(profileId: string) {
       type: 'recovery',
       email: profile.email,
       options: {
-        redirectTo: `${env.NEXT_PUBLIC_APP_URL}/reset-password`
+        redirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/reset-password`
       }
     })
 
