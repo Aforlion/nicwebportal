@@ -72,7 +72,7 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
     if (!enrollment) return { error: "You are not enrolled in this course." }
 
     // 5. Save Submission — using validated safeAnswers only
-    const { error: subError } = await supabase
+    const { data: subData, error: subError } = await supabase
         .from('assessment_submissions')
         .insert({
             assessment_id: assessmentId,
@@ -83,31 +83,36 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
             submitted_at: new Date().toISOString(),
             graded_at: requiresManualReview ? null : new Date().toISOString()
         })
+        .select('id')
+        .single()
 
-    if (subError) {
+    if (subError || !subData) {
         console.error('[submitAssessment] DB insert error:', subError)
         return { error: 'Something went wrong saving your submission. Please try again.' }
     }
 
-    // Send Assessment Receipt Email
-    const { data: courseData } = await supabase
-        .from('courses')
-        .select('title')
-        .eq('id', courseId)
-        .single()
+    const submissionId = subData.id
 
-    if (courseData) {
-        await sendAssessmentReceiptEmail(
-            user.email!,
-            user.user_metadata?.full_name || "Student",
-            courseData.title,
-            assessment.title
-        )
+    // 6. Trigger AI grading if needed, or handle autogradable results
+    let aiPassed = false
+    let aiScore = 0
+    let aiFeedback = ""
+
+    if (requiresManualReview) {
+        // Trigger AI Auto-Grading (imported at top)
+        const { autoGradeSubmission } = await import("./ai-grading")
+        const aiResult = await autoGradeSubmission(submissionId)
+        if (aiResult.success) {
+            aiPassed = aiResult.passed!
+            aiScore = aiResult.score!
+            aiFeedback = aiResult.feedback!
+        }
     }
 
-    // 6. Update Lesson Progress if Passed or Pending Review
-    if (passed || requiresManualReview) {
-        const { error: progressError } = await supabase
+    // 7. Update Lesson Progress if Passed
+    const isPassing = passed || aiPassed
+    if (isPassing) {
+        await supabase
             .from('lesson_progress')
             .upsert({
                 enrollment_id: enrollment.id,
@@ -117,24 +122,17 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
                 last_accessed_at: new Date().toISOString()
             }, { onConflict: 'enrollment_id, lesson_id' })
 
-        if (progressError) {
-            console.error('[submitAssessment] Progress update error:', progressError)
-            // Non-fatal: submission is saved; don't fail the whole response
-        }
-
-        await updateCourseProgress(enrollment.id)
+        await updateCourseProgress(enrollment.id, user.id)
         revalidatePath(`/portal/student/courses/${courseId}`)
     }
 
     return {
         success: true,
-        score: percentage,
-        passed,
-        pending: requiresManualReview,
-        feedback: passed
-            ? "Great job! You passed."
-            : requiresManualReview
-                ? "Your submission is under review. Please continue with the next module."
-                : "You didn't reach the passing score. Please try again."
+        score: requiresManualReview ? aiScore : percentage,
+        passed: isPassing,
+        pending: requiresManualReview && !aiPassed && aiScore === 0, // only pending if AI failed
+        feedback: isPassing
+            ? (aiFeedback || feedback || "Great job! You passed.")
+            : (aiFeedback || feedback || "You didn't reach the passing score. Please try again.")
     }
 }

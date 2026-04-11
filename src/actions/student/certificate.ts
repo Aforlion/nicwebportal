@@ -5,71 +5,83 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { sendCertificateEmail } from "@/lib/email"
 
-export async function issueCertificate(courseId: string) {
+export async function issueCertificate(courseId: string, targetUserId?: string) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return { error: "User not authenticated" }
+    // 1. Resolve User
+    let userId: string;
+    let userEmail: string;
+    let fullName: string;
+
+    if (targetUserId) {
+        // Admin/AI-triggered issuance
+        userId = targetUserId;
+        const { data: profile } = await supabase.from('profiles').select('email, full_name').eq('id', userId).single();
+        userEmail = profile?.email || "";
+        fullName = profile?.full_name || "Student";
+    } else {
+        // Session-triggered issuance
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return { error: "User not authenticated" }
+        userId = user.id;
+        userEmail = user.email || "";
+        fullName = user.user_metadata?.full_name || "Student";
     }
 
-    // 1. Verify Enrollment & Progress
+    // 2. Fetch enrollment and course details (including level!)
     const { data: enrollment } = await supabase
         .from('enrollments')
-        .select('id, progress, program_id')
-        .eq('user_id', user.id)
+        .select(`
+            id, 
+            progress, 
+            program_id,
+            course:courses (
+                id,
+                title,
+                level
+            )
+        `)
+        .eq('user_id', userId)
         .eq('course_id', courseId)
         .single()
 
-    if (!enrollment || !enrollment.program_id) {
-        return { error: "Enrollment or Program ID not found" }
+    if (!enrollment) {
+        return { error: "Enrollment not found" }
     }
+
+    const course = enrollment.course as any;
 
     if (enrollment.progress < 100) {
         return { error: "Course not yet completed. Please finish all lessons." }
     }
 
-    // 2. Check for existing certificate
+    // 3. Check for existing certificate (linked either by program or course)
     const { data: existing } = await supabase
         .from('certificates')
         .select('certificate_number')
-        .eq('user_id', user.id)
-        .eq('program_id', enrollment.program_id)
+        .eq('user_id', userId)
+        .or(`program_id.eq.${enrollment.program_id},course_id.eq.${courseId}`)
         .maybeSingle()
 
     if (existing) {
-        // Re-send email or just return success
-        const { data: courseData } = await supabase
-            .from('courses')
-            .select('title')
-            .eq('id', courseId)
-            .single()
-
-        if (courseData) {
-            await sendCertificateEmail(
-                user.email!,
-                user.user_metadata?.full_name || "Student",
-                courseData.title,
-                existing.certificate_number
-            )
-        }
-
+        await sendCertificateEmail(userEmail, fullName, course.title, existing.certificate_number)
         return { success: true, code: existing.certificate_number }
     }
 
-    // 3. Generate Unique Code
-    // Format: NIC-YYYY-[RANDOM]
+    // 4. Generate Unique Code
     const year = new Date().getFullYear()
     const random = Math.random().toString(36).substring(2, 7).toUpperCase()
     const code = `NIC-${year}-${random}`
 
-    // 4. Issue Certificate
+    // 5. Issue Certificate with Level info
     const { error: insertError } = await supabase
         .from('certificates')
         .insert({
-            user_id: user.id,
+            user_id: userId,
             program_id: enrollment.program_id,
+            course_id: courseId,
+            course_level: course.level,
             certificate_number: code,
             issue_date: new Date().toISOString()
         })
@@ -79,21 +91,8 @@ export async function issueCertificate(courseId: string) {
         return { error: "Failed to generate certificate. Please try again." }
     }
 
-    // 5. Send initial Email
-    const { data: courseData } = await supabase
-        .from('courses')
-        .select('title')
-        .eq('id', courseId)
-        .single()
-
-    if (courseData) {
-        await sendCertificateEmail(
-            user.email!,
-            user.user_metadata?.full_name || "Student",
-            courseData.title,
-            code
-        )
-    }
+    // 6. Send initial Email
+    await sendCertificateEmail(userEmail, fullName, course.title, code)
 
     return { success: true, code }
 }

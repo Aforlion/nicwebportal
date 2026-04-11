@@ -24,8 +24,8 @@ export default async function LessonPlayerPage({
         redirect('/portal/student')
     }
 
-    const { course, progress, overallProgress } = data
-
+    const { course, progress, overallProgress, submissionStatus } = data
+    
     // Sort modules and lessons
     const sortedModules = course.modules?.sort((a: any, b: any) => a.sort_order - b.sort_order)
 
@@ -39,10 +39,18 @@ export default async function LessonPlayerPage({
         itemStates.set(m.id, { isLocked: !previousItemCompleted })
 
         m.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).forEach((l: any) => {
-            const isCompleted = !!progress[l.id];
+            const isCompletedStatus = !!progress[l.id];
+            
+            // PROVISIONAL UNLOCK: A lesson is "complete" for unlocking the NEXT item if:
+            // 1. It is explicitly marked complete in lesson_progress
+            // 2. OR It has an assessment that is currently 'pending_review'
+            const assessmentStatus = l.assessments?.id ? submissionStatus[l.assessments.id] : null
+            const isProvisionallyCompleted = isCompletedStatus || assessmentStatus === 'pending_review' || assessmentStatus === 'passed'
+            
             itemStates.set(l.id, { isLocked: !previousItemCompleted })
-            // For the next item in the sequence to be unlocked, this lesson MUST be completed
-            previousItemCompleted = isCompleted
+            
+            // The next item in the sequence is unlocked if this one is provisionally completed
+            previousItemCompleted = isProvisionallyCompleted
         })
     })
 
@@ -175,6 +183,8 @@ export default async function LessonPlayerPage({
                             <div className="space-y-1 ml-4 border-l-2 border-muted/30">
                                 {module.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => {
                                     const isCompleted = progress[lesson.id]
+                                    const assessmentStatus = lesson.assessments?.id ? submissionStatus[lesson.assessments.id] : null
+                                    const isProvisional = !isCompleted && assessmentStatus === 'pending_review'
                                     const isActive = activeType === 'lesson' && lesson.id === activeContent?.id
                                     const isLessonLocked = itemStates.get(lesson.id)?.isLocked;
 
@@ -203,6 +213,10 @@ export default async function LessonPlayerPage({
                                                 {isCompleted ? (
                                                     <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center">
                                                         <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+                                                    </div>
+                                                ) : isProvisional ? (
+                                                    <div className="h-5 w-5 rounded-full bg-amber-100 flex items-center justify-center" title="Awaiting Grading. You can proceed!">
+                                                        <CheckCircle className="h-3.5 w-3.5 text-amber-600 opacity-70" />
                                                     </div>
                                                 ) : isActive ? (
                                                     <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">

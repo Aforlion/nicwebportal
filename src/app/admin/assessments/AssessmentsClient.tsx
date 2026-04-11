@@ -42,18 +42,16 @@ interface Submission {
     feedback: string | null
     assessment: {
         title: string
-        lessons: {
-            modules: {
-                courses: {
-                    title: string
-                }
-            }
-        }
     }
     enrollment: {
+        user_id: string
         profiles: {
             full_name: string
             avatar_url: string | null
+        }
+        course: {
+            title: string
+            level: string
         }
     }
 }
@@ -212,8 +210,8 @@ export default function AssessmentsClient({ initialSubmissions }: { initialSubmi
                                         <td className="p-4 text-sm">
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] text-muted-foreground uppercase font-bold">
-                                                    {/* @ts-ignore - Handle possible array/object nesting from Supabase joins */}
-                                                    {(sub.assessment.lessons?.modules?.courses?.title || sub.assessment.lessons?.[0]?.modules?.courses?.title || "Unknown Course")}
+                                                    {sub.enrollment?.course?.level ? `${sub.enrollment.course.level} | ` : ''}
+                                                    {sub.enrollment?.course?.title || "Unknown Course"}
                                                 </span>
                                                 <span className="font-medium">{sub.assessment.title}</span>
                                             </div>

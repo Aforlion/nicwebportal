@@ -81,9 +81,21 @@ export async function getCourseContent(courseId: string) {
         .select('lesson_id, is_completed')
         .eq('enrollment_id', enrollment.id)
 
+    // NEW: fetch assessment submission statuses for the current user in this course
+    const { data: submissionData } = await supabase
+        .from('assessment_submissions')
+        .select('assessment_id, status')
+        .eq('enrollment_id', enrollment.id)
+
     // transform progress into a map: { lessonId: true }
     const progressMap = (progressData || []).reduce((acc: any, curr: any) => {
         acc[curr.lesson_id] = curr.is_completed
+        return acc
+    }, {})
+
+    // transform submissions into a map: { assessmentId: status }
+    const submissionMap = (submissionData || []).reduce((acc: any, curr: any) => {
+        acc[curr.assessment_id] = curr.status
         return acc
     }, {})
 
@@ -91,6 +103,7 @@ export async function getCourseContent(courseId: string) {
         course: courseWithModules,
         enrollmentId: enrollment.id,
         progress: progressMap,
+        submissionStatus: submissionMap, // New field
         overallProgress: enrollment.progress
     }
 }

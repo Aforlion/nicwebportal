@@ -96,7 +96,14 @@ export default function QuizPlayer({ courseId, lessonId, assessment }: QuizPlaye
                 )}
 
                 {result.passed || result.pending ? (
-                    <Button onClick={() => router.refresh()} size="lg">Continue Learning</Button>
+                    <div className="space-y-4">
+                        {result.pending && (
+                             <p className="text-sm bg-amber-50 text-amber-800 p-3 rounded-lg border border-amber-100 italic">
+                                <strong>Provisional Unlock:</strong> While we review your work, you are free to continue with the next lessons in the course.
+                             </p>
+                        )}
+                        <Button onClick={() => router.refresh()} size="lg" className="w-full">Continue Learning</Button>
+                    </div>
                 ) : (
                     <Button onClick={handleRetry} variant="outline" size="lg">
                         <RefreshCw className="mr-2 h-4 w-4" /> Try Again

@@ -100,16 +100,11 @@ export async function getSubmissions(status?: string) {
         .from('assessment_submissions')
         .select(`
             *,
-            assessment:assessments(
-                title,
-                lessons(
-                    modules(
-                        courses(title)
-                    )
-                )
-            ),
+            assessment:assessments(title),
             enrollment:enrollments(
-                profiles(full_name, avatar_url)
+                user_id,
+                profiles(full_name, avatar_url),
+                course:courses(title, level)
             )
         `)
         .order('submitted_at', { ascending: false })
@@ -160,7 +155,15 @@ export async function gradeSubmission(submissionId: string, score: number, feedb
                         completed_at: new Date().toISOString(),
                         last_accessed_at: new Date().toISOString()
                     }, { onConflict: 'enrollment_id, lesson_id' })
-                await updateCourseProgress(submission.enrollment_id)
+                
+                // Get user_id from enrollment
+                const { data: enrollment } = await supabase
+                    .from('enrollments')
+                    .select('user_id')
+                    .eq('id', submission.enrollment_id)
+                    .single()
+
+                await updateCourseProgress(submission.enrollment_id, enrollment?.user_id)
             }
         }
 
@@ -170,5 +173,52 @@ export async function gradeSubmission(submissionId: string, score: number, feedb
     } catch (err: any) {
         console.error('[gradeSubmission] Unexpected error:', err)
         return { error: 'Something went wrong. Please try again.' }
+    }
+}
+
+/**
+ * Triggers AI grading for all pending submissions in a specific course
+ */
+export async function batchGradeCourse(courseId: string) {
+    const { supabaseAdmin } = await import("@/lib/supabase/admin")
+    const { autoGradeSubmission } = await import("../student/ai-grading")
+    
+    // 1. Get all pending submissions for this course using an inner join filter
+    const { data: submissions, error } = await supabaseAdmin
+        .from('assessment_submissions')
+        .select(`
+            id,
+            enrollments!inner(course_id)
+        `)
+        .eq('status', 'pending_review')
+        .eq('enrollments.course_id', courseId)
+
+    if (error) {
+        console.error("Batch grade fetch error:", error)
+        return { success: false, error: "Failed to fetch pending submissions" }
+    }
+
+    if (!submissions || submissions.length === 0) {
+        return { success: true, message: "No pending submissions found for this course." }
+    }
+
+    // 2. Process them in sequence to avoid rate limits
+    const results = []
+    for (const sub of submissions) {
+        try {
+            const res = await autoGradeSubmission(sub.id)
+            results.push({ id: sub.id, success: res.success })
+            // 1 second delay to be safe with Gemini free/low tier quotas
+            await new Promise(resolve => setTimeout(resolve, 1000))
+        } catch (e) {
+            results.push({ id: sub.id, success: false, error: "Processing failed" })
+        }
+    }
+
+    revalidatePath('/admin/assessments')
+    return { 
+        success: true, 
+        processed: results.length,
+        results
     }
 }
