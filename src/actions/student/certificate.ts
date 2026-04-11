@@ -56,12 +56,40 @@ export async function issueCertificate(courseId: string, targetUserId?: string) 
         return { error: "Course not yet completed. Please finish all lessons." }
     }
 
+    // 2.5 Ensure all assessments are completely graded and passed
+    const { data: submissions } = await supabase
+        .from('assessment_submissions')
+        .select(`
+            status,
+            score,
+            assessment:assessments (
+                passing_score
+            )
+        `)
+        .eq('enrollment_id', enrollment.id)
+
+    if (submissions && submissions.length > 0) {
+        for (const sub of submissions) {
+            if (sub.status === 'pending') {
+                return { error: "One or more of your assessments are still Pending Review. Your certificate will be available once graded." }
+            }
+            const passingscore = sub.assessment?.passing_score || 70
+            if (sub.score < passingscore) {
+                return { error: `You scored ${sub.score}% on an assessment (Requires ${passingscore}%). Please retake failed assessments to unlock your certificate.` }
+            }
+        }
+    }
+
     // 3. Check for existing certificate (linked either by program or course)
+    const orCondition = enrollment.program_id 
+        ? `program_id.eq.${enrollment.program_id},course_id.eq.${courseId}`
+        : `course_id.eq.${courseId}`;
+
     const { data: existing } = await supabase
         .from('certificates')
         .select('certificate_number')
         .eq('user_id', userId)
-        .or(`program_id.eq.${enrollment.program_id},course_id.eq.${courseId}`)
+        .or(orCondition)
         .maybeSingle()
 
     if (existing) {
