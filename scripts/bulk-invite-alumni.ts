@@ -107,8 +107,13 @@ async function runCampaign() {
 
     for (const person of uniqueAlumni) {
         try {
-            console.log(`Processing: ${person.name} (${person.email})...`)
-            
+            // 0. Check if user already exists and has logged in
+            const { data: { users: allUsers } } = await supabase.auth.admin.listUsers()
+            if (allUsers.find(u => u.email === person.email && u.last_sign_in_at)) {
+                console.log(`Skipping ${person.email} - already established access.`)
+                continue
+            }
+
             // 1. Generate the recovery/setup link
             const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
                 type: 'recovery',

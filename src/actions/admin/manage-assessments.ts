@@ -125,9 +125,9 @@ export async function getSubmissions(status?: string) {
 
 export async function gradeSubmission(submissionId: string, score: number, feedback: string) {
     await requireAdmin()
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
-    const admin = (await supabase.auth.getUser()).data.user
+    const { supabaseAdmin } = await import("@/lib/supabase/admin")
+    // We use the supabaseAdmin to bypass RLS so the admin can write to the student's records
+    const supabase = supabaseAdmin
 
     try {
         // Fetch basic info for progress update
@@ -165,6 +165,24 @@ export async function gradeSubmission(submissionId: string, score: number, feedb
 
                 await updateCourseProgress(submission.enrollment_id, enrollment?.user_id)
             }
+
+            // CRITICAL FIX: Actually update the submission record itself
+            const passed = assessment && score >= assessment.passing_score
+            const { error: updateError } = await supabase
+                .from('assessment_submissions')
+                .update({
+                    score: score,
+                    feedback: feedback,
+                    status: passed ? 'passed' : 'failed',
+                    graded_by_ai: false,
+                    graded_at: new Date().toISOString()
+                })
+                .eq('id', submissionId)
+
+            if (updateError) {
+                console.error('[gradeSubmission] Update error:', updateError)
+                return { error: 'Failed to update submission data' }
+            }
         }
 
         revalidatePath('/admin/assessments')
@@ -188,10 +206,10 @@ export async function batchGradeCourse(courseId: string) {
         .from('assessment_submissions')
         .select(`
             id,
-            enrollments!inner(course_id)
+            enrollment:enrollments!inner(course_id)
         `)
         .eq('status', 'pending_review')
-        .eq('enrollments.course_id', courseId)
+        .eq('enrollment.course_id', courseId)
 
     if (error) {
         console.error("Batch grade fetch error:", error)
@@ -202,23 +220,60 @@ export async function batchGradeCourse(courseId: string) {
         return { success: true, message: "No pending submissions found for this course." }
     }
 
-    // 2. Process them in sequence to avoid rate limits
-    const results = []
-    for (const sub of submissions) {
-        try {
-            const res = await autoGradeSubmission(sub.id)
-            results.push({ id: sub.id, success: res.success })
-            // 1 second delay to be safe with Gemini free/low tier quotas
-            await new Promise(resolve => setTimeout(resolve, 1000))
-        } catch (e) {
-            results.push({ id: sub.id, success: false, error: "Processing failed" })
-        }
+    return await processBatch(submissions.map(s => s.id))
+}
+
+/**
+ * Global action to process ALL pending items from the dashboard
+ */
+export async function batchGradeAllAction(): Promise<
+    { success: true; processed: number; total?: number; message: string } | 
+    { success: false; error: string }
+> {
+    await requireAdmin()
+    const { supabaseAdmin } = await import("@/lib/supabase/admin")
+    
+    const { data: submissions, error } = await supabaseAdmin
+        .from('assessment_submissions')
+        .select('id')
+        .eq('status', 'pending_review')
+
+    if (error) return { success: false, error: error.message }
+    if (!submissions || submissions.length === 0) {
+        return { success: true, processed: 0, message: "No pending items found" }
     }
 
+    return await processBatch(submissions.map(s => s.id))
+}
+
+/**
+ * Individual action for a single row
+ */
+export async function autoGradeSubmissionAction(submissionId: string) {
+    await requireAdmin()
+    const { autoGradeSubmission } = await import("../student/ai-grading")
+    return await autoGradeSubmission(submissionId)
+}
+
+async function processBatch(ids: string[]): Promise<{ success: true; processed: number; total: number; message: string }> {
+    const { autoGradeSubmission } = await import("../student/ai-grading")
+    const results = []
+    
+    for (const id of ids) {
+        try {
+            const res = await autoGradeSubmission(id)
+            results.push({ id, success: res.success })
+            await new Promise(r => setTimeout(r, 1000))
+        } catch (e) {
+            results.push({ id, success: false })
+        }
+    }
+    
     revalidatePath('/admin/assessments')
     return { 
         success: true, 
-        processed: results.length,
-        results
+        processed: results.filter(r => r.success).length, 
+        total: results.length,
+        message: `Processed ${results.length} submissions.`
     }
 }

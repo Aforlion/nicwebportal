@@ -8,8 +8,8 @@ import { revalidatePath } from "next/cache"
  * Recalculates the course progress percentage based on completed lessons
  */
 export async function updateCourseProgress(enrollmentId: string, targetUserId?: string) {
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
+    const { supabaseAdmin } = await import("@/lib/supabase/admin")
+    const supabase = supabaseAdmin // Use admin client to bypass RLS during system-level recounts
 
     // 1. Get Course ID, current state
     const query = supabase
@@ -70,8 +70,7 @@ export async function updateCourseProgress(enrollmentId: string, targetUserId?: 
     const percentage = totalLessons > 0 ? Math.min(100, Math.round((completedCount / totalLessons) * 100)) : 0
 
     // 6. Update Enrollment - Use supabaseAdmin to bypass RLS restrictions
-    const { supabaseAdmin } = await import("@/lib/supabase/admin")
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await supabase
         .from('enrollments')
         .update({
             progress: percentage,

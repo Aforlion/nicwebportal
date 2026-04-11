@@ -8,15 +8,17 @@ import { Badge } from "@/components/ui/badge"
 import {
     Search,
     CheckCircle2,
+    CheckCircle,
+    XCircle,
     Clock,
     FileText,
     Eye,
-    CheckCircle,
-    XCircle,
-    Loader2,
-    ArrowLeft
+    ArrowLeft,
+    Sparkles,
+    Zap,
+    Loader2
 } from "lucide-react"
-import { getSubmissions, gradeSubmission } from "@/actions/admin/manage-assessments"
+import { getSubmissions, gradeSubmission, batchGradeAllAction, autoGradeSubmissionAction } from "@/actions/admin/manage-assessments"
 import { toast } from "sonner"
 import {
     Dialog,
@@ -65,6 +67,8 @@ export default function AssessmentsClient({ initialSubmissions }: { initialSubmi
     const [gradingScore, setGradingScore] = useState("")
     const [gradingFeedback, setGradingFeedback] = useState("")
     const [isGrading, setIsGrading] = useState(false)
+    const [isBatching, setIsBatching] = useState(false)
+    const [isAiGrading, setIsAiGrading] = useState<string | null>(null) // Submission ID being AI graded
 
     const fetchSubmissions = async () => {
         setLoading(true)
@@ -106,6 +110,36 @@ export default function AssessmentsClient({ initialSubmissions }: { initialSubmi
         setIsGrading(false)
     }
 
+    const handleAutoGrade = async (subId: string) => {
+        setIsAiGrading(subId)
+        const res = await autoGradeSubmissionAction(subId)
+        if (res.success) {
+            if (res.score !== undefined) {
+                toast.success(`AI Grade: ${res.score}% - ${res.passed ? 'Passed' : 'Failed'}`)
+            } else {
+                toast.success(res.message || "Assessment processed (no score needed)")
+            }
+            fetchSubmissions()
+        } else {
+            toast.error(res.error || "AI Grading failed")
+        }
+        setIsAiGrading(null)
+    }
+
+    const handleBatchProcess = async () => {
+        if (!confirm("Start AI grading for all pending items? This may take a minute.")) return
+        setIsBatching(true)
+        const res = await batchGradeAllAction()
+        if (res.success) {
+            toast.success(res.message || `Processed ${res.processed} items`)
+            fetchSubmissions()
+        } else {
+            // TypeScript now understands that if success is false, error exists
+            toast.error(res.error || "Batch processing failed")
+        }
+        setIsBatching(false)
+    }
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'passed':
@@ -127,12 +161,23 @@ export default function AssessmentsClient({ initialSubmissions }: { initialSubmi
                     <h1 className="text-3xl font-bold text-secondary">Student Assessments</h1>
                     <p className="text-muted-foreground">Review and grade submissions for essays, reports, and quizzes.</p>
                 </div>
-                <Button variant="outline" asChild>
-                    <Link href="/admin/training">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Courses
-                    </Link>
-                </Button>
+                <div className="flex gap-2">
+                    <Button 
+                        variant="secondary" 
+                        onClick={handleBatchProcess} 
+                        disabled={isBatching || loading}
+                        className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
+                    >
+                        {isBatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        Batch AI Grade
+                    </Button>
+                    <Button variant="outline" asChild>
+                        <Link href="/admin/training">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Courses
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             <Card>
@@ -224,10 +269,31 @@ export default function AssessmentsClient({ initialSubmissions }: { initialSubmi
                                             {new Date(sub.submitted_at).toLocaleDateString()}
                                         </td>
                                         <td className="p-4 text-right">
-                                            <Button size="sm" variant="ghost" onClick={() => setSelectedSubmission(sub)}>
-                                                <Eye className="h-4 w-4 mr-2" />
-                                                View / Grade
-                                            </Button>
+                                            <div className="flex justify-end gap-2">
+                                                {sub.status === 'pending_review' && (
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="outline" 
+                                                        className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleAutoGrade(sub.id);
+                                                        }}
+                                                        disabled={!!isAiGrading}
+                                                    >
+                                                        {isAiGrading === sub.id ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <Zap className="h-4 w-4 mr-1" />
+                                                        )}
+                                                        AI Grade
+                                                    </Button>
+                                                )}
+                                                <Button size="sm" variant="ghost" onClick={() => setSelectedSubmission(sub)}>
+                                                    <Eye className="h-4 w-4 mr-2" />
+                                                    View / Grade
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
