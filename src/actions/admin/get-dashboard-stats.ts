@@ -24,18 +24,18 @@ export async function getDashboardStats() {
             // Certified Members (Active)
             supabase.from('memberships').select('*', { count: 'exact', head: true }).eq('status', 'active'),
             // Active Programs (Published)
-            supabase.from('programs').select('*', { count: 'exact', head: true }).eq('is_active', true),
+            supabase.from('programs').select('*', { count: 'exact', head: true }).eq('is_published', true),
             // Pending Verifications
             supabase.from('pending_registrations').select('*', { count: 'exact', head: true }).eq('status', 'paid'),
             // Total Revenue
-            supabase.from('enrollments').select('price:programs(price)').eq('payment_status', 'paid'),
+            supabase.from('payments').select('amount').eq('status', 'completed'),
             // Recent Activity (Mixed from different tables)
             supabase.from('pending_registrations').select('*').order('created_at', { ascending: false }).limit(5)
         ])
 
         // Calculate revenue
         const totalRevenue = revenueData?.reduce((acc: number, item: any) => {
-            return acc + (item.price?.price || 0)
+            return acc + (item.amount || 0)
         }, 0) || 0
 
         // Format recent activity for UI
