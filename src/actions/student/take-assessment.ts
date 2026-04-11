@@ -109,9 +109,11 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
         }
     }
 
-    // 7. Update Lesson Progress if Passed
+    // 7. Update Lesson Progress to unlock next lesson
+    // If it requires manual review, we allow the student to progress immediately. 
+    // They will just not get the certificate until it gets graded.
     const isPassing = passed || aiPassed
-    if (isPassing) {
+    if (isPassing || requiresManualReview) {
         await supabase
             .from('lesson_progress')
             .upsert({
@@ -131,8 +133,8 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
         score: requiresManualReview ? aiScore : percentage,
         passed: isPassing,
         pending: requiresManualReview && !aiPassed && aiScore === 0, // only pending if AI failed
-        feedback: isPassing
-            ? (aiFeedback || "Great job! You passed.")
-            : (aiFeedback || "You didn't reach the passing score. Please try again.")
+        feedback: requiresManualReview 
+            ? "Assessment submitted successfully, pending review."
+            : (isPassing ? (aiFeedback || "Great job! You passed.") : (aiFeedback || "You didn't reach the passing score. Please try again."))
     }
 }

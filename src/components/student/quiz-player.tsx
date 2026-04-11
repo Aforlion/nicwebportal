@@ -98,8 +98,8 @@ export default function QuizPlayer({ courseId, lessonId, assessment }: QuizPlaye
                 {result.passed || result.pending ? (
                     <div className="space-y-4">
                         {result.pending && (
-                             <p className="text-sm bg-amber-50 text-amber-800 p-3 rounded-lg border border-amber-100 italic">
-                                <strong>Provisional Unlock:</strong> While we review your work, you are free to continue with the next lessons in the course.
+                             <p className="text-sm bg-blue-50 text-blue-800 p-3 rounded-lg border border-blue-100 font-medium">
+                                Assessment submitted successfully, pending review.
                              </p>
                         )}
                         <Button onClick={() => router.refresh()} size="lg" className="w-full">Continue Learning</Button>
