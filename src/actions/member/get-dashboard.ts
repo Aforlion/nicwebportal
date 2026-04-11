@@ -58,8 +58,8 @@ export async function getMemberDashboardData() {
     const { data: payments } = await supabase
         .from('payments')
         .select('*')
-        .eq('membership_id', membership.id) // Fixed column name
-        .eq('payment_type', 'membership_fee') // Fixed column name
+        .eq('membership_id', membership.id) 
+        .in('payment_type', ['membership_fee', 'membership_dues']) // Check both legacy and current formats
         // Check if there's a payment for the current year cycle
         .gte('payment_date', new Date(new Date().getFullYear(), 0, 1).toISOString())
 
@@ -95,7 +95,7 @@ export async function getMemberDashboardData() {
             name: profileData.full_name,
             nicId: membership.nic_id,
             category: membership.category,
-            status: membership.is_active ? 'ACTIVE' : 'INACTIVE',
+            status: (membership.is_active || membership.status?.toLowerCase() === 'active') ? 'ACTIVE' : 'INACTIVE',
             joined: membership.created_at
                 ? new Date(membership.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
                 : 'Pending',
