@@ -141,5 +141,39 @@ export async function updateSession(request: NextRequest) {
         }
     }
 
+    // ============================================================
+    //  Inactivity Timeout Enforcer (60 Minutes)
+    // ============================================================
+    const INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000 // 60 minutes
+    const lastActivityCookie = request.cookies.get('nic_last_active')?.value
+
+    if (user) {
+        const now = Date.now()
+        if (lastActivityCookie) {
+            const lastActiveTime = parseInt(lastActivityCookie, 10)
+            
+            // If the time since last activity exceeds the timeout, force sign-out
+            if (now - lastActiveTime > INACTIVITY_TIMEOUT_MS) {
+                // Clear Supabase session cookies
+                await supabase.auth.signOut()
+                // Clear our custom tracker
+                supabaseResponse.cookies.delete('nic_last_active')
+                
+                const redirectUrl = new URL('/login', request.url)
+                redirectUrl.searchParams.set('expired', 'true') // Provide UX context
+                return NextResponse.redirect(redirectUrl)
+            }
+        }
+
+        // Update the last active timestamp cookie
+        supabaseResponse.cookies.set('nic_last_active', now.toString(), {
+            path: '/',
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 // Expire the cookie itself after 1 hour of pure zero-interaction
+        })
+    }
+
     return supabaseResponse
 }
