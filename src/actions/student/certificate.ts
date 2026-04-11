@@ -73,7 +73,8 @@ export async function issueCertificate(courseId: string, targetUserId?: string) 
             if (sub.status === 'pending') {
                 return { error: "One or more of your assessments are still Pending Review. Your certificate will be available once graded." }
             }
-            const passingscore = sub.assessment?.passing_score || 70
+            const assessmentObj = Array.isArray(sub.assessment) ? sub.assessment[0] : sub.assessment;
+            const passingscore = assessmentObj?.passing_score || 70
             if (sub.score < passingscore) {
                 return { error: `You scored ${sub.score}% on an assessment (Requires ${passingscore}%). Please retake failed assessments to unlock your certificate.` }
             }
