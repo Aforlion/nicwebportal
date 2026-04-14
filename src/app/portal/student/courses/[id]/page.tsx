@@ -113,10 +113,16 @@ export default async function LessonPlayerPage({
     }
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] flex-col lg:flex-row overflow-hidden -m-4 sm:-m-8">
-            {/* Sidebar - Course Curriculum */}
-            <div className="w-full lg:w-96 border-r bg-muted/5 flex flex-col h-full overflow-hidden shrink-0">
-                <div className="p-5 border-b bg-background">
+        <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)] lg:overflow-hidden -m-4 sm:-m-8">
+            {/* Sidebar - Course Curriculum: desktop=fixed side panel, mobile=collapsible bottom section */}
+            <div className="w-full lg:w-96 border-r bg-muted/5 flex flex-col max-h-[45vh] lg:h-full overflow-hidden shrink-0 order-last lg:order-first">
+                {/* Mobile-only label — sidebar appears below content on small screens */}
+                <div className="lg:hidden px-5 py-3 bg-muted/30 border-b flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Course Curriculum</span>
+                </div>
+
+                <div className="p-5 border-b bg-background hidden lg:block">
                     <Link href="/portal/student" className="flex items-center text-sm text-muted-foreground hover:text-primary mb-4 transition-colors">
                         <ChevronLeft className="h-4 w-4 mr-1" /> Back to Dashboard
                     </Link>
@@ -238,8 +244,22 @@ export default async function LessonPlayerPage({
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 overflow-y-auto bg-background flex flex-col">
-                <div className="max-w-4xl mx-auto w-full p-6 lg:p-12">
+            <div className="flex-1 overflow-y-auto bg-background flex flex-col order-first lg:order-last">
+                {/* Mobile-only top bar with back link + progress (sidebar is at bottom on mobile) */}
+                <div className="lg:hidden sticky top-0 z-10 bg-background border-b px-4 py-3 flex items-center gap-3">
+                    <Link href="/portal/student" className="flex items-center text-sm text-muted-foreground hover:text-primary transition-colors shrink-0">
+                        <ChevronLeft className="h-4 w-4 mr-1" /> Back
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-secondary truncate">{course.title}</p>
+                        <div className="mt-1 bg-muted/50 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${overallProgress || 0}%` }} />
+                        </div>
+                    </div>
+                    <span className="text-xs font-bold text-muted-foreground shrink-0">{Math.round(overallProgress || 0)}%</span>
+                </div>
+
+                <div className="max-w-4xl mx-auto w-full p-4 sm:p-6 lg:p-12">
                     {isActiveContentLocked ? (
                         <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-20 text-center bg-muted/5 rounded-3xl border border-dashed border-muted">
                             <div className="h-20 w-20 rounded-full bg-muted/20 flex items-center justify-center mb-6">
@@ -255,7 +275,7 @@ export default async function LessonPlayerPage({
                         </div>
                     ) : activeType === 'lesson' && activeContent ? (
                         <>
-                            <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl mb-10 relative group border-4 border-muted/10">
+                            <div className="aspect-video bg-black rounded-xl lg:rounded-2xl overflow-hidden shadow-xl lg:shadow-2xl mb-6 lg:mb-10 relative group border-2 lg:border-4 border-muted/10">
                                 {activeContent.video_url ? (
                                     <iframe
                                         src={activeContent.video_url}
@@ -273,9 +293,9 @@ export default async function LessonPlayerPage({
                                 )}
                             </div>
 
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-muted/30 pb-8 mb-10">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-muted/30 pb-6 lg:pb-8 mb-6 lg:mb-10">
                                 <div className="space-y-2">
-                                    <h1 className="text-3xl font-black text-secondary tracking-tight">{activeContent.title}</h1>
+                                    <h1 className="text-2xl lg:text-3xl font-black text-secondary tracking-tight">{activeContent.title}</h1>
                                     <div className="flex items-center gap-2 text-muted-foreground font-medium">
                                         <span className="px-2 py-0.5 rounded bg-muted text-[10px] font-bold uppercase tracking-wider">Lesson</span>
                                         <span>•</span>
@@ -349,7 +369,7 @@ export default async function LessonPlayerPage({
                                 <div className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-xs font-bold uppercase tracking-widest mb-4">
                                     {activeType === 'course' ? 'Course Introduction' : 'Module Introduction'}
                                 </div>
-                                <h1 className="text-5xl font-black text-secondary tracking-tight mb-6">{activeContent.title}</h1>
+                                <h1 className="text-3xl lg:text-5xl font-black text-secondary tracking-tight mb-4 lg:mb-6">{activeContent.title}</h1>
                                 {activeType === 'course' && (
                                     <div className="flex items-center gap-4 text-muted-foreground font-medium mb-8">
                                         <div className="flex items-center gap-1">

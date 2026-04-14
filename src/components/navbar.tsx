@@ -282,7 +282,8 @@ export function Navbar() {
 
             {/* Mobile Navigation */}
             {isOpen && (
-                <div className="md:hidden border-t bg-background p-4 animate-in slide-in-from-top duration-300">
+                <div className="md:hidden border-t bg-background animate-in slide-in-from-top duration-300 max-h-[calc(100svh-4rem)] overflow-y-auto">
+                    <div className="p-4">
                     <nav className="flex flex-col gap-2">
                         <Accordion type="single" collapsible className="w-full border-none">
                             {navItems.map((item) => (
@@ -358,6 +359,7 @@ export function Navbar() {
                             </Button>
                         </div>
                     </nav>
+                    </div>
                 </div>
             )}
         </header>
