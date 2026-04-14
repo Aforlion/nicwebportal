@@ -141,6 +141,9 @@ export async function getCertificateByCode(code: string) {
             ),
             programs:program_id (
                 title
+            ),
+            courses:course_id (
+                title
             )
         `)
         .eq('certificate_number', code)

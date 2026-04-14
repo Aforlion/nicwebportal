@@ -1,8 +1,7 @@
 import { getCertificateByCode } from "@/actions/student/certificate"
 import { notFound } from "next/navigation"
 import QRCodeDisplay from "@/components/certificate/qr-code-display"
-import { Button } from "@/components/ui/button"
-import { Download, Printer } from "lucide-react"
+import CertificateActions from "@/components/certificate/certificate-actions"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -14,8 +13,9 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
         notFound()
     }
 
-    const studentName = cert.profiles?.full_name || cert.profiles?.email || "Student"
-    const courseTitle = cert.programs?.title || "Program"
+    const studentName = (cert.profiles as any)?.full_name || (cert.profiles as any)?.email || "Student"
+    // For program-based certs: use program title. For course-based certs: use course title.
+    const courseTitle = (cert.programs as any)?.title || (cert.courses as any)?.title || "NIC Course"
     const issueDate = new Date(cert.issue_date).toLocaleDateString("en-GB", {
         day: 'numeric', month: 'long', year: 'numeric'
     })
@@ -26,18 +26,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
 
     return (
         <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4 print:bg-white print:p-0">
-            {/* Action Bar (Hidden in Print) */}
-            <div className="w-full max-w-[800px] mb-6 flex justify-between items-center print:hidden">
-                <Link href="/" className="font-bold text-lg flex items-center gap-2">
-                    <Image src="/logo.jpg" alt="NIC" width={24} height={24} className="rounded" />
-                    NIC Portal
-                </Link>
-                <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => window.print()} className="print-hidden">
-                        <Printer className="mr-2 h-4 w-4" /> Print
-                    </Button>
-                </div>
-            </div>
+            {/* Action Bar — rendered as a Client Component to support onClick/window.print() */}
+            <CertificateActions verificationUrl={verificationUrl} />
 
             {/* Certificate Container */}
             <div className="bg-white text-center p-12 shadow-2xl border-4 border-double border-slate-200 w-full max-w-[800px] aspect-[1.414] flex flex-col items-center justify-between text-slate-800 relative overflow-hidden print:shadow-none print:border-none print:w-[100%] print:h-[100vh] print:m-0">
