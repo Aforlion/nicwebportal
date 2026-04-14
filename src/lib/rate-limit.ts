@@ -18,15 +18,28 @@ function buildRedis() {
     const token = process.env.UPSTASH_REDIS_REST_TOKEN
 
     if (!url || !token) {
-        // Dev fallback — log a warning; never silently fail in production
+        // CRITICAL: Do NOT throw here — this runs at module initialization time.
+        // A throw at this level will crash any page that transitively imports this
+        // module (e.g. email.ts → certificate.ts → /certificates/[code] page).
+        // Fail-open: log a critical warning and disable rate limiting rather than
+        // bringing down the entire application.
         if (process.env.NODE_ENV === 'production') {
-            throw new Error('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set in production.')
+            console.error(
+                '[rate-limit] CRITICAL: UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN ' +
+                'are not set. Rate limiting is DISABLED. Set these in your Vercel environment variables.'
+            )
+        } else {
+            console.warn('[rate-limit] Upstash env vars not set. Rate limiting disabled in dev mode.')
         }
-        console.warn('[rate-limit] Upstash env vars not set. Rate limiting disabled in dev mode.')
         return null
     }
 
-    return new Redis({ url, token })
+    try {
+        return new Redis({ url, token })
+    } catch (err) {
+        console.error('[rate-limit] Failed to initialize Upstash Redis client:', err)
+        return null
+    }
 }
 
 const redis = buildRedis()
