@@ -34,11 +34,21 @@ export async function inviteMemberAction(profileId: string) {
             { auth: { autoRefreshToken: false, persistSession: false } }
         )
 
+        const tempPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-2).toUpperCase()
+        
+        // Update user with a known password
+        await supabaseAdmin.auth.admin.updateUserById(profileId, { 
+            password: tempPassword,
+            email_confirm: true 
+        })
+
+        const baseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://nicnigeria.org')
+        
         const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
             type: 'recovery',
             email: profile.email,
             options: {
-                redirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/reset-password`
+                redirectTo: `${baseUrl}/auth/callback?next=/reset-password`
             }
         })
 
@@ -48,13 +58,13 @@ export async function inviteMemberAction(profileId: string) {
         }
 
         // 3. Send the orientation email with the generated link
-        const baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org'
         await sendEmail({
             to: profile.email,
             subject: 'Action Required: Set Up Your NIC Member Portal Account',
             template: React.createElement(NICWelcomeEmail, {
                 fullName: profile.full_name,
                 loginUrl: linkData?.properties?.action_link || `${baseUrl}/login`,
+                temporaryPassword: tempPassword,
                 mode: 'invitation'
             })
         })
