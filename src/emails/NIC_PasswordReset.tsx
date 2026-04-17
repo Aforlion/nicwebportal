@@ -19,7 +19,7 @@ interface NICPasswordResetEmailProps {
     resetUrl: string;
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.nicnigeria.org';
 
 export const NICPasswordResetEmail = ({
     fullName,

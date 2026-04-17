@@ -42,7 +42,7 @@ export async function inviteMemberAction(profileId: string) {
             email_confirm: true 
         })
 
-        const baseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://nicnigeria.org')
+        const baseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://www.nicnigeria.org')
         
         const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
             type: 'recovery',

@@ -21,7 +21,7 @@ interface NICWelcomeEmailProps {
     mode?: 'welcome' | 'invitation';
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.nicnigeria.org';
 
 export const NICWelcomeEmail = ({
     fullName,
@@ -60,7 +60,9 @@ export const NICWelcomeEmail = ({
                         </Heading>
                         <Text style={stepText}>
                             {mode === 'invitation'
-                                ? "Click the button below to set your password and access your profile."
+                                ? (temporaryPassword 
+                                    ? "You can set up your account using the secure link below or by logging in with the temporary credentials provided."
+                                    : "Click the button below to set your password and access your profile.")
                                 : (temporaryPassword
                                     ? "Your account has been created. Use the details below to access your portal for the first time:"
                                     : "Your account has been successfully created. You can now access your portal using the link below:")
