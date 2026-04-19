@@ -21,22 +21,76 @@ function ResetPasswordForm() {
     const [showPassword, setShowPassword] = useState(false)
 
     useEffect(() => {
-        async function checkSession() {
+        const supabase = createClient()
+        let timeoutId: NodeJS.Timeout
+
+        async function verifySession() {
             try {
-                const supabase = createClient()
+                // 1. Check current session
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession()
                 
-                if (sessionError || !session) {
-                    console.error("Session verification failed:", sessionError)
-                    setError("Auth session missing! Your link may have expired or is invalid. Please request a new password reset link.")
+                if (session) {
+                    console.log("[ResetPassword] Session detected via getSession")
+                    setVerifying(false)
+                    return
+                }
+
+                // 2. Fallback: Manual hash parsing (Implicit Grant)
+                // This is needed if the client hasn't processed the hash yet
+                const hash = window.location.hash
+                if (hash && hash.includes('access_token=')) {
+                    console.log("[ResetPassword] Access token found in hash, attempting manual setSession")
+                    const params = new URLSearchParams(hash.substring(1))
+                    const access_token = params.get('access_token')
+                    const refresh_token = params.get('refresh_token')
+
+                    if (access_token) {
+                        const { data: setSessionData, error: setSessionError } = await supabase.auth.setSession({
+                            access_token,
+                            refresh_token: refresh_token || "",
+                        })
+                        
+                        if (setSessionData.session) {
+                            console.log("[ResetPassword] Session established via manual setSession")
+                            setVerifying(false)
+                            return
+                        }
+                    }
+                }
+
+                if (sessionError) {
+                    console.error("[ResetPassword] Session check error:", sessionError)
                 }
             } catch (err: any) {
-                setError("An error occurred during verification.")
-            } finally {
-                setVerifying(false)
+                console.error("[ResetPassword] Unexpected error during verification:", err)
             }
         }
-        checkSession()
+
+        // 3. Listen for auth state changes (covers race conditions)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log(`[ResetPassword] Auth event: ${event}`)
+            if (session) {
+                setVerifying(false)
+                setError("") // Clear any previous missing session error
+            }
+        })
+
+        verifySession()
+
+        // 4. Safety timeout: if no session found after 3 seconds, show error
+        timeoutId = setTimeout(() => {
+            setVerifying(prev => {
+                if (prev) {
+                    setError("Auth session missing! Your link may have expired or is invalid. Please request a new password reset link.")
+                }
+                return false
+            })
+        }, 3000)
+
+        return () => {
+            subscription.unsubscribe()
+            clearTimeout(timeoutId)
+        }
     }, [])
 
     const handleReset = async (e: React.FormEvent) => {
