@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Lock, AlertCircle, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react"
 
+// 1. Single shared client to prevent cookie deadlocks
+const supabase = createClient()
+
 function ResetPasswordForm() {
     const router = useRouter()
     const [password, setPassword] = useState("")
@@ -21,25 +24,24 @@ function ResetPasswordForm() {
     const [showPassword, setShowPassword] = useState(false)
 
     useEffect(() => {
-        const supabase = createClient()
         let timeoutId: NodeJS.Timeout
 
         async function verifySession() {
             try {
-                // 1. Check current session
+                console.log("[ResetPassword] Step 1: Initializing verifySession")
+                // A. Check current session
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession()
                 
                 if (session) {
-                    console.log("[ResetPassword] Session detected via getSession")
+                    console.log("[ResetPassword] Step 1b: Session detected via getSession")
                     setVerifying(false)
                     return
                 }
 
-                // 2. Fallback: Manual hash parsing (Implicit Grant)
-                // This is needed if the client hasn't processed the hash yet
+                // B. Fallback: Manual hash parsing (Implicit Grant)
                 const hash = window.location.hash
                 if (hash && hash.includes('access_token=')) {
-                    console.log("[ResetPassword] Access token found in hash, attempting manual setSession")
+                    console.log("[ResetPassword] Step 1c: Access token found in hash, attempting manual setSession")
                     const params = new URLSearchParams(hash.substring(1))
                     const access_token = params.get('access_token')
                     const refresh_token = params.get('refresh_token')
@@ -50,8 +52,10 @@ function ResetPasswordForm() {
                             refresh_token: refresh_token || "",
                         })
                         
-                        if (setSessionData.session) {
-                            console.log("[ResetPassword] Session established via manual setSession")
+                        if (setSessionError) {
+                            console.error("[ResetPassword] Step 1d: Manual setSession failed:", setSessionError)
+                        } else if (setSessionData.session) {
+                            console.log("[ResetPassword] Step 1e: Session established via manual setSession")
                             setVerifying(false)
                             return
                         }
@@ -59,28 +63,30 @@ function ResetPasswordForm() {
                 }
 
                 if (sessionError) {
-                    console.error("[ResetPassword] Session check error:", sessionError)
+                    console.error("[ResetPassword] Step 1f: Session check error:", sessionError)
                 }
             } catch (err: any) {
-                console.error("[ResetPassword] Unexpected error during verification:", err)
+                console.error("[ResetPassword] Step 1g: Unexpected error during verification:", err)
             }
         }
 
-        // 3. Listen for auth state changes (covers race conditions)
+        // C. Listen for auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log(`[ResetPassword] Auth event: ${event}`)
+            console.log(`[ResetPassword] Step 1h: Auth event triggered: ${event}`)
             if (session) {
+                console.log("[ResetPassword] Step 1i: Session confirmed via listener")
                 setVerifying(false)
-                setError("") // Clear any previous missing session error
+                setError("") 
             }
         })
 
         verifySession()
 
-        // 4. Safety timeout: if no session found after 3 seconds, show error
+        // D. Safety timeout: if no session found after 3 seconds, show error
         timeoutId = setTimeout(() => {
             setVerifying(prev => {
                 if (prev) {
+                    console.warn("[ResetPassword] Step 1j: Verification timed out, no session found")
                     setError("Auth session missing! Your link may have expired or is invalid. Please request a new password reset link.")
                 }
                 return false
@@ -98,6 +104,8 @@ function ResetPasswordForm() {
         setLoading(true)
         setError("")
 
+        console.log("[ResetPassword] Step 2: Starting handleReset")
+
         if (password !== confirmPassword) {
             setError("Passwords do not match")
             setLoading(false)
@@ -111,36 +119,45 @@ function ResetPasswordForm() {
         }
 
         try {
-            const supabase = createClient()
-            
-            // 1. Re-verify session before update
+            // 2a. Final session check
+            console.log("[ResetPassword] Step 2b: Final session check")
             const { data: { session } } = await supabase.auth.getSession()
             if (!session) {
+                console.error("[ResetPassword] Step 2c: Session missing at submission")
                 throw new Error("Auth session missing! Please refresh and try again or request a new link.")
             }
 
-            // 2. Wrap update in a 10s timeout to prevent hanging
+            // 2d. Trigger updateUser with 10s timeout
+            console.log("[ResetPassword] Step 2e: Attempting supabase.auth.updateUser")
             const updatePromise = supabase.auth.updateUser({
                 password: password
             })
 
             const timeoutPromise = new Promise<{ error: any }>((_, reject) => 
-                setTimeout(() => reject(new Error("Update service timed out. Please try again or check your internet connection.")), 10000)
+                setTimeout(() => {
+                    console.error("[ResetPassword] Step 2f: updateUser timed out after 10s")
+                    reject(new Error("Update service timed out. Please try again or check your internet connection."))
+                }, 10000)
             )
 
             const { error: updateError } = await Promise.race([updatePromise, timeoutPromise]) as { error: any }
 
             if (updateError) {
+                console.error("[ResetPassword] Step 2g: updateUser returned error:", updateError)
                 throw new Error(updateError.message)
             }
 
+            console.log("[ResetPassword] Step 2h: updateUser successful")
             setSuccess(true)
-            // Redirect to login after a short delay
+            
+            // 2i. Redirect
             setTimeout(() => {
+                console.log("[ResetPassword] Step 2j: Redirecting to login")
                 router.push('/login')
             }, 3000)
+
         } catch (error: any) {
-            console.error("[ResetPassword] Final error:", error)
+            console.error("[ResetPassword] Step 2k: Caught error in handler:", error)
             setError(error.message || "Failed to update password. Your link may have expired.")
         } finally {
             setLoading(false)
