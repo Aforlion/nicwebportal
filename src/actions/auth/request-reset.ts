@@ -37,7 +37,7 @@ export async function requestPasswordResetAction(email: string) {
         }
 
         // 3. Generate the recovery link
-        const baseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://www.nicnigeria.org')
+        const baseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://nicnigeria.org')
         console.log(`[requestPasswordResetAction] Generating recovery link for: ${email}`)
         const { data, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
             type: 'recovery',

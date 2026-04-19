@@ -132,7 +132,7 @@ export async function admitMemberAction(profileId: string) {
     }
 
     // 4. Send admission email & trigger account setup (Consolidated & Reliable)
-    const baseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://www.nicnigeria.org')
+    const baseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://nicnigeria.org')
 
     // Generate the recovery/setup link using Admin API
     const supabaseAdmin = createAdminClient(

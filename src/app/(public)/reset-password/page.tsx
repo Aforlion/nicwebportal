@@ -15,9 +15,29 @@ function ResetPasswordForm() {
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [loading, setLoading] = useState(false)
+    const [verifying, setVerifying] = useState(true)
     const [error, setError] = useState("")
     const [success, setSuccess] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
+
+    useEffect(() => {
+        async function checkSession() {
+            try {
+                const supabase = createClient()
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+                
+                if (sessionError || !session) {
+                    console.error("Session verification failed:", sessionError)
+                    setError("Auth session missing! Your link may have expired or is invalid. Please request a new password reset link.")
+                }
+            } catch (err: any) {
+                setError("An error occurred during verification.")
+            } finally {
+                setVerifying(false)
+            }
+        }
+        checkSession()
+    }, [])
 
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -38,6 +58,13 @@ function ResetPasswordForm() {
 
         try {
             const supabase = createClient()
+            
+            // Re-verify session before update
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session) {
+                throw new Error("Auth session missing! Please refresh and try again or request a new link.")
+            }
+
             const { error: updateError } = await supabase.auth.updateUser({
                 password: password
             })
@@ -142,12 +169,17 @@ function ResetPasswordForm() {
                         <Button
                             type="submit"
                             className="w-full bg-primary h-11 text-base font-semibold mt-2"
-                            disabled={loading}
+                            disabled={loading || verifying}
                         >
                             {loading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Updating...
+                                </>
+                            ) : verifying ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Verifying session...
                                 </>
                             ) : (
                                 "Update Password"
