@@ -113,15 +113,22 @@ function ResetPasswordForm() {
         try {
             const supabase = createClient()
             
-            // Re-verify session before update
+            // 1. Re-verify session before update
             const { data: { session } } = await supabase.auth.getSession()
             if (!session) {
                 throw new Error("Auth session missing! Please refresh and try again or request a new link.")
             }
 
-            const { error: updateError } = await supabase.auth.updateUser({
+            // 2. Wrap update in a 10s timeout to prevent hanging
+            const updatePromise = supabase.auth.updateUser({
                 password: password
             })
+
+            const timeoutPromise = new Promise<{ error: any }>((_, reject) => 
+                setTimeout(() => reject(new Error("Update service timed out. Please try again or check your internet connection.")), 10000)
+            )
+
+            const { error: updateError } = await Promise.race([updatePromise, timeoutPromise]) as { error: any }
 
             if (updateError) {
                 throw new Error(updateError.message)
@@ -133,6 +140,7 @@ function ResetPasswordForm() {
                 router.push('/login')
             }, 3000)
         } catch (error: any) {
+            console.error("[ResetPassword] Final error:", error)
             setError(error.message || "Failed to update password. Your link may have expired.")
         } finally {
             setLoading(false)

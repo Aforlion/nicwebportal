@@ -98,11 +98,17 @@ export async function updateSession(request: NextRequest) {
         }
     )
 
-    // Skip static assets and API routes (server actions are protected at the action level)
+    // 1. Skip static assets, API routes, and public auth pages to avoid session conflicts
+    const isPublicAuthPage =
+        request.nextUrl.pathname.startsWith('/login') ||
+        request.nextUrl.pathname.startsWith('/reset-password') ||
+        request.nextUrl.pathname.startsWith('/auth/callback')
+
     if (
         request.nextUrl.pathname.startsWith('/_next') ||
         request.nextUrl.pathname.startsWith('/api') ||
-        request.nextUrl.pathname.startsWith('/favicon.ico')
+        request.nextUrl.pathname.startsWith('/favicon.ico') ||
+        isPublicAuthPage
     ) {
         return supabaseResponse
     }
