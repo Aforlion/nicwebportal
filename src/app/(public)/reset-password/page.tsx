@@ -119,13 +119,10 @@ function ResetPasswordForm() {
         }
 
         try {
-            // 2a. Final session check
-            console.log("[ResetPassword] Step 2b: Final session check")
-            const { data: { session } } = await supabase.auth.getSession()
-            if (!session) {
-                console.error("[ResetPassword] Step 2c: Session missing at submission")
-                throw new Error("Auth session missing! Please refresh and try again or request a new link.")
-            }
+            // 2a. Bypass hanging getSession() check. 
+            // We already confirmed session in Step 1i. 
+            // supabase.auth.updateUser will still fail securely internally if the session is invalid.
+            console.log("[ResetPassword] Step 2a: Skipping getSession check (bypassing deadlock)")
 
             // 2d. Trigger updateUser with 10s timeout
             console.log("[ResetPassword] Step 2e: Attempting supabase.auth.updateUser")
