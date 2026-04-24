@@ -55,6 +55,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                                 maxHeight={200}
                                 buttonClassName="text-white hover:text-white/80"
                                 maskClassName="from-primary/80"
+                                invert={true}
                             />
                             <div className="flex flex-col gap-4 sm:flex-row">
                                 <Button size="lg" className="bg-secondary text-white hover:bg-secondary/90 h-14 text-lg px-8" asChild>

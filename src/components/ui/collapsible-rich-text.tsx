@@ -13,6 +13,7 @@ interface CollapsibleRichTextProps {
     maxHeight?: number // px
     buttonClassName?: string
     maskClassName?: string
+    invert?: boolean
 }
 
 export function CollapsibleRichText({
@@ -21,7 +22,8 @@ export function CollapsibleRichText({
     contentClassName,
     maxHeight = 150,
     buttonClassName,
-    maskClassName
+    maskClassName,
+    invert
 }: CollapsibleRichTextProps) {
     const [isExpanded, setIsExpanded] = useState(false)
     const [shouldShowButton, setShouldShowButton] = useState(false)
@@ -45,7 +47,7 @@ export function CollapsibleRichText({
                     !isExpanded && shouldShowButton && "mask-bottom"
                 )}
             >
-                <RichText content={content} className={contentClassName} />
+                <RichText content={content} className={contentClassName} invert={invert} />
             </div>
 
             {shouldShowButton && (

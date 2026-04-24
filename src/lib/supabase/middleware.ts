@@ -45,7 +45,7 @@ function getAllowedRolesForPath(pathname: string): string[] | null {
     const rbacRules = [
         {
             pathPrefix: '/admin/training',
-            allowedRoles: ['admin', 'super_admin', 'instructor'],
+            allowedRoles: ['admin', 'super_admin', 'instructor', 'examiner'],
         },
         {
             pathPrefix: '/admin/registry',
@@ -53,7 +53,7 @@ function getAllowedRolesForPath(pathname: string): string[] | null {
         },
         {
             pathPrefix: '/admin/compliance',
-            allowedRoles: ['admin', 'super_admin', 'auditor', 'inspector'],
+            allowedRoles: ['admin', 'super_admin', 'auditor', 'inspector', 'examiner'],
         },
         {
             pathPrefix: '/admin/members',

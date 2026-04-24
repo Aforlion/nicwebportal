@@ -19,6 +19,7 @@ interface NICAdmissionConfirmationEmailProps {
     coursesUrl?: string;
     loginUrl?: string;
     resetUrl?: string;
+    temporaryPassword?: string;
 }
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://nicnigeria.org';
@@ -28,6 +29,7 @@ export const NICAdmissionConfirmationEmail = ({
     coursesUrl = `${baseUrl}/portal/student/courses`,
     loginUrl = `${baseUrl}/login`,
     resetUrl,
+    temporaryPassword,
 }: NICAdmissionConfirmationEmailProps) => (
     <Html>
         <Head />
@@ -83,6 +85,17 @@ export const NICAdmissionConfirmationEmail = ({
                             {resetUrl ? "Set Up Your Account & Password →" : "Browse & Register for a Course →"}
                         </Button>
                     </Section>
+
+                    {temporaryPassword && (
+                        <Section style={accessBox}>
+                            <Heading as="h4" style={h4}>Your Portal Credentials</Heading>
+                            <Text style={accessText}><strong>Email:</strong> (This address)</Text>
+                            <Text style={accessText}><strong>Temporary Password:</strong> <code style={code}>{temporaryPassword}</code></Text>
+                            <Text style={stepTextSmall}>
+                                * Please change this password immediately after logging in for the first time.
+                            </Text>
+                        </Section>
+                    )}
 
                     <Text style={orText}>
                         Already know which course to take?{' '}
@@ -151,6 +164,13 @@ const h3 = {
     margin: '12px 0 8px',
 };
 
+const h4 = {
+    color: '#0d3b66',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    margin: '8px 0 4px',
+};
+
 const textBody = {
     color: '#333',
     fontSize: '15px',
@@ -186,11 +206,43 @@ const infoBlock = {
     borderTop: '1px solid #f0f0f0',
 };
 
+const accessBox = {
+    backgroundColor: '#f4f7fa',
+    padding: '16px',
+    borderRadius: '8px',
+    margin: '16px 0',
+    border: '1px solid #e1e8ed',
+};
+
+const accessText = {
+    color: '#333',
+    fontSize: '14px',
+    lineHeight: '20px',
+    margin: '4px 0',
+};
+
+const code = {
+    backgroundColor: '#fff',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    border: '1px solid #d1d9e0',
+    fontSize: '14px',
+    fontFamily: 'monospace',
+};
+
 const stepText = {
     color: '#374151',
     fontSize: '14px',
     lineHeight: '24px',
     margin: '2px 0',
+};
+
+const stepTextSmall = {
+    color: '#666',
+    fontSize: '11px',
+    lineHeight: '16px',
+    margin: '8px 0 0',
+    fontStyle: 'italic',
 };
 
 const ctaSection = {

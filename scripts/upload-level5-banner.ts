@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
-import * as path from 'path';
 import * as dotenv from 'dotenv';
 import { randomUUID } from 'crypto';
 
@@ -11,24 +10,16 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function uploadBanner() {
-  const courseId = '19eef393-597c-4667-a3ca-b202a43b973b'; // Level 4 course ID
-  const imagePath = 'C:\\Users\\Olatunji\\.gemini\\antigravity\\brain\\683e9870-7a35-4a77-94ed-e35d587680e2\\level_4_rebrand_banner_1776328702610.png';
+  const courseId = '52e1fde0-a8b2-4d56-b9a3-a75d27d7f8a5'; // Level 5 course ID
+  const imagePath = 'C:\\Users\\Olatunji\\.gemini\\antigravity\\brain\\683e9870-7a35-4a77-94ed-e35d587680e2\\level5_agency_business_banner_1776380539816.png';
   
   if (!fs.existsSync(imagePath)) {
     console.error(`❌ Image not found: ${imagePath}`);
     return;
   }
 
-  const fileExt = 'png';
-  const fileName = `course-banners/${courseId}-${randomUUID()}.${fileExt}`;
-
-  let fileBuffer;
-  try {
-      fileBuffer = fs.readFileSync(imagePath);
-  } catch (err) {
-      console.error('Failed to read image:', err);
-      return;
-  }
+  const fileName = `course-banners/${courseId}-${randomUUID()}.png`;
+  const fileBuffer = fs.readFileSync(imagePath);
 
   console.log(`📤 Uploading to course-banners bucket as ${fileName}...`);
   

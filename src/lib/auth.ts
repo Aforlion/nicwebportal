@@ -57,7 +57,7 @@ export async function requireAdmin() {
 }
 
 export async function requireStaff() {
-    return requireRole(['admin', 'super_admin', 'registry_officer', 'inspector', 'auditor', 'instructor'])
+    return requireRole(['admin', 'super_admin', 'registry_officer', 'inspector', 'auditor', 'instructor', 'examiner'])
 }
 
 export async function requireInspector() {

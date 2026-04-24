@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
+import * as path from 'path';
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local' });
@@ -14,7 +15,7 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const filePath = 'C:/Users/Olatunji/Desktop/NIC Docs/Advanced/NIC_CARE_SUPERVISOR_LEVEL4_Full_Course_Consolidated.md';
+const filePath = 'C:/Users/Olatunji/Desktop/NIC Docs/Advanced/NIC_Advanced_Care_Practitioner_Full_Course_Reworked.md';
 
 interface Lesson {
   title: string;
@@ -38,16 +39,16 @@ function slugify(text: string) {
 }
 
 async function uploadCourse() {
-  console.log('🚀 Starting Level 4 course ingestion...');
+  console.log('🚀 Starting ACP Rework course ingestion...');
   if (!fs.existsSync(filePath)) {
       console.error(`File not found: ${filePath}`);
       return;
   }
   let content = fs.readFileSync(filePath, 'utf-8');
   
-  const courseId = '19eef393-597c-4667-a3ca-b202a43b973b';
-  const newCourseTitle = 'NIC Care Supervisor & Facility Manager (Level 4)';
-  const courseSlug = 'nic-care-supervisor-facility-manager-level-4';
+  const courseId = 'b505a8b1-c40b-47ba-9eac-c42ed035e4d6';
+  const newCourseTitle = 'NIC Advanced Care Practitioner (ACP) Program';
+  const courseSlug = 'advanced-care-practitioner';
 
   // 1. Extract Modules and Lessons using a stateful approach
   const modules: Module[] = [];
@@ -56,14 +57,13 @@ async function uploadCourse() {
   let currentModule: Module | null = null;
   let currentLesson: Lesson | null = null;
   let currentContent: string[] = [];
+  let currentModuleIndex = -1;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const moduleMatch = line.match(/^# Module (\d+): (.*)$/);
     const lessonMatch = line.match(/^## Lesson (\d+): (.*)$/);
     const assessmentMatch = line.match(/^# Module (\d+) Assessment: (.*)$/);
-    const altAssessmentMatch = line.match(/^## Module (\d+) Assessment/); // sometimes defined differently
-    const endOfModuleMatch = line.match(/^## End of Module/);
 
     if (moduleMatch) {
       // Save current lesson if exists
@@ -78,7 +78,7 @@ async function uploadCourse() {
       const modTitle = moduleMatch[2].trim();
       const fullModTitle = `Module ${modNum}: ${modTitle}`;
 
-      // Check if this module already exists (since the file may repeat headers)
+      // Check if this module already exists (since the file repeats headers)
       let existingMod = modules.find(m => m.sort_order === modNum);
       if (!existingMod) {
         existingMod = {
@@ -112,8 +112,8 @@ async function uploadCourse() {
       continue;
     }
 
-    if (assessmentMatch || altAssessmentMatch || endOfModuleMatch) {
-        // Stop current lesson parsing when assessment/end starts
+    if (assessmentMatch) {
+        // Stop current lesson parsing when assessment starts
         if (currentLesson && currentModule) {
             currentLesson.content = currentContent.join('\n').trim();
             currentModule.lessons.push({ ...currentLesson });
@@ -153,14 +153,14 @@ async function uploadCourse() {
   console.log('✅ Validation Passed. Beginning Database update...');
 
   try {
-    // 1. Update Course Title (just to be safe)
+    // 1. Update Course Title
     const { error: updateError } = await supabase
       .from('courses')
       .update({ title: newCourseTitle })
       .eq('id', courseId);
     
     if (updateError) throw updateError;
-    console.log(`✅ Course title verified/updated: ${newCourseTitle}`);
+    console.log(`✅ Course title updated to: ${newCourseTitle}`);
 
     // 2. Clear old modules (Cascade will handle lessons)
     console.log('🚮 Cleaning up old content...');
@@ -170,12 +170,6 @@ async function uploadCourse() {
       .eq('course_id', courseId);
     
     if (deleteError) throw deleteError;
-    
-    // Also clear from course_modules junction
-    await supabase
-      .from('course_modules')
-      .delete()
-      .eq('course_id', courseId);
 
     // 3. Ingest new modules
     for (const mod of modules) {
@@ -191,16 +185,6 @@ async function uploadCourse() {
         .single();
       if (insertError) throw insertError;
       const moduleId = newMod.id;
-      
-      // 3.5 Link to course_modules junction
-      const { error: junctionError } = await supabase
-        .from('course_modules')
-        .insert({
-          course_id: courseId,
-          module_id: moduleId,
-          sort_order: mod.sort_order
-        });
-      if (junctionError) throw junctionError;
 
       // 4. Ingest new lessons
       const lessonsToInsert = mod.lessons.map(l => ({
@@ -217,7 +201,7 @@ async function uploadCourse() {
       console.log(`✅ Ingested: ${mod.title} (${mod.lessons.length} lessons)`);
     }
 
-    console.log('🎉 Level 4 Deployment Successfully Completed!');
+    console.log('🎉 ACP Rework Successfully Deployed!');
   } catch (err) {
     console.error('❌ Deployment failed:', err);
   }

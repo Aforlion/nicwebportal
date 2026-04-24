@@ -8,6 +8,7 @@ import { StudentChartView } from "./student-chart-view"
 interface RichTextProps {
     content: string
     className?: string
+    invert?: boolean
 }
 
 // Known section headings that should be styled as prominent section headers
@@ -69,7 +70,7 @@ function renderInline(text: string): React.ReactNode[] {
     const parts = text.split(/(\*\*.*?\*\*|_.*?_)/g)
     return parts.map((part, i) => {
         if (part.startsWith("**") && part.endsWith("**")) {
-            return <strong key={i} className="font-semibold text-slate-800">{part.slice(2, -2)}</strong>
+            return <strong key={i} className={cn("font-semibold", invert ? "text-white" : "text-slate-800")}>{part.slice(2, -2)}</strong>
         }
         if (part.startsWith("_") && part.endsWith("_")) {
             return <em key={i}>{part.slice(1, -1)}</em>
@@ -86,7 +87,7 @@ function cleanNumbered(line: string) {
     return line.trim().replace(/^\d+[\.\)]\t?/, "").replace(/^\d+[\.\)]\s+/, "")
 }
 
-export function RichText({ content, className }: RichTextProps) {
+export function RichText({ content, className, invert }: RichTextProps) {
     if (!content) return null
 
     // Check if content is HTML (from Tiptap editor)
@@ -107,13 +108,18 @@ export function RichText({ content, className }: RichTextProps) {
         return (
             <div
                 className={cn(
-                    "prose prose-slate prose-lg max-w-none",
-                    "prose-headings:font-bold prose-headings:text-slate-800",
+                    "prose prose-lg max-w-none",
+                    invert ? "prose-invert" : "prose-slate",
+                    "prose-headings:font-bold",
+                    !invert && "prose-headings:text-slate-800",
                     "prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4",
                     "prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3",
-                    "prose-p:leading-relaxed prose-p:text-slate-700 prose-p:my-4",
-                    "prose-li:leading-relaxed prose-li:text-slate-700",
-                    "prose-strong:text-slate-800 prose-strong:font-semibold",
+                    "prose-p:leading-relaxed prose-p:my-4",
+                    !invert && "prose-p:text-slate-700",
+                    !invert && "prose-li:text-slate-700",
+                    "prose-li:leading-relaxed",
+                    !invert && "prose-strong:text-slate-800",
+                    "prose-strong:font-semibold",
                     "prose-table:border-collapse prose-table:w-full",
                     "prose-td:border prose-td:border-border prose-td:p-3",
                     "prose-th:border prose-th:border-border prose-th:p-3 prose-th:bg-slate-50 prose-th:text-left",
@@ -146,13 +152,13 @@ export function RichText({ content, className }: RichTextProps) {
         if (mdHeading) {
             if (mdHeading.level === 2) {
                 blocks.push(
-                    <h2 key={i} className="text-2xl font-bold text-slate-800 mt-10 mb-4 pb-2 border-b border-slate-100">
+                    <h2 key={i} className={cn("text-2xl font-bold mt-10 mb-4 pb-2 border-b", invert ? "text-white border-white/10" : "text-slate-800 border-slate-100")}>
                         {renderInline(mdHeading.text)}
                     </h2>
                 )
             } else {
                 blocks.push(
-                    <h3 key={i} className="text-xl font-bold text-slate-800 mt-8 mb-3">
+                    <h3 key={i} className={cn("text-xl font-bold mt-8 mb-3", invert ? "text-white" : "text-slate-800")}>
                         {renderInline(mdHeading.text)}
                     </h3>
                 )
@@ -196,7 +202,7 @@ export function RichText({ content, className }: RichTextProps) {
                 continue
             } else {
                 blocks.push(
-                    <h2 key={`heading-${i}`} className="text-xl font-bold text-slate-800 mt-10 mb-4 pb-2 border-b border-slate-100">
+                    <h2 key={`heading-${i}`} className={cn("text-xl font-bold mt-10 mb-4 pb-2 border-b", invert ? "text-white border-white/10" : "text-slate-800 border-slate-100")}>
                         {line}
                     </h2>
                 )
@@ -214,7 +220,7 @@ export function RichText({ content, className }: RichTextProps) {
             blocks.push(
                 <ul key={`ul-${i}`} className="my-4 space-y-2 pl-2">
                     {items.map((item, j) => (
-                        <li key={j} className="flex items-start gap-3 text-slate-700 leading-relaxed">
+                        <li key={j} className={cn("flex items-start gap-3 leading-relaxed", invert ? "text-white/90" : "text-slate-700")}>
                             <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
                             <span>{renderInline(item)}</span>
                         </li>
@@ -243,7 +249,7 @@ export function RichText({ content, className }: RichTextProps) {
             blocks.push(
                 <ol key={`ol-${i}`} className="my-4 space-y-3 pl-2">
                     {items.map((item, j) => (
-                        <li key={j} className="flex items-start gap-3 text-slate-700 leading-relaxed">
+                        <li key={j} className={cn("flex items-start gap-3 leading-relaxed", invert ? "text-white/90" : "text-slate-700")}>
                             <span className="mt-0.5 flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
                                 {j + 1}
                             </span>
@@ -268,7 +274,7 @@ export function RichText({ content, className }: RichTextProps) {
         if (paraLines.length > 0) {
             const combined = paraLines.join(" ")
             blocks.push(
-                <p key={`p-${i}`} className="text-slate-700 leading-[1.85] my-4 text-base">
+                <p key={`p-${i}`} className={cn("leading-[1.85] my-4 text-base", invert ? "text-white/90" : "text-slate-700")}>
                     {renderInline(combined)}
                 </p>
             )
@@ -276,7 +282,7 @@ export function RichText({ content, className }: RichTextProps) {
     }
 
     return (
-        <div className={cn("max-w-none text-slate-700", className)}>
+        <div className={cn("max-w-none", !invert && "text-slate-700", className)}>
             {blocks}
         </div>
     )
