@@ -10,7 +10,7 @@ export async function getStudentDashboardData() {
     if (!user) return { enrollments: [], recent: null }
 
     // Fetch enrollments with course details
-    const { data: enrollments, error } = await supabase
+    const { data: rawEnrollments, error } = await supabase
         .from('enrollments')
         .select(`
             id,
@@ -32,6 +32,11 @@ export async function getStudentDashboardData() {
         console.error('Error fetching enrollments:', error)
         return { enrollments: [], recent: null }
     }
+
+    const enrollments = rawEnrollments.filter((e: any) => {
+        const course = Array.isArray(e.course) ? e.course[0] : e.course;
+        return course != null;
+    });
 
     // Determined "Continue Learning" (most recent active course)
     const activeEnrollment = enrollments.find((e: any) => e.status === 'active' || e.status === 'enrolled')

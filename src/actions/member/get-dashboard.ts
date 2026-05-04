@@ -82,7 +82,7 @@ export async function getMemberDashboardData() {
         .in('status', ['active', 'enrolled'])
         .order('enrolled_at', { ascending: false })
 
-    const activeEnrollments = enrollments?.map((e: any) => ({
+    const activeEnrollments = enrollments?.filter((e: any) => e.courses).map((e: any) => ({
         id: e.id,
         courseId: e.courses.id,
         title: e.courses.title,

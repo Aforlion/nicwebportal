@@ -63,14 +63,17 @@ export async function getCourseContent(courseId: string) {
     const courseWithModules = {
         ...course,
         modules: (course.course_modules as any[])
-            ?.map(cm => ({
-                ...cm.modules,
-                lessons: cm.modules.lessons.map((l: any) => ({
-                    ...l,
-                    assessments: Array.isArray(l.assessments) ? l.assessments[0] : (l.assessments || null)
-                })),
-                sort_order: cm.sort_order
-            }))
+            ?.map(cm => {
+                if (!cm.modules) return null
+                return {
+                    ...cm.modules,
+                    lessons: (cm.modules.lessons || []).map((l: any) => ({
+                        ...l,
+                        assessments: Array.isArray(l.assessments) ? l.assessments[0] : (l.assessments || null)
+                    })),
+                    sort_order: cm.sort_order
+                }
+            })
             .filter(m => !!m)
             .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)) || []
     }

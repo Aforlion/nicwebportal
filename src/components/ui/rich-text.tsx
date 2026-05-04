@@ -65,7 +65,7 @@ function isNumberedItem(line: string) {
     return /^\d+[\.\)]\s+/.test(line.trim())
 }
 
-function renderInline(text: string): React.ReactNode[] {
+function renderInline(text: string, invert?: boolean): React.ReactNode[] {
     // Support **bold** and _italic_
     const parts = text.split(/(\*\*.*?\*\*|_.*?_)/g)
     return parts.map((part, i) => {
@@ -153,13 +153,13 @@ export function RichText({ content, className, invert }: RichTextProps) {
             if (mdHeading.level === 2) {
                 blocks.push(
                     <h2 key={i} className={cn("text-2xl font-bold mt-10 mb-4 pb-2 border-b", invert ? "text-white border-white/10" : "text-slate-800 border-slate-100")}>
-                        {renderInline(mdHeading.text)}
+                        {renderInline(mdHeading.text, invert)}
                     </h2>
                 )
             } else {
                 blocks.push(
                     <h3 key={i} className={cn("text-xl font-bold mt-8 mb-3", invert ? "text-white" : "text-slate-800")}>
-                        {renderInline(mdHeading.text)}
+                        {renderInline(mdHeading.text, invert)}
                     </h3>
                 )
             }
@@ -222,7 +222,7 @@ export function RichText({ content, className, invert }: RichTextProps) {
                     {items.map((item, j) => (
                         <li key={j} className={cn("flex items-start gap-3 leading-relaxed", invert ? "text-white/90" : "text-slate-700")}>
                             <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
-                            <span>{renderInline(item)}</span>
+                            <span>{renderInline(item, invert)}</span>
                         </li>
                     ))}
                 </ul>
@@ -253,7 +253,7 @@ export function RichText({ content, className, invert }: RichTextProps) {
                             <span className="mt-0.5 flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
                                 {j + 1}
                             </span>
-                            <span className="pt-0.5">{renderInline(item)}</span>
+                            <span className="pt-0.5">{renderInline(item, invert)}</span>
                         </li>
                     ))}
                 </ol>
@@ -275,7 +275,7 @@ export function RichText({ content, className, invert }: RichTextProps) {
             const combined = paraLines.join(" ")
             blocks.push(
                 <p key={`p-${i}`} className={cn("leading-[1.85] my-4 text-base", invert ? "text-white/90" : "text-slate-700")}>
-                    {renderInline(combined)}
+                    {renderInline(combined, invert)}
                 </p>
             )
         }
