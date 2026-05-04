@@ -76,6 +76,11 @@ export async function finalizeRegistrationAction(reference: string) {
         logger.info("Payment verified", { reference, type, email });
 
         const supabase = createServerClient(await cookies())
+        const adminClient = createClient(
+            env.NEXT_PUBLIC_SUPABASE_URL,
+            env.SUPABASE_SERVICE_ROLE_KEY,
+            { auth: { autoRefreshToken: false, persistSession: false } }
+        )
 
         if (type === 'founding') {
             const token = metadata?.token
@@ -117,17 +122,17 @@ export async function finalizeRegistrationAction(reference: string) {
                 return { success: false, message: "Missing registration context." }
             }
 
-            // 1. Get Pending Data
-            const { data: pending, error: pError } = await supabase
-                .from('pending_registrations')
-                .select('*')
-                .eq('id', pendingId)
-                .single()
+        // 1. Get Pending Data (using service role to bypass RLS)
+        const { data: pending, error: pError } = await adminClient
+            .from('pending_registrations')
+            .select('*')
+            .eq('id', pendingId)
+            .single()
 
-            if (pError || !pending) {
-                logger.error("Registration record not found", { pendingId, error: pError });
-                return { success: false, message: "Registration record not found." }
-            }
+        if (pError || !pending) {
+            logger.error("Registration record not found", { pendingId, error: pError });
+            return { success: false, message: "Registration record not found." }
+        }
             if (pending.status === 'completed' || pending.status === 'paid') {
                 logger.info("Registration already completed", { pendingId });
                 return { success: true, message: "Already completed." }
@@ -166,11 +171,6 @@ export async function finalizeRegistrationAction(reference: string) {
             }
 
             // 3.1 Confirm Email using Admin API (idempotent after payment)
-            const adminClient = createClient(
-                env.NEXT_PUBLIC_SUPABASE_URL,
-                env.SUPABASE_SERVICE_ROLE_KEY,
-                { auth: { autoRefreshToken: false, persistSession: false } }
-            )
             await adminClient.auth.admin.updateUserById(authData.user.id, { email_confirm: true })
 
             // 3.5 Create Membership Record
@@ -191,7 +191,7 @@ export async function finalizeRegistrationAction(reference: string) {
                 // We'll continue anyway as auth is created, but log it
             }
 
-            await supabase
+            await adminClient
                 .from('pending_registrations')
                 .update({
                     status: 'completed', // Using completed to match facility behavior and ensure idempotency
@@ -214,8 +214,8 @@ export async function finalizeRegistrationAction(reference: string) {
                 return { success: false, message: "Missing registration context." }
             }
 
-            // 1. Get Pending Data
-            const { data: pending, error: pError } = await supabase
+            // 1. Get Pending Data (using service role)
+            const { data: pending, error: pError } = await adminClient
                 .from('pending_registrations')
                 .select('*')
                 .eq('id', pendingId)
@@ -257,11 +257,6 @@ export async function finalizeRegistrationAction(reference: string) {
             }
 
             // 2.1 Confirm Email using Admin API
-            const adminClient = createClient(
-                env.NEXT_PUBLIC_SUPABASE_URL,
-                env.SUPABASE_SERVICE_ROLE_KEY,
-                { auth: { autoRefreshToken: false, persistSession: false } }
-            )
             await adminClient.auth.admin.updateUserById(authData.user.id, { email_confirm: true })
 
             // 3. Create Facility via existing action
@@ -301,7 +296,7 @@ export async function finalizeRegistrationAction(reference: string) {
             }
 
             // 4. Mark Pending as Completed
-            await supabase
+            await adminClient
                 .from('pending_registrations')
                 .update({
                     status: 'completed',
