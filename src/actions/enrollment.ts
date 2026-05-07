@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from "@/lib/supabase/server"
+import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { getStudentLevel } from "./get-student-progress"
@@ -218,4 +219,105 @@ export async function enrollFreeCourse(courseId: string) {
     revalidatePath('/portal/student')
     return { success: true, enrollmentId: enrollment.id }
 }
+
+/**
+ * Called by the Paystack webhook after a successful charge.success event with
+ * payment_type === 'course_enrollment'. Uses the service-role client so it
+ * can operate without a user session.
+ */
+export async function enrollFromWebhookAction(
+    reference: string,
+    courseId: string,
+    customerEmail: string
+): Promise<{ success: boolean; message: string }> {
+
+    // Build the admin/service-role client (no user session in webhook context)
+    const adminClient = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
+    // 1. Verify the transaction with Paystack
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY
+    if (!paystackSecret) {
+        console.error("[enrollFromWebhookAction] Missing PAYSTACK_SECRET_KEY")
+        return { success: false, message: "Server configuration error." }
+    }
+
+    const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+        headers: { Authorization: `Bearer ${paystackSecret}` }
+    })
+    const verifyData = await verifyRes.json()
+
+    if (!verifyData.status || verifyData.data?.status !== 'success') {
+        console.error("[enrollFromWebhookAction] Paystack verification failed", { reference, verifyData })
+        return { success: false, message: "Payment verification failed." }
+    }
+
+    // 2. Find the user by email via profiles table (admin bypasses RLS)
+    const { data: profile, error: profileError } = await adminClient
+        .from('profiles')
+        .select('id, full_name')
+        .eq('email', customerEmail)
+        .maybeSingle()
+
+    if (profileError || !profile) {
+        console.error("[enrollFromWebhookAction] User profile not found", { customerEmail, reference })
+        return { success: false, message: "User not found." }
+    }
+
+    const userId = profile.id
+
+    // 3. Idempotency guard — bail if already enrolled
+    const { data: existing } = await adminClient
+        .from('enrollments')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('course_id', courseId)
+        .maybeSingle()
+
+    if (existing) {
+        console.log("[enrollFromWebhookAction] Already enrolled, skipping duplicate.", { userId, courseId, reference })
+        return { success: true, message: "Already enrolled." }
+    }
+
+    // 4. Create the enrollment
+    const { error: enrollError } = await adminClient
+        .from('enrollments')
+        .insert({
+            user_id: userId,
+            course_id: courseId,
+            payment_reference: reference,
+            status: 'active',
+            payment_status: 'paid',
+            progress: 0,
+            completed_lessons: [],
+            enrolled_at: new Date().toISOString()
+        })
+
+    if (enrollError) {
+        console.error("[enrollFromWebhookAction] Enrollment insert failed", { enrollError, userId, courseId, reference })
+        return { success: false, message: "Failed to create enrollment." }
+    }
+
+    // 5. Send confirmation email (non-fatal if it fails)
+    const { data: courseData } = await adminClient
+        .from('courses')
+        .select('title')
+        .eq('id', courseId)
+        .maybeSingle()
+
+    if (courseData) {
+        try {
+            await sendEnrollmentEmail(customerEmail, profile.full_name || "Student", courseData.title, courseId)
+        } catch (emailErr) {
+            console.error("[enrollFromWebhookAction] Confirmation email failed", emailErr)
+        }
+    }
+
+    console.log("[enrollFromWebhookAction] Enrollment created successfully", { userId, courseId, reference })
+    return { success: true, message: "Enrolled successfully." }
+}
+
 

@@ -26,6 +26,14 @@ export default function PaystackButton({ amount, email, courseId, courseTitle }:
         amount: amount * 100, // Convert to kobo
         publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
         split_code: 'SPL_8b8sZKPgRb',
+        metadata: {
+            payment_type: 'course_enrollment',
+            course_id: courseId,
+            custom_fields: [
+                { display_name: "Course ID", variable_name: "course_id", value: courseId },
+                { display_name: "Payment Type", variable_name: "payment_type", value: "course_enrollment" }
+            ]
+        }
     }
 
     const initializePayment = usePaystackPayment(config)
