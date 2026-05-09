@@ -32,8 +32,12 @@ export async function savePendingRegistrationAction(data: {
             FacilityRegistrationSchema.parse(data.formData)
         }
 
-        const supabase = createServerClient(await cookies())
-        const { data: record, error } = await supabase
+        const adminClient = createClient(
+            env.NEXT_PUBLIC_SUPABASE_URL,
+            env.SUPABASE_SERVICE_ROLE_KEY,
+            { auth: { autoRefreshToken: false, persistSession: false } }
+        )
+        const { data: record, error } = await adminClient
             .from('pending_registrations')
             .insert({
                 email: data.email,
@@ -122,17 +126,17 @@ export async function finalizeRegistrationAction(reference: string) {
                 return { success: false, message: "Missing registration context." }
             }
 
-        // 1. Get Pending Data (using service role to bypass RLS)
-        const { data: pending, error: pError } = await adminClient
-            .from('pending_registrations')
-            .select('*')
-            .eq('id', pendingId)
-            .single()
+            // 1. Get Pending Data (using service role to bypass RLS)
+            const { data: pending, error: pError } = await adminClient
+                .from('pending_registrations')
+                .select('*')
+                .eq('id', pendingId)
+                .single()
 
-        if (pError || !pending) {
-            logger.error("Registration record not found", { pendingId, error: pError });
-            return { success: false, message: "Registration record not found." }
-        }
+            if (pError || !pending) {
+                logger.error("Registration record not found", { pendingId, error: pError });
+                return { success: false, message: "Registration record not found." }
+            }
             if (pending.status === 'completed' || pending.status === 'paid') {
                 logger.info("Registration already completed", { pendingId });
                 return { success: true, message: "Already completed." }
