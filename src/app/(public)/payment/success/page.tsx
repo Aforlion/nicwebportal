@@ -10,6 +10,7 @@ function SuccessContent() {
     const searchParams = useSearchParams()
     const type = searchParams.get('type')
     const reference = searchParams.get('reference')
+    const redirectUrl = searchParams.get('redirect')
 
     return (
         <div className="min-h-[60vh] flex items-center justify-center px-4">
@@ -45,8 +46,8 @@ function SuccessContent() {
 
                 <div className="flex flex-col gap-3">
                     <Button asChild className="bg-primary h-12 text-lg">
-                        <Link href={type === 'founding' ? '/onboard/founding' : (type === 'individual' ? '/courses' : '/login')}>
-                            {type === 'individual' ? 'Start Orientation Course' : 'Continue Registration'} <ArrowRight className="ml-2 h-5 w-5" />
+                        <Link href={redirectUrl ? redirectUrl : (type === 'founding' ? '/onboard/founding' : (type === 'individual' ? '/courses' : '/login'))}>
+                            {redirectUrl ? 'Continue to Course' : (type === 'individual' ? 'Start Orientation Course' : 'Continue Registration')} <ArrowRight className="ml-2 h-5 w-5" />
                         </Link>
                     </Button>
                     <Button variant="ghost" asChild>

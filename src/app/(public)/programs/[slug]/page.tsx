@@ -58,11 +58,14 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                                 invert={true}
                             />
                             <div className="flex flex-col gap-4 sm:flex-row">
-                                <Button size="lg" className="bg-secondary text-white hover:bg-secondary/90 h-14 text-lg px-8" asChild>
-                                    <Link href={`/portal/student/enroll/${course.id}`}>
-                                        Enroll Now - {course.price > 0 ? `₦${course.price.toLocaleString()}` : 'Free'}
-                                    </Link>
-                                </Button>
+                                <div className="space-y-1">
+                                    <Button size="lg" className="bg-secondary text-white hover:bg-secondary/90 h-14 text-lg px-8 w-full" asChild>
+                                        <Link href={`/portal/student/enroll/${course.id}`}>
+                                            Enroll Now - {course.price > 0 ? `₦${course.price.toLocaleString()}` : 'Free'}
+                                        </Link>
+                                    </Button>
+                                    <p className="text-xs text-white/70 text-center">* Requires Active Membership (from ₦5,000/yr)</p>
+                                </div>
                                 <div className="flex items-center gap-2 text-sm opacity-80 px-2">
                                     <Shield className="h-4 w-4" />
                                     <span>Official NIC Certification</span>
@@ -214,9 +217,12 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                                 {course.price > 0 ? `₦${course.price.toLocaleString()}` : 'Free'}
                             </div>
                             <p className="text-sm text-muted-foreground mb-6">One-time payment</p>
-                            <Button className="w-full h-12 text-lg" asChild>
-                                <Link href={`/portal/student/enroll/${course.id}`}>Enroll Now</Link>
-                            </Button>
+                            <div className="space-y-1">
+                                <Button className="w-full h-12 text-lg" asChild>
+                                    <Link href={`/portal/student/enroll/${course.id}`}>Enroll Now</Link>
+                                </Button>
+                                <p className="text-xs text-muted-foreground text-center">* Requires Active Membership (from ₦5,000/yr)</p>
+                            </div>
                         </div>
                     </div>
                 </div>

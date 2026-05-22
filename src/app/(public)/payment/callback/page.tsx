@@ -11,6 +11,7 @@ function CallbackContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const reference = searchParams.get("reference")
+    const redirectUrl = searchParams.get("redirect")
     const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying")
     const [message, setMessage] = useState("Verifying your payment...")
 
@@ -31,11 +32,11 @@ function CallbackContent() {
                 if (result.type === 'founding') {
                     // Redirect back to onboarding at Step 3 (KYC)
                     // We need to pass the token back
-                    router.push(`/onboard/founding?token=${result.token}&step=3&paid=true&reference=${reference}`)
+                    router.push(`/onboard/founding?token=${result.token}&step=3&paid=true&reference=${reference}${redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ''}`)
                 } else {
                     // Default behavior
                     setTimeout(() => {
-                        router.push('/payment/success?reference=' + reference)
+                        router.push(`/payment/success?reference=${reference}${redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ''}`)
                     }, 2000)
                 }
             } else {

@@ -10,8 +10,46 @@ import { CPDProgress } from "@/components/student/cpd-progress"
 import { CertificationPathway } from "@/components/student/certification-pathway"
 
 import { ErrorBoundary } from "@/components/error-boundary"
+import { getPublishedCourses } from "@/actions/get-courses"
+import { Suspense } from "react"
 
 export const dynamic = 'force-dynamic'
+
+async function RecommendedCourses() {
+    const courses = await getPublishedCourses()
+    // Show top 2-4 published courses
+    const recommended = courses.slice(0, 4)
+
+    if (recommended.length === 0) return null;
+
+    return (
+        <>
+            {recommended.map((course: any) => (
+                <Card key={course.id} className="overflow-hidden hover:shadow-md transition-all flex flex-col h-full border-muted">
+                    <div className="aspect-video w-full bg-slate-100 relative">
+                        {course.thumbnail_url ? (
+                            <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40">
+                                <BookOpen size={24} />
+                            </div>
+                        )}
+                    </div>
+                    <CardContent className="p-4 flex flex-col flex-grow">
+                        <Badge variant="secondary" className="w-fit mb-2 text-[10px]">{course.level || "Course"}</Badge>
+                        <h4 className="font-bold text-sm text-secondary line-clamp-2 mb-2 flex-grow">{course.title}</h4>
+                        <div className="flex items-center justify-between mt-auto pt-2 border-t text-xs">
+                            <span className="font-semibold text-primary">{course.price > 0 ? `₦${course.price.toLocaleString()}` : "Free"}</span>
+                            <Link href={`/programs/${course.slug}`} className="text-muted-foreground hover:text-primary flex items-center">
+                                Details <ArrowRight className="ml-1 h-3 w-3" />
+                            </Link>
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </>
+    )
+}
 
 export default async function StudentDashboard() {
     const { enrollments, recent, events, tip, cpdCredits, currentLevel } = await getStudentDashboardData()
@@ -106,14 +144,25 @@ export default async function StudentDashboard() {
 
                         <div className="grid gap-6">
                             {(enrollments || []).length === 0 ? (
-                                <Card className="p-8 text-center bg-muted/20 border-dashed">
-                                    <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                                    <h3 className="text-lg font-semibold text-secondary">No courses yet</h3>
-                                    <p className="text-muted-foreground mb-4">Start your learning journey today.</p>
-                                    <Button variant="outline" asChild>
-                                        <Link href="/programs">Browse Courses</Link>
-                                    </Button>
-                                </Card>
+                                <div className="space-y-6">
+                                    <Card className="p-8 text-center bg-primary/5 border-dashed border-primary/20">
+                                        <BookOpen className="h-12 w-12 text-primary mx-auto mb-4 opacity-70" />
+                                        <h3 className="text-lg font-semibold text-secondary">Your Learning Journey Starts Here</h3>
+                                        <p className="text-muted-foreground mb-6">As a registered Student Member, you are required to enroll in an orientation or foundational course.</p>
+                                        <Button className="bg-primary" asChild>
+                                            <Link href="/programs">Browse All Courses</Link>
+                                        </Button>
+                                    </Card>
+
+                                    <div className="pt-4">
+                                        <h3 className="text-lg font-bold text-secondary mb-4">Recommended Courses</h3>
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <Suspense fallback={<div className="h-32 bg-muted animate-pulse rounded-lg col-span-2"></div>}>
+                                                <RecommendedCourses />
+                                            </Suspense>
+                                        </div>
+                                    </div>
+                                </div>
                             ) : (
                                 enrollments.map((enrollment: any, index: number) => {
                                     const course = Array.isArray(enrollment?.course) ? enrollment.course[0] : enrollment?.course;

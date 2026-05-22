@@ -38,10 +38,12 @@ const STEPS = [
 
 export function MemberRegistrationForm({
     lockCategory,
-    isGraduate
+    isGraduate,
+    redirectUrl
 }: {
     lockCategory?: string,
-    isGraduate?: boolean
+    isGraduate?: boolean,
+    redirectUrl?: string
 }) {
     const [currentStep, setCurrentStep] = useState(lockCategory ? 2 : 1)
     const [formData, setFormData] = useState({
@@ -105,6 +107,15 @@ export function MemberRegistrationForm({
 
     return (
         <div className="w-full">
+            {redirectUrl?.includes('/enroll') && (
+                <div className="mb-8 rounded-lg bg-blue-50 border border-blue-200 p-4 text-blue-800 flex gap-3">
+                    <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5 text-blue-600" />
+                    <div>
+                        <p className="font-bold">Prerequisite Membership Required</p>
+                        <p className="text-sm">You are completing your prerequisite membership registration. After payment, you will be automatically redirected to complete your course enrollment.</p>
+                    </div>
+                </div>
+            )}
             {/* Progress Steps */}
             <div className="mb-12">
                 <div className="flex items-center justify-between">
@@ -434,7 +445,7 @@ export function MemberRegistrationForm({
                                 email={formData.email}
                                 amount={selectedCategory?.fee || 0}
                                 useRedirect={true}
-                                callbackUrl={`${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : '')}/payment/callback`}
+                                callbackUrl={`${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : '')}/payment/callback${redirectUrl ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`}
                                 onBefore={async () => {
                                     const res = await savePendingRegistrationAction({
                                         email: formData.email,

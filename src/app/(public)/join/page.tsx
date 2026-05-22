@@ -6,7 +6,8 @@ export const metadata: Metadata = {
     description: "Register as a member of the National Institute of Caregivers",
 }
 
-export default function JoinPage() {
+export default async function JoinPage({ searchParams }: { searchParams: Promise<{ redirect?: string }> }) {
+    const { redirect } = await searchParams
     return (
         <div className="pb-20">
             {/* Header */}
@@ -29,7 +30,7 @@ export default function JoinPage() {
                         {/* Left Column: Registration Form */}
                         <div className="lg:col-span-2 space-y-8 order-2 lg:order-1">
                             <div className="bg-white p-1 rounded-2xl shadow-sm border">
-                                <MemberRegistrationForm />
+                                <MemberRegistrationForm redirectUrl={redirect} />
                             </div>
                         </div>
 
