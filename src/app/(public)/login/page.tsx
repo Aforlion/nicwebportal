@@ -55,6 +55,7 @@ function LoginForm() {
             // Redirect based on role and category
             const adminRoles = ['admin', 'super_admin', 'registry_officer', 'inspector', 'auditor', 'instructor']
             const isStudent = result.role === 'student' || result.category === 'student'
+            const isFacility = result.role === 'facility_admin' || result.category === 'institutional'
             const isMember = result.role === 'member' || 
                            ['professional', 'full', 'associate'].includes(result.category || '')
 
@@ -62,6 +63,8 @@ function LoginForm() {
                 router.push('/admin')
             } else if (isStudent) {
                 router.push('/portal/student')
+            } else if (isFacility) {
+                router.push('/portal/facility')
             } else if (isMember) {
                 router.push('/portal/member')
             } else {

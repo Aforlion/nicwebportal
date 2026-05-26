@@ -159,10 +159,22 @@ export default function AdminFacilitiesPage() {
                     actionModal.type === 'reinstate' ? 'active' :
                         actionModal.type === 'suspend' ? 'suspended' : 'revoked'
 
+            // Automatically assign verifiable NIC Facility ID on approval if not already set
+            let registrationNumber = actionModal.facility.registration_number
+            let idAssignedLog = ""
+            if (actionModal.type === 'approve' && (!registrationNumber || !registrationNumber.startsWith('NIC/FAC/'))) {
+                const year = new Date().getFullYear()
+                const random = Math.random().toString(36).substring(2, 7).toUpperCase()
+                registrationNumber = `NIC/FAC/${year}/${random}`
+                idAssignedLog = ` and assigned standardized ID: ${registrationNumber}`
+            }
+
             const { error } = await supabase
                 .from('facilities')
                 .update({
                     status: newStatus,
+                    registration_number: registrationNumber,
+                    updated_at: new Date().toISOString()
                 })
                 .eq('id', actionModal.facility.id)
 
@@ -174,7 +186,7 @@ export default function AdminFacilitiesPage() {
                 target_type: 'facility',
                 target_id: actionModal.facility.id,
                 action_type: actionModal.type,
-                reason: actionModal.reason || `Administrative status update to ${newStatus}`,
+                reason: actionModal.reason || `Administrative status update to ${newStatus}${idAssignedLog}`,
                 performed_by: user?.id
             })
 
@@ -197,7 +209,7 @@ export default function AdminFacilitiesPage() {
                     "", // Owner name
                     emailStatusMap[actionModal.type] || 'action_required',
                     actionModal.reason,
-                    actionModal.facility.registration_number
+                    registrationNumber
                 )
             }
         } catch (err) {

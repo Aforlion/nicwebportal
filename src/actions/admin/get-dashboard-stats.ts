@@ -44,7 +44,7 @@ export async function getDashboardStats() {
             type: act.registration_type === 'individual' ? 'Membership Registration' : 'Facility Registration',
             description: act.status === 'paid' ? `Paid verification pending: ${act.email}` : `New registration started: ${act.email}`,
             time: formatRelativeTime(new Date(act.created_at)),
-            initials: act.form_data?.fullName?.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || '??',
+            initials: extractInitials(act.form_data),
             status: act.status
         })) || []
 
@@ -93,3 +93,23 @@ function formatRelativeTime(date: Date) {
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     return `${Math.floor(diffInSeconds / 86400)}d ago`;
 }
+
+/**
+ * Safely extracts initials from registration form data.
+ * Handles individual (fullName), facility (ownerFullName/facilityName), and missing data.
+ */
+function extractInitials(formData: any): string {
+    if (!formData) return '??';
+
+    const name = formData.fullName || formData.ownerFullName || formData.facilityName;
+    if (!name || typeof name !== 'string') return '??';
+
+    return name
+        .split(' ')
+        .filter((part: string) => part.length > 0)
+        .map((part: string) => part[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase() || '??';
+}
+

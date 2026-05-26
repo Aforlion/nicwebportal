@@ -15,6 +15,7 @@ export async function getMemberDashboardData() {
     const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select(`
+            role,
             full_name,
             memberships (
                 id,
@@ -32,6 +33,14 @@ export async function getMemberDashboardData() {
     if (profileError || !profileData) {
         console.error('Error fetching member profile:', profileError)
         return { error: 'Failed to fetch member details' }
+    }
+
+    if (profileData.role === 'facility_admin') {
+        return { redirect: '/portal/facility' }
+    }
+
+    if (profileData.role === 'student') {
+        return { redirect: '/portal/student' }
     }
 
     const membership = profileData.memberships?.[0]

@@ -1,5 +1,6 @@
 import { getMemberDashboardData } from "@/actions/member/get-dashboard"
 import MemberDashboardClient from "./MemberDashboardClient"
+import { redirect } from "next/navigation"
 
 import { ErrorBoundary } from "@/components/error-boundary"
 
@@ -7,6 +8,10 @@ export const dynamic = 'force-dynamic'
 
 export default async function MemberDashboard() {
     const data = await getMemberDashboardData()
+
+    if ('redirect' in data && data.redirect) {
+        redirect(data.redirect)
+    }
 
     if ('error' in data) {
         return (

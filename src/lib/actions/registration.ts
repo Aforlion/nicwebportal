@@ -243,14 +243,14 @@ export async function finalizeRegistrationAction(reference: string) {
                 return { success: false, message: "Invalid facility data: " + err.message };
             }
 
-            // 2. Create the Auth User (Owner)
+            // 2. Create the Auth User (Owner) with facility_admin role
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: fd.ownerEmail,
                 password: fd.password,
                 options: {
                     data: {
                         full_name: fd.ownerFullName,
-                        role: 'member'
+                        role: 'facility_admin'
                     }
                 }
             })
@@ -263,9 +263,11 @@ export async function finalizeRegistrationAction(reference: string) {
             // 2.1 Confirm Email using Admin API
             await adminClient.auth.admin.updateUserById(authData.user.id, { email_confirm: true })
 
-            // 3. Create Facility via existing action
+            // 3. Create Facility via existing action (pass owner details for profile upsert)
             const result = await registerFacilityAction({
                 ownerId: authData.user.id,
+                ownerEmail: fd.ownerEmail,
+                ownerFullName: fd.ownerFullName,
                 facilityName: fd.facilityName,
                 regNumber: fd.regNumber,
                 tin: fd.tin,
@@ -282,8 +284,8 @@ export async function finalizeRegistrationAction(reference: string) {
                 return { success: false, message: result.error || "Failed to create facility record." }
             }
 
-            // 4. Create Institutional Membership
-            const { error: membershipError } = await supabase
+            // 4. Create Institutional Membership (use adminClient to bypass RLS)
+            const { error: membershipError } = await adminClient
                 .from('memberships')
                 .insert({
                     user_id: authData.user.id,
@@ -434,6 +436,8 @@ export async function sendFoundingPaymentReceiptAction(
 
 export async function registerFacilityAction(data: {
     ownerId: string,
+    ownerEmail: string,
+    ownerFullName: string,
     facilityName: string,
     regNumber: string,
     tin: string,
@@ -446,23 +450,30 @@ export async function registerFacilityAction(data: {
     capacity: number
 }) {
     try {
-        const supabase = createServerClient(cookies())
+        // Use adminClient (service role) to bypass RLS for server-side facility creation
+        const adminClient = createClient(
+            env.NEXT_PUBLIC_SUPABASE_URL,
+            env.SUPABASE_SERVICE_ROLE_KEY,
+            { auth: { autoRefreshToken: false, persistSession: false } }
+        )
 
-        // 1. Double check and Upsert Profile just in case trigger was slow (idempotent)
-        const { error: profileError } = await supabase
+        // 1. Upsert Profile with owner details (not facility email) to ensure profile exists
+        const { error: profileError } = await adminClient
             .from('profiles')
             .upsert({
                 id: data.ownerId,
-                email: data.email,
+                email: data.ownerEmail,
+                full_name: data.ownerFullName,
+                role: 'facility_admin',
                 updated_at: new Date().toISOString()
             }, { onConflict: 'id' })
 
         if (profileError) {
-            console.error("Server Profile Sync Warning:", profileError)
+            logger.error("Profile upsert failed for facility owner", { error: profileError, ownerId: data.ownerId })
         }
 
-        // 2. Create the facility record
-        const { data: facility, error: facilityError } = await supabase
+        // 2. Create the facility record using adminClient to bypass RLS
+        const { data: facility, error: facilityError } = await adminClient
             .from('facilities')
             .insert({
                 name: data.facilityName,
@@ -482,13 +493,14 @@ export async function registerFacilityAction(data: {
             .single()
 
         if (facilityError) {
-            console.error("Server Facility Creation Error:", facilityError)
+            logger.error("Facility creation failed", { error: facilityError, ownerId: data.ownerId, facilityName: data.facilityName })
             return { success: false, error: facilityError.message }
         }
 
+        logger.info("Facility registered successfully", { facilityId: facility.id, ownerId: data.ownerId })
         return { success: true, facilityId: facility.id }
     } catch (error: any) {
-        console.error("Register Facility Action Error:", error)
+        logger.error("Register Facility Action Error", { error: error.message, ownerId: data.ownerId })
         return { success: false, error: error.message || "An unexpected error occurred." }
     }
 }
