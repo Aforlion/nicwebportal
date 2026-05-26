@@ -25,6 +25,7 @@ export default function FacilityDashboard() {
     const [staffCount, setStaffCount] = useState(0)
     const [pillarScores, setPillarScores] = useState<any[]>([])
     const [docs, setDocs] = useState<{document_name: string, status: string}[]>([])
+    const [courses, setCourses] = useState<any[]>([])
     const supabase = createClient()
 
     useEffect(() => {
@@ -46,48 +47,60 @@ export default function FacilityDashboard() {
 
             setFacility(facData)
 
-        if (facData) {
-            // 2. Fetch Staff Count
-            const { count } = await supabase
-                .from('facility_staff')
-                .select('*', { count: 'exact', head: true })
-                .eq('facility_id', facData.id)
-                .eq('is_active', true)
-
-            setStaffCount(count || 0)
-
-            // 3. Fetch Latest Inspection Scores
-            const { data: scores } = await supabase
-                .from('inspection_scores')
-                .select('pillar, score')
-                .eq('inspection_id', (
-                    await supabase
-                    .from('inspections')
-                    .select('id')
+            if (facData) {
+                // 2. Fetch Staff Count
+                const { count } = await supabase
+                    .from('facility_staff')
+                    .select('*', { count: 'exact', head: true })
                     .eq('facility_id', facData.id)
-                    .order('conducted_at', { ascending: false })
-                    .limit(1)
-                    .single()
-                ).data?.id)
+                    .eq('is_active', true)
 
-            if (scores) {
-                setPillarScores(scores.map(s => ({ name: s.pillar, score: s.score })))
+                setStaffCount(count || 0)
+
+                // 3. Fetch Latest Inspection Scores
+                const { data: scores } = await supabase
+                    .from('inspection_scores')
+                    .select('pillar, score')
+                    .eq('inspection_id', (
+                        await supabase
+                        .from('inspections')
+                        .select('id')
+                        .eq('facility_id', facData.id)
+                        .order('conducted_at', { ascending: false })
+                        .limit(1)
+                        .single()
+                    ).data?.id)
+
+                if (scores) {
+                    setPillarScores(scores.map(s => ({ name: s.pillar, score: s.score })))
+                }
+
+                // 4. Fetch Documents Status
+                const { data: docData } = await supabase
+                    .from('documents')
+                    .select('document_name, status')
+                    .eq('membership_id', (
+                        await supabase
+                        .from('memberships')
+                        .select('id')
+                        .eq('user_id', user.id)
+                        .single()
+                    ).data?.id)
+                
+                if (docData) setDocs(docData)
+
+                // 5. Fetch Recommended Courses
+                const { data: coursesData } = await supabase
+                    .from('courses')
+                    .select('id, title, slug, description, level, price, duration_hours, thumbnail_url')
+                    .eq('is_published', true)
+                    .order('sort_order', { ascending: true })
+                    .limit(4)
+
+                if (coursesData) {
+                    setCourses(coursesData)
+                }
             }
-
-            // 4. Fetch Documents Status
-            const { data: docData } = await supabase
-                .from('documents')
-                .select('document_name, status')
-                .eq('membership_id', (
-                    await supabase
-                    .from('memberships')
-                    .select('id')
-                    .eq('user_id', user.id)
-                    .single()
-                ).data?.id)
-            
-            if (docData) setDocs(docData)
-        }
         } catch (err) {
             console.error("Error fetching facility dashboard:", err)
         } finally {
@@ -254,7 +267,7 @@ export default function FacilityDashboard() {
                                 )
                             })}
                             <Button className="w-full text-xs" variant="outline" size="sm" asChild>
-                                <a href="/portal/facility/settings">Manage Documents</a>
+                                <a href="/portal/facility/certificates">Manage Documents</a>
                             </Button>
                         </CardContent>
                     </Card>
@@ -284,6 +297,76 @@ export default function FacilityDashboard() {
                     </Card>
                 </div>
             </div>
+
+            {/* Recommended Courses Section */}
+            {courses.length > 0 && (
+                <div className="mt-8 border-t pt-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                        <div>
+                            <h2 className="text-xl font-bold text-secondary flex items-center gap-2">
+                                <Briefcase className="h-5 w-5 text-primary" />
+                                Recommended Training & Courses
+                            </h2>
+                            <p className="text-muted-foreground text-sm">Enhance your staff&apos;s compliance, skills, and care delivery standards.</p>
+                        </div>
+                        <Button variant="outline" size="sm" className="w-fit flex items-center gap-2 border-primary text-primary hover:bg-primary/5" asChild>
+                            <a href="/programs">
+                                Browse All Courses
+                                <ArrowRight className="h-4 w-4" />
+                            </a>
+                        </Button>
+                    </div>
+
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                        {courses.map((course) => (
+                            <Card key={course.id} className="group overflow-hidden border border-muted hover:border-primary/30 hover:shadow-md transition-all flex flex-col h-full bg-white">
+                                <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                                    {course.thumbnail_url ? (
+                                        <Image 
+                                            src={course.thumbnail_url} 
+                                            alt={course.title}
+                                            fill
+                                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                    ) : (
+                                        <div className="absolute inset-0 bg-primary/5 flex items-center justify-center">
+                                            <Briefcase className="h-10 w-10 text-primary/20" />
+                                        </div>
+                                    )}
+                                    <div className="absolute top-2 left-2">
+                                        <Badge className="bg-primary/90 text-white backdrop-blur text-[10px] uppercase font-bold py-0.5 px-2 border-none">
+                                            {course.level || 'Professional'}
+                                        </Badge>
+                                    </div>
+                                </div>
+                                <CardContent className="p-4 flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <h3 className="font-bold text-secondary text-sm line-clamp-2 group-hover:text-primary transition-colors duration-200 mb-1" title={course.title}>
+                                            {course.title}
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
+                                            {course.description}
+                                        </p>
+                                    </div>
+                                    <div className="pt-3 border-t border-muted flex items-center justify-between mt-auto">
+                                        <div className="text-xs text-muted-foreground">
+                                            <span className="font-bold text-secondary">{course.duration_hours || 0} hrs</span> study time
+                                        </div>
+                                        <div className="font-bold text-primary text-sm">
+                                            ₦{Number(course.price).toLocaleString()}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                                <div className="p-4 pt-0">
+                                    <Button variant="outline" size="sm" className="w-full text-xs font-semibold group-hover:bg-primary group-hover:text-white transition-all border-primary/25 group-hover:border-primary" asChild>
+                                        <a href={`/programs/${course.slug}`}>View Syllabus</a>
+                                    </Button>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

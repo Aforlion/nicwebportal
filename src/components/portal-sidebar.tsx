@@ -69,7 +69,8 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
         { title: "Staff Directory", href: "/portal/facility/staff", icon: Users },
         { title: "Link Caregiver", href: "/portal/facility/link", icon: UserPlus },
         { title: "Inspections", href: "/portal/facility/inspections", icon: CheckSquare },
-        { title: "Certificates", href: "/portal/facility/certificates", icon: Award },
+        { title: "Accreditation", href: "/portal/facility/accreditation", icon: ShieldCheck },
+        { title: "Documents & Certificates", href: "/portal/facility/certificates", icon: FileText },
     ]
 
     const navItems = role === 'student' ? studentNavItems : (role === 'member' ? memberNavItems : facilityNavItems)
