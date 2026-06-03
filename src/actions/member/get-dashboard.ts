@@ -17,6 +17,8 @@ export async function getMemberDashboardData() {
         .select(`
             role,
             full_name,
+            address,
+            photo_url,
             memberships (
                 id,
                 nic_id,
@@ -99,6 +101,8 @@ export async function getMemberDashboardData() {
         status: e.status
     })) || []
 
+    const profileComplete = !!(profileData.address && profileData.photo_url)
+
     return {
         member: {
             name: profileData.full_name,
@@ -115,11 +119,12 @@ export async function getMemberDashboardData() {
         },
         cpd: {
             points: totalCPDPoints,
-            target: 30, // Default target
+            target: 30,
             progress: Math.min(Math.round((totalCPDPoints / 30) * 100), 100),
             logs: recentLogs
         },
         hasOutstandingDues,
-        activeEnrollments
+        activeEnrollments,
+        profileComplete
     }
 }

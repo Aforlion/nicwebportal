@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-
 import { Badge } from "@/components/ui/badge"
 import {
     UserPlus,
@@ -14,7 +13,7 @@ import {
     CheckCircle2,
     ArrowRight,
     ArrowLeft,
-    Upload
+    AlertCircle,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase"
 import { toast } from "sonner"
@@ -31,9 +30,8 @@ const MEMBERSHIP_CATEGORIES = [
 
 const STEPS = [
     { id: 1, name: "Category", icon: UserPlus },
-    { id: 2, name: "Personal Info", icon: FileText },
-    { id: 3, name: "Documents", icon: Upload },
-    { id: 4, name: "Payment", icon: CreditCard },
+    { id: 2, name: "Your Details", icon: FileText },
+    { id: 3, name: "Payment", icon: CreditCard },
 ]
 
 export function MemberRegistrationForm({
@@ -51,59 +49,45 @@ export function MemberRegistrationForm({
         fullName: "",
         email: "",
         phone: "",
-        address: "",
-        dateOfBirth: "",
-        gender: "",
-        qualification: "",
-        experience: "",
-        state: "",
-        city: "",
         password: "",
         confirmPassword: "",
     })
+    const [errors, setErrors] = useState<Record<string, string>>({})
 
-    const [files, setFiles] = useState<{
-        passport: File | null;
-        certificate: File | null;
-        idCard: File | null;
-    }>({
-        passport: null,
-        certificate: null,
-        idCard: null,
-    })
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, key: keyof typeof files) => {
-        const selectedFile = e.target.files?.[0] || null
-        setFiles(prev => ({ ...prev, [key]: selectedFile }))
+    const validateStep2 = (): boolean => {
+        const newErrors: Record<string, string> = {}
+        if (!formData.fullName || formData.fullName.trim().length < 2)
+            newErrors.fullName = "Full name is required"
+        if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+            newErrors.email = "A valid email address is required"
+        if (!formData.phone || formData.phone.replace(/\D/g, "").length < 10)
+            newErrors.phone = "A valid phone number is required (at least 10 digits)"
+        if (!formData.password || formData.password.length < 8)
+            newErrors.password = "Password must be at least 8 characters"
+        if (formData.password !== formData.confirmPassword)
+            newErrors.confirmPassword = "Passwords do not match"
+        setErrors(newErrors)
+        return Object.keys(newErrors).length === 0
     }
 
     const handleNext = () => {
-        if (currentStep === 2) {
-            if (!formData.password || formData.password.length < 8) {
-                toast.error("Password must be at least 8 characters long")
-                return
-            }
-            if (formData.password !== formData.confirmPassword) {
-                toast.error("Passwords do not match")
-                return
-            }
-            if (!formData.state || !formData.city) {
-                toast.error("State and City are required")
-                return
-            }
-        }
-        if (currentStep < STEPS.length) {
-            setCurrentStep(currentStep + 1)
-        }
+        if (currentStep === 2 && !validateStep2()) return
+        if (currentStep < STEPS.length) setCurrentStep(currentStep + 1)
     }
 
     const handlePrevious = () => {
         if (currentStep > 1) {
+            setErrors({})
             setCurrentStep(currentStep - 1)
         }
     }
 
     const selectedCategory = MEMBERSHIP_CATEGORIES.find(cat => cat.id === formData.category)
+
+    const updateField = (key: keyof typeof formData, value: string) => {
+        setFormData(prev => ({ ...prev, [key]: value }))
+        if (errors[key]) setErrors(prev => ({ ...prev, [key]: "" }))
+    }
 
     return (
         <div className="w-full">
@@ -116,6 +100,7 @@ export function MemberRegistrationForm({
                     </div>
                 </div>
             )}
+
             {/* Progress Steps */}
             <div className="mb-12">
                 <div className="flex items-center justify-between">
@@ -151,25 +136,24 @@ export function MemberRegistrationForm({
                 <CardHeader>
                     <CardTitle>
                         {currentStep === 1 && "Select Membership Category"}
-                        {currentStep === 2 && (isGraduate ? "Graduate Student Onboarding" : "Personal Information")}
-                        {currentStep === 3 && (isGraduate ? "Academic Records" : "Upload Documents")}
-                        {currentStep === 4 && "Payment & Confirmation"}
+                        {currentStep === 2 && (isGraduate ? "Graduate Student Onboarding" : "Your Details")}
+                        {currentStep === 3 && "Payment & Confirmation"}
                     </CardTitle>
                     <CardDescription>
                         {currentStep === 1 && "Choose the membership category that best fits your professional status"}
-                        {currentStep === 2 && (isGraduate ? "Complete your professional profile as a NIC graduate" : "Provide your personal and professional details")}
-                        {currentStep === 3 && (isGraduate ? "Upload your credentials for professional verification" : "Upload required documents for verification")}
-                        {currentStep === 4 && "Complete payment to activate your membership and access orientation"}
+                        {currentStep === 2 && "Just the basics — you can complete your full profile after registration"}
+                        {currentStep === 3 && "Complete payment to activate your membership and access orientation"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+
                     {/* Step 1: Category Selection */}
                     {currentStep === 1 && (
                         <div className="space-y-4">
                             {MEMBERSHIP_CATEGORIES.map((category) => (
                                 <div
                                     key={category.id}
-                                    onClick={() => setFormData({ ...formData, category: category.id })}
+                                    onClick={() => updateField("category", category.id)}
                                     className={`cursor-pointer rounded-lg border-2 p-4 transition-all hover:border-primary ${formData.category === category.id
                                         ? "border-primary bg-primary/5"
                                         : "border-muted"
@@ -189,18 +173,27 @@ export function MemberRegistrationForm({
                         </div>
                     )}
 
-                    {/* Step 2: Personal Information */}
+                    {/* Step 2: Minimal Personal Information */}
                     {currentStep === 2 && (
-                        <div className="grid gap-6 md:grid-cols-2">
+                        <div className="grid gap-5 md:grid-cols-2">
+                            {/* Profile completion nudge */}
+                            <div className="md:col-span-2 rounded-lg bg-amber-50 border border-amber-200 p-3 flex gap-2 text-amber-800 text-sm">
+                                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                                <p>Fields marked <strong>*</strong> are required. You can add your address, photo, and documents after registration from your dashboard.</p>
+                            </div>
+
                             <div className="space-y-2 md:col-span-2">
                                 <Label htmlFor="fullName">Full Name *</Label>
                                 <Input
                                     id="fullName"
                                     placeholder="Enter your full name"
                                     value={formData.fullName}
-                                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                    onChange={(e) => updateField("fullName", e.target.value)}
+                                    className={errors.fullName ? "border-red-500" : ""}
                                 />
+                                {errors.fullName && <p className="text-xs text-red-600">{errors.fullName}</p>}
                             </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email Address *</Label>
                                 <Input
@@ -208,9 +201,12 @@ export function MemberRegistrationForm({
                                     type="email"
                                     placeholder="your.email@example.com"
                                     value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    onChange={(e) => updateField("email", e.target.value)}
+                                    className={errors.email ? "border-red-500" : ""}
                                 />
+                                {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
                             </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="phone">Phone Number *</Label>
                                 <Input
@@ -218,177 +214,42 @@ export function MemberRegistrationForm({
                                     type="tel"
                                     placeholder="+234 xxx xxx xxxx"
                                     value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    onChange={(e) => updateField("phone", e.target.value)}
+                                    className={errors.phone ? "border-red-500" : ""}
                                 />
+                                {errors.phone && <p className="text-xs text-red-600">{errors.phone}</p>}
                             </div>
-                            <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="address">Address *</Label>
-                                <Input
-                                    id="address"
-                                    placeholder="Your residential address"
-                                    value={formData.address}
-                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-                                <Input
-                                    id="dateOfBirth"
-                                    type="date"
-                                    value={formData.dateOfBirth}
-                                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="gender">Gender *</Label>
-                                <select
-                                    value={formData.gender}
-                                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                >
-                                    <option value="">Select gender</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="qualification">Highest Qualification *</Label>
-                                <Input
-                                    id="qualification"
-                                    placeholder="e.g., HCA Certificate, BSc Nursing"
-                                    value={formData.qualification}
-                                    onChange={(e) => setFormData({ ...formData, qualification: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="experience">Years of Experience</Label>
-                                <Input
-                                    id="experience"
-                                    type="number"
-                                    placeholder="0"
-                                    value={formData.experience}
-                                    onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="state">State *</Label>
-                                <Input
-                                    id="state"
-                                    placeholder="e.g. Lagos"
-                                    value={formData.state}
-                                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="city">City *</Label>
-                                <Input
-                                    id="city"
-                                    placeholder="e.g. Ikeja"
-                                    value={formData.city}
-                                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                                />
-                            </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="password">Create Password *</Label>
                                 <Input
                                     id="password"
                                     type="password"
-                                    placeholder="Password"
+                                    placeholder="Min. 8 characters"
                                     value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    onChange={(e) => updateField("password", e.target.value)}
+                                    className={errors.password ? "border-red-500" : ""}
                                 />
+                                {errors.password && <p className="text-xs text-red-600">{errors.password}</p>}
                             </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="confirmPassword">Confirm Password *</Label>
                                 <Input
                                     id="confirmPassword"
                                     type="password"
-                                    placeholder="Confirm Password"
+                                    placeholder="Re-enter your password"
                                     value={formData.confirmPassword}
-                                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                    onChange={(e) => updateField("confirmPassword", e.target.value)}
+                                    className={errors.confirmPassword ? "border-red-500" : ""}
                                 />
+                                {errors.confirmPassword && <p className="text-xs text-red-600">{errors.confirmPassword}</p>}
                             </div>
                         </div>
                     )}
 
-                    {/* Step 3: Documents */}
+                    {/* Step 3: Payment */}
                     {currentStep === 3 && (
-                        <div className="space-y-6">
-                            <div className="space-y-2">
-                                <Label>Passport Photograph *</Label>
-                                <div className="flex items-center justify-center w-full">
-                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors">
-                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <Upload className={`w-8 h-8 mb-2 ${files.passport ? "text-primary" : "text-muted-foreground"}`} />
-                                            <p className="text-sm text-muted-foreground">
-                                                {files.passport ? (
-                                                    <span className="text-primary font-medium">Selected: {files.passport.name}</span>
-                                                ) : (
-                                                    "Click to upload passport photo"
-                                                )}
-                                            </p>
-                                        </div>
-                                        <input
-                                            type="file"
-                                            className="hidden"
-                                            accept="image/*"
-                                            onChange={(e) => handleFileChange(e, 'passport')}
-                                        />
-                                    </label>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Professional Certificate *</Label>
-                                <div className="flex items-center justify-center w-full">
-                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors">
-                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <Upload className={`w-8 h-8 mb-2 ${files.certificate ? "text-primary" : "text-muted-foreground"}`} />
-                                            <p className="text-sm text-muted-foreground">
-                                                {files.certificate ? (
-                                                    <span className="text-primary font-medium">Selected: {files.certificate.name}</span>
-                                                ) : (
-                                                    "Upload HCA or relevant certificate"
-                                                )}
-                                            </p>
-                                        </div>
-                                        <input
-                                            type="file"
-                                            className="hidden"
-                                            accept=".pdf,.jpg,.jpeg,.png"
-                                            onChange={(e) => handleFileChange(e, 'certificate')}
-                                        />
-                                    </label>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Valid ID Card *</Label>
-                                <div className="flex items-center justify-center w-full">
-                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors">
-                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <Upload className={`w-8 h-8 mb-2 ${files.idCard ? "text-primary" : "text-muted-foreground"}`} />
-                                            <p className="text-sm text-muted-foreground">
-                                                {files.idCard ? (
-                                                    <span className="text-primary font-medium">Selected: {files.idCard.name}</span>
-                                                ) : (
-                                                    "Upload National ID, Driver's License, or Passport"
-                                                )}
-                                            </p>
-                                        </div>
-                                        <input
-                                            type="file"
-                                            className="hidden"
-                                            accept=".pdf,.jpg,.jpeg,.png"
-                                            onChange={(e) => handleFileChange(e, 'idCard')}
-                                        />
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Step 4: Payment */}
-                    {currentStep === 4 && (
                         <div className="space-y-6">
                             <div className="rounded-lg border bg-muted/30 p-6">
                                 <h3 className="mb-4 font-bold text-secondary">Registration Summary</h3>
@@ -405,6 +266,10 @@ export function MemberRegistrationForm({
                                         <span className="text-muted-foreground">Email:</span>
                                         <span className="font-medium">{formData.email || "—"}</span>
                                     </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Phone:</span>
+                                        <span className="font-medium">{formData.phone || "—"}</span>
+                                    </div>
                                     <div className="border-t pt-3 mt-3">
                                         <div className="flex justify-between text-lg">
                                             <span className="font-bold text-secondary">Annual Fee:</span>
@@ -412,6 +277,10 @@ export function MemberRegistrationForm({
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 flex gap-2 text-amber-800 text-sm">
+                                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                                <p>After payment, you will receive a welcome email with instructions to complete your profile (address, photo, and documents).</p>
                             </div>
                             <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
                                 <p className="text-sm text-muted-foreground">
@@ -473,4 +342,3 @@ export function MemberRegistrationForm({
         </div>
     )
 }
-

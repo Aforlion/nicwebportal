@@ -73,9 +73,9 @@ export const IndividualRegistrationSchema = z.object({
     fullName: z.string().min(2, "Full name is required"),
     email: z.string().email("Invalid email address"),
     phone: z.string().min(10, "Valid phone number is required"),
-    address: z.string().min(5, "Address is required"),
-    state: z.string().min(1, "State is required"),
-    city: z.string().min(1, "City is required"),
+    address: z.string().optional(),
+    state: z.string().optional(),
+    city: z.string().optional(),
     category: z.enum(['student', 'associate', 'full', 'professional']),
     password: z.string().min(8, "Password must be at least 8 characters"),
 })

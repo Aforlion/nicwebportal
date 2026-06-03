@@ -7,7 +7,16 @@ export async function getStudentDashboardData() {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) return { enrollments: [], recent: null }
+    if (!user) return { enrollments: [], recent: null, profileComplete: true }
+
+    // Fetch profile for completeness check
+    const { data: profileData } = await supabase
+        .from('profiles')
+        .select('address, photo_url')
+        .eq('id', user.id)
+        .single()
+
+    const profileComplete = !!(profileData?.address && profileData?.photo_url)
 
     // Fetch enrollments with course details
     const { data: rawEnrollments, error } = await supabase
@@ -108,7 +117,8 @@ export async function getStudentDashboardData() {
         events: events || [],
         tip,
         cpdCredits,
-        currentLevel
+        currentLevel,
+        profileComplete
     }
 }
 

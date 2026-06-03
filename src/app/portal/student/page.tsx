@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { PlayCircle, Clock, Award, ArrowRight, ShieldCheck, BookOpen } from "lucide-react"
+import { PlayCircle, Clock, Award, ArrowRight, ShieldCheck, BookOpen, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { getStudentDashboardData } from "@/actions/get-student-progress"
@@ -52,11 +52,31 @@ async function RecommendedCourses() {
 }
 
 export default async function StudentDashboard() {
-    const { enrollments, recent, events, tip, cpdCredits, currentLevel } = await getStudentDashboardData()
+    const { enrollments, recent, events, tip, cpdCredits, currentLevel, profileComplete } = await getStudentDashboardData()
 
     return (
         <ErrorBoundary>
             <div className="space-y-8 relative min-h-[calc(100vh-100px)]">
+                {/* Profile Completion Banner */}
+                {!profileComplete && (
+                    <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                        <div className="flex items-start gap-3">
+                            <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                                <p className="font-bold text-amber-900">Complete your profile</p>
+                                <p className="text-sm text-amber-700 mt-0.5">
+                                    Add your address and a profile photo so NIC can verify and issue your student ID.
+                                </p>
+                            </div>
+                        </div>
+                        <Link
+                            href="/portal/student/profile"
+                            className="flex items-center gap-1.5 shrink-0 rounded-lg bg-amber-600 px-4 py-2 text-sm font-bold text-white hover:bg-amber-700 transition-colors"
+                        >
+                            Complete Profile <ArrowRight className="h-4 w-4" />
+                        </Link>
+                    </div>
+                )}
                 {/* Background Watermark */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-0">
                     <Image 
