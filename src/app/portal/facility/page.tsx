@@ -93,12 +93,22 @@ export default function FacilityDashboard() {
                 const { data: coursesData } = await supabase
                     .from('courses')
                     .select('id, title, slug, description, level, price, duration_hours, thumbnail_url')
-                    .eq('is_published', true)
-                    .order('sort_order', { ascending: true })
-                    .limit(4)
+                    .in('slug', [
+                        'nic-care-business-agency-development-program-level-5',
+                        'nic-care-supervisor-facility-manager-level-4',
+                        'advanced-care-practitioner'
+                    ])
 
                 if (coursesData) {
-                    setCourses(coursesData)
+                    const orderedSlugs = [
+                        'nic-care-business-agency-development-program-level-5',
+                        'nic-care-supervisor-facility-manager-level-4',
+                        'advanced-care-practitioner'
+                    ];
+                    const sortedCourses = [...coursesData].sort((a, b) => 
+                        orderedSlugs.indexOf(a.slug) - orderedSlugs.indexOf(b.slug)
+                    );
+                    setCourses(sortedCourses)
                 }
             }
         } catch (err) {
