@@ -142,20 +142,11 @@ function ResetPasswordForm() {
             // supabase.auth.updateUser will still fail securely internally if the session is invalid.
             console.log("[ResetPassword] Step 2a: Skipping getSession check (bypassing deadlock)")
 
-            // 2d. Trigger updateUser with 10s timeout
+            // 2d. Trigger updateUser
             console.log("[ResetPassword] Step 2e: Attempting supabase.auth.updateUser")
-            const updatePromise = supabase.auth.updateUser({
+            const { error: updateError } = await supabase.auth.updateUser({
                 password: password
             })
-
-            const timeoutPromise = new Promise<{ error: any }>((_, reject) => 
-                setTimeout(() => {
-                    console.error("[ResetPassword] Step 2f: updateUser timed out after 10s")
-                    reject(new Error("Update service timed out. Please try again or check your internet connection."))
-                }, 10000)
-            )
-
-            const { error: updateError } = await Promise.race([updatePromise, timeoutPromise]) as { error: any }
 
             if (updateError) {
                 console.error("[ResetPassword] Step 2g: updateUser returned error:", updateError)
