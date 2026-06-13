@@ -43,9 +43,7 @@ export async function requestPasswordResetAction(email: string) {
             type: 'recovery',
             email: email,
             options: {
-                // Route through /auth/callback so the PKCE code is exchanged
-                // before the user reaches the reset-password form.
-                redirectTo: `${baseUrl}/auth/callback?next=/reset-password`
+                redirectTo: `${baseUrl}/reset-password`
             }
         })
 
