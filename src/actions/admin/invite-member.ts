@@ -48,7 +48,9 @@ export async function inviteMemberAction(profileId: string) {
             type: 'recovery',
             email: profile.email,
             options: {
-                redirectTo: `${baseUrl}/reset-password`
+                // Route through /auth/callback so the PKCE code is exchanged
+                // before the user reaches the reset-password form.
+                redirectTo: `${baseUrl}/auth/callback?next=/reset-password`
             }
         })
 

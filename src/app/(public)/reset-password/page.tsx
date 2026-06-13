@@ -29,7 +29,25 @@ function ResetPasswordForm() {
         async function verifySession() {
             try {
                 console.log("[ResetPassword] Step 1: Initializing verifySession")
-                // A. Check current session
+
+                // A. PKCE flow: exchange ?code= from URL (fallback if /auth/callback was bypassed)
+                const urlParams = new URLSearchParams(window.location.search)
+                const code = urlParams.get('code')
+                if (code) {
+                    console.log("[ResetPassword] Step 1a: PKCE code found in URL, exchanging for session")
+                    const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+                    if (exchangeError) {
+                        console.error("[ResetPassword] Step 1a: Code exchange failed:", exchangeError)
+                    } else if (exchangeData.session) {
+                        console.log("[ResetPassword] Step 1a: Session established via PKCE code exchange")
+                        // Remove the code from the URL to prevent re-use
+                        window.history.replaceState({}, '', window.location.pathname)
+                        setVerifying(false)
+                        return
+                    }
+                }
+
+                // B. Check current session (set by /auth/callback server route)
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession()
                 
                 if (session) {
@@ -38,7 +56,7 @@ function ResetPasswordForm() {
                     return
                 }
 
-                // B. Fallback: Manual hash parsing (Implicit Grant)
+                // C. Fallback: Manual hash parsing (Implicit Grant / legacy links)
                 const hash = window.location.hash
                 if (hash && hash.includes('access_token=')) {
                     console.log("[ResetPassword] Step 1c: Access token found in hash, attempting manual setSession")
