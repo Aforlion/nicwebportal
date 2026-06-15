@@ -2,12 +2,13 @@ import { getCourseContent } from "@/actions/get-course-content"
 import QuizPlayer from "@/components/student/quiz-player"
 import CourseCompletionCard from "@/components/student/course-completion-card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, Circle, PlayCircle, ChevronLeft, BookOpen } from "lucide-react"
+import { CheckCircle, Circle, PlayCircle, ChevronLeft, BookOpen, Menu } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { RichText } from "@/components/ui/rich-text"
 import { CollapsibleRichText } from "@/components/ui/collapsible-rich-text"
 import LessonCompleteButton from "@/components/student/lesson-complete-button"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 export default async function LessonPlayerPage({
     params,
@@ -112,17 +113,122 @@ export default async function LessonPlayerPage({
         return `/portal/student/courses/${courseId}?${params.toString()}`
     }
 
+    const renderCurriculum = () => (
+        <>
+            {/* Course Intro Link */}
+            <Link
+                href={getHref({ id: course.id, type: 'course' })}
+                className={`w-full flex items-center gap-3 px-4 py-4 text-sm rounded-xl transition-all border
+                    ${activeType === 'course' ? 'bg-primary/10 text-primary font-bold border-primary/20 shadow-sm' : 'hover:bg-muted text-secondary font-semibold border-transparent'}
+                `}
+            >
+                <div className={`p-2 rounded-lg ${activeType === 'course' ? 'bg-primary/20' : 'bg-muted'}`}>
+                    <PlayCircle className={`h-5 w-5 ${activeType === 'course' ? 'text-primary' : 'text-muted-foreground'}`} />
+                </div>
+                <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground uppercase tracking-widest font-black opacity-60">Introduction</span>
+                    <span>Course Overview</span>
+                </div>
+            </Link>
+
+            {sortedModules?.map((module: any, idx: number) => {
+                const isModuleLocked = itemStates.get(module.id)?.isLocked;
+                
+                return (
+                <div key={module.id} className="space-y-2">
+                    <div className="px-2">
+                        {isModuleLocked ? (
+                            <div className="w-full flex flex-col gap-1 p-3 rounded-xl border border-transparent opacity-50 cursor-not-allowed">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Module {idx + 1}</span>
+                                    <svg className="h-3 w-3 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                </div>
+                                <span className="text-sm font-bold line-clamp-1 text-muted-foreground">
+                                    {module.title}
+                                </span>
+                            </div>
+                        ) : (
+                            <Link
+                                href={getHref({ id: module.id, type: 'module' })}
+                                className={`group w-full flex flex-col gap-1 p-3 rounded-xl transition-all border
+                                    ${activeType === 'module' && activeContent?.id === module.id ? 'bg-emerald-50 border-emerald-100' : 'hover:bg-muted/50 border-transparent'}
+                                `}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Module {idx + 1}</span>
+                                    <BookOpen className={`h-3 w-3 ${activeType === 'module' && activeContent?.id === module.id ? 'text-emerald-500' : 'text-muted-foreground opacity-30'}`} />
+                                </div>
+                                <span className={`text-sm font-bold line-clamp-1 ${activeType === 'module' && activeContent?.id === module.id ? 'text-emerald-900' : 'text-secondary group-hover:text-primary transition-colors'}`}>
+                                    {module.title}
+                                </span>
+                            </Link>
+                        )}
+                    </div>
+
+                    <div className="space-y-1 ml-4 border-l-2 border-muted/30">
+                        {module.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => {
+                            const isCompleted = progress[lesson.id]
+                            const assessmentStatus = lesson.assessments?.id ? submissionStatus[lesson.assessments.id] : null
+                            const isProvisional = !isCompleted && assessmentStatus === 'pending_review'
+                            const isActive = activeType === 'lesson' && lesson.id === activeContent?.id
+                            const isLessonLocked = itemStates.get(lesson.id)?.isLocked;
+
+                            if (isLessonLocked) {
+                                return (
+                                    <div key={lesson.id} className="w-full flex items-center gap-3 px-4 py-3 text-sm rounded-r-xl transition-all opacity-50 cursor-not-allowed">
+                                        <div className="shrink-0">
+                                            <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
+                                        </div>
+                                        <span className="line-clamp-1 text-muted-foreground">{lesson.title}</span>
+                                    </div>
+                                )
+                            }
+
+                            return (
+                                <Link
+                                    key={lesson.id}
+                                    href={getHref({ id: lesson.id, type: 'lesson' })}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-r-xl transition-all
+                                        ${isActive ? 'bg-primary/5 text-primary font-bold border-l-4 border-primary -ml-[2px]' : 'hover:bg-muted/30 text-muted-foreground hover:text-secondary'}
+                                    `}
+                                >
+                                    <div className="shrink-0">
+                                        {isCompleted ? (
+                                            <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                                                <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+                                            </div>
+                                        ) : isProvisional ? (
+                                            <div className="h-5 w-5 rounded-full bg-amber-100 flex items-center justify-center" title="Awaiting Grading. You can proceed!">
+                                                <CheckCircle className="h-3.5 w-3.5 text-amber-600 opacity-70" />
+                                            </div>
+                                        ) : isActive ? (
+                                            <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
+                                                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                                            </div>
+                                        ) : (
+                                            <Circle className="h-5 w-5 text-muted-foreground/20" />
+                                        )}
+                                    </div>
+                                    <span className="line-clamp-1">{lesson.title}</span>
+                                </Link>
+                            )
+                        })}
+                    </div>
+                </div>
+                )
+            })}
+        </>
+    )
+
     return (
         <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)] lg:overflow-hidden -m-4 sm:-m-8">
-            {/* Sidebar - Course Curriculum: desktop=fixed side panel, mobile=collapsible bottom section */}
-            <div className="w-full lg:w-96 border-r bg-muted/5 flex flex-col max-h-[45vh] lg:h-full overflow-hidden shrink-0 order-last lg:order-first">
-                {/* Mobile-only label — sidebar appears below content on small screens */}
-                <div className="lg:hidden px-5 py-3 bg-muted/30 border-b flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Course Curriculum</span>
-                </div>
-
-                <div className="p-5 border-b bg-background hidden lg:block">
+            {/* Desktop Sidebar - hidden on mobile */}
+            <div className="hidden lg:flex w-full lg:w-96 border-r bg-muted/5 flex-col lg:h-full overflow-hidden shrink-0">
+                <div className="p-5 border-b bg-background">
                     <Link href="/portal/student" className="flex items-center text-sm text-muted-foreground hover:text-primary mb-4 transition-colors">
                         <ChevronLeft className="h-4 w-4 mr-1" /> Back to Dashboard
                     </Link>
@@ -134,118 +240,13 @@ export default async function LessonPlayerPage({
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                    {/* Course Intro Link */}
-                    <Link
-                        href={getHref({ id: course.id, type: 'course' })}
-                        className={`w-full flex items-center gap-3 px-4 py-4 text-sm rounded-xl transition-all border
-                            ${activeType === 'course' ? 'bg-primary/10 text-primary font-bold border-primary/20 shadow-sm' : 'hover:bg-muted text-secondary font-semibold border-transparent'}
-                        `}
-                    >
-                        <div className={`p-2 rounded-lg ${activeType === 'course' ? 'bg-primary/20' : 'bg-muted'}`}>
-                            <PlayCircle className={`h-5 w-5 ${activeType === 'course' ? 'text-primary' : 'text-muted-foreground'}`} />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-xs text-muted-foreground uppercase tracking-widest font-black opacity-60">Introduction</span>
-                            <span>Course Overview</span>
-                        </div>
-                    </Link>
-
-                    {sortedModules?.map((module: any, idx: number) => {
-                        const isModuleLocked = itemStates.get(module.id)?.isLocked;
-                        
-                        return (
-                        <div key={module.id} className="space-y-2">
-                            <div className="px-2">
-                                {isModuleLocked ? (
-                                    <div className="w-full flex flex-col gap-1 p-3 rounded-xl border border-transparent opacity-50 cursor-not-allowed">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Module {idx + 1}</span>
-                                            <svg className="h-3 w-3 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                            </svg>
-                                        </div>
-                                        <span className="text-sm font-bold line-clamp-1 text-muted-foreground">
-                                            {module.title}
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <Link
-                                        href={getHref({ id: module.id, type: 'module' })}
-                                        className={`group w-full flex flex-col gap-1 p-3 rounded-xl transition-all border
-                                            ${activeType === 'module' && activeContent?.id === module.id ? 'bg-emerald-50 border-emerald-100' : 'hover:bg-muted/50 border-transparent'}
-                                        `}
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Module {idx + 1}</span>
-                                            <BookOpen className={`h-3 w-3 ${activeType === 'module' && activeContent?.id === module.id ? 'text-emerald-500' : 'text-muted-foreground opacity-30'}`} />
-                                        </div>
-                                        <span className={`text-sm font-bold line-clamp-1 ${activeType === 'module' && activeContent?.id === module.id ? 'text-emerald-900' : 'text-secondary group-hover:text-primary transition-colors'}`}>
-                                            {module.title}
-                                        </span>
-                                    </Link>
-                                )}
-                            </div>
-
-                            <div className="space-y-1 ml-4 border-l-2 border-muted/30">
-                                {module.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => {
-                                    const isCompleted = progress[lesson.id]
-                                    const assessmentStatus = lesson.assessments?.id ? submissionStatus[lesson.assessments.id] : null
-                                    const isProvisional = !isCompleted && assessmentStatus === 'pending_review'
-                                    const isActive = activeType === 'lesson' && lesson.id === activeContent?.id
-                                    const isLessonLocked = itemStates.get(lesson.id)?.isLocked;
-
-                                    if (isLessonLocked) {
-                                        return (
-                                            <div key={lesson.id} className="w-full flex items-center gap-3 px-4 py-3 text-sm rounded-r-xl transition-all opacity-50 cursor-not-allowed">
-                                                <div className="shrink-0">
-                                                    <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                                    </svg>
-                                                </div>
-                                                <span className="line-clamp-1 text-muted-foreground">{lesson.title}</span>
-                                            </div>
-                                        )
-                                    }
-
-                                    return (
-                                        <Link
-                                            key={lesson.id}
-                                            href={getHref({ id: lesson.id, type: 'lesson' })}
-                                            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-r-xl transition-all
-                                                ${isActive ? 'bg-primary/5 text-primary font-bold border-l-4 border-primary -ml-[2px]' : 'hover:bg-muted/30 text-muted-foreground hover:text-secondary'}
-                                            `}
-                                        >
-                                            <div className="shrink-0">
-                                                {isCompleted ? (
-                                                    <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center">
-                                                        <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
-                                                    </div>
-                                                ) : isProvisional ? (
-                                                    <div className="h-5 w-5 rounded-full bg-amber-100 flex items-center justify-center" title="Awaiting Grading. You can proceed!">
-                                                        <CheckCircle className="h-3.5 w-3.5 text-amber-600 opacity-70" />
-                                                    </div>
-                                                ) : isActive ? (
-                                                    <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
-                                                        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                                                    </div>
-                                                ) : (
-                                                    <Circle className="h-5 w-5 text-muted-foreground/20" />
-                                                )}
-                                            </div>
-                                            <span className="line-clamp-1">{lesson.title}</span>
-                                        </Link>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                        )
-                    })}
+                    {renderCurriculum()}
                 </div>
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 overflow-y-auto bg-background flex flex-col order-first lg:order-last">
-                {/* Mobile-only top bar with back link + progress (sidebar is at bottom on mobile) */}
+            <div className="flex-1 overflow-y-auto bg-background flex flex-col">
+                {/* Mobile-only top bar with back link + progress and floating Sheet curriculum trigger */}
                 <div className="lg:hidden sticky top-0 z-10 bg-background border-b px-4 py-3 flex items-center gap-3">
                     <Link href="/portal/student" className="flex items-center text-sm text-muted-foreground hover:text-primary transition-colors shrink-0">
                         <ChevronLeft className="h-4 w-4 mr-1" /> Back
@@ -256,7 +257,28 @@ export default async function LessonPlayerPage({
                             <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${overallProgress || 0}%` }} />
                         </div>
                     </div>
-                    <span className="text-xs font-bold text-muted-foreground shrink-0">{Math.round(overallProgress || 0)}%</span>
+                    <span className="text-xs font-bold text-muted-foreground shrink-0 mr-1">{Math.round(overallProgress || 0)}%</span>
+                    
+                    <Sheet>
+                        <SheetTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8 gap-1 font-bold text-xs shrink-0 rounded-lg border-primary/20 text-primary hover:bg-primary/5">
+                                <Menu className="h-3.5 w-3.5" />
+                                Modules
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="left" className="w-80 p-0 flex flex-col h-full">
+                            <div className="p-5 border-b bg-background">
+                                <h2 className="font-bold text-lg leading-tight text-secondary">{course.title}</h2>
+                                <div className="mt-3 bg-muted/50 rounded-full h-2 overflow-hidden">
+                                    <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${overallProgress || 0}%` }} />
+                                </div>
+                                <p className="text-[10px] font-bold text-muted-foreground mt-2 text-right">{Math.round(overallProgress || 0)}% Complete</p>
+                            </div>
+                            <div className="flex-grow overflow-y-auto p-4 space-y-6">
+                                {renderCurriculum()}
+                            </div>
+                        </SheetContent>
+                    </Sheet>
                 </div>
 
                 <div className="max-w-4xl mx-auto w-full p-4 sm:p-6 lg:p-12">
