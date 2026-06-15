@@ -4,12 +4,21 @@ import { createClient } from "@supabase/supabase-js"
 import { env } from "@/env"
 import { sendPasswordResetEmail } from "@/lib/email"
 import { createClient as createServerClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function requestPasswordResetAction(email: string) {
     if (!email) return { success: false, error: "Email is required" }
 
     try {
+        // Rate Limiting: 10 reset attempts per minute per IP
+        const headerList = await headers()
+        const ip = headerList.get('x-forwarded-for') ?? 'unknown'
+        const isAllowed = await checkRateLimit('email', `reset-request:${ip}`)
+        if (!isAllowed) {
+            return { success: false, error: "Too many reset attempts. Please try again later." }
+        }
+
         // 1. Initialize admin client
         const supabaseAdmin = createClient(
             env.NEXT_PUBLIC_SUPABASE_URL,

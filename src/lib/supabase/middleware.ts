@@ -98,15 +98,17 @@ export async function updateSession(request: NextRequest) {
         }
     )
 
-    // 1. Skip static assets, API routes, and public auth pages to avoid session conflicts
+    // 1. Skip static assets, public webhooks, and public auth pages to avoid session conflicts
     const isPublicAuthPage =
         request.nextUrl.pathname.startsWith('/login') ||
         request.nextUrl.pathname.startsWith('/reset-password') ||
         request.nextUrl.pathname.startsWith('/auth/callback')
 
+    const isPublicApiRoute = request.nextUrl.pathname.startsWith('/api/webhooks')
+
     if (
         request.nextUrl.pathname.startsWith('/_next') ||
-        request.nextUrl.pathname.startsWith('/api') ||
+        (request.nextUrl.pathname.startsWith('/api') && isPublicApiRoute) ||
         request.nextUrl.pathname.startsWith('/favicon.ico') ||
         isPublicAuthPage
     ) {
@@ -116,14 +118,23 @@ export async function updateSession(request: NextRequest) {
     // Refresh the session cookie (required for Server Components)
     const { data: { user } } = await supabase.auth.getUser()
 
+    const isApiRoute = request.nextUrl.pathname.startsWith('/api')
     const isPortalRoute = request.nextUrl.pathname.startsWith('/portal')
     const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
 
-    // 1. Redirect unauthenticated users away from all protected routes
-    if ((isPortalRoute || isAdminRoute) && !user) {
-        const redirectUrl = new URL('/login', request.url)
-        redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
-        return NextResponse.redirect(redirectUrl)
+    // 1. Redirect or block unauthenticated users away from all protected routes
+    if (!user) {
+        if (isPortalRoute || isAdminRoute) {
+            const redirectUrl = new URL('/login', request.url)
+            redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
+            return NextResponse.redirect(redirectUrl)
+        }
+        if (isApiRoute) {
+            return new NextResponse(
+                JSON.stringify({ success: false, error: 'Unauthorized' }),
+                { status: 401, headers: { 'Content-Type': 'application/json' } }
+            )
+        }
     }
 
     // 2. Route-specific RBAC for admin routes
@@ -165,6 +176,12 @@ export async function updateSession(request: NextRequest) {
                 // Clear our custom tracker
                 supabaseResponse.cookies.delete('nic_last_active')
                 
+                if (isApiRoute) {
+                    return new NextResponse(
+                        JSON.stringify({ success: false, error: 'Session expired' }),
+                        { status: 401, headers: { 'Content-Type': 'application/json' } }
+                    )
+                }
                 const redirectUrl = new URL('/login', request.url)
                 redirectUrl.searchParams.set('expired', 'true') // Provide UX context
                 return NextResponse.redirect(redirectUrl)

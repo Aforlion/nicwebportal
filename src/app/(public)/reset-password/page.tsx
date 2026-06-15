@@ -74,6 +74,8 @@ function ResetPasswordForm() {
                             console.error("[ResetPassword] Step 1d: Manual setSession failed:", setSessionError)
                         } else if (setSessionData.session) {
                             console.log("[ResetPassword] Step 1e: Session established via manual setSession")
+                            // Scrub access tokens from URL hash immediately to prevent leakage
+                            window.history.replaceState(null, "", window.location.pathname + window.location.search)
                             setVerifying(false)
                             return
                         }
