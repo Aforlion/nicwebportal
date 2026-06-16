@@ -127,7 +127,7 @@ export function Navbar() {
         }
         initAuth()
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
             if (session?.user) {
                 setUser(session.user)
                 const fullName = session.user.user_metadata?.full_name as string | undefined

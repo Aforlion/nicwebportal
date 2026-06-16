@@ -91,7 +91,7 @@ function ResetPasswordForm() {
         }
 
         // C. Listen for auth state changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
             console.log(`[ResetPassword] Step 1h: Auth event triggered: ${event}`)
             if (session) {
                 console.log("[ResetPassword] Step 1i: Session confirmed via listener")

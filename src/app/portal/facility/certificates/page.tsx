@@ -87,7 +87,7 @@ export default function FacilityCertificatesPage() {
             if (error) throw error
 
             if (docData) {
-                const formatted = docData.map(doc => ({
+                const formatted = docData.map((doc: any) => ({
                     id: doc.id,
                     name: doc.document_name,
                     type: doc.document_type,

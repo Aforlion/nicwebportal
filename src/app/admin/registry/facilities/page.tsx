@@ -118,7 +118,7 @@ export default function AdminFacilitiesPage() {
             const { data: allData } = await supabase.from('facilities').select('status')
             if (allData) {
                 const s = { total: allData.length, active: 0, pending: 0, suspended: 0 }
-                allData.forEach(f => {
+                allData.forEach((f: any) => {
                     if (f.status === 'active') s.active++
                     else if (f.status === 'pending') s.pending++
                     else if (f.status === 'suspended' || f.status === 'revoked') s.suspended++

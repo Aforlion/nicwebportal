@@ -78,7 +78,7 @@ function getAllowedRolesForPath(pathname: string): string[] | null {
 // ============================================================
 
 export async function updateSession(request: NextRequest) {
-    const supabaseResponse = NextResponse.next({ request })
+    let supabaseResponse = NextResponse.next({ request })
 
     const supabase = createServerClient(
         env.NEXT_PUBLIC_SUPABASE_URL,
@@ -89,14 +89,28 @@ export async function updateSession(request: NextRequest) {
                     return request.cookies.getAll()
                 },
                 setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value, options }) => {
+                    cookiesToSet.forEach(({ name, value }) => {
                         request.cookies.set(name, value)
+                    })
+                    supabaseResponse = NextResponse.next({
+                        request,
+                    })
+                    cookiesToSet.forEach(({ name, value, options }) => {
                         supabaseResponse.cookies.set(name, value, options)
                     })
                 },
             },
         }
     )
+
+    // Helper to copy cookies from supabaseResponse to a redirect/error response
+    const copyCookies = (from: NextResponse, to: NextResponse) => {
+        from.cookies.getAll().forEach(cookie => {
+            const { name, value, ...options } = cookie
+            to.cookies.set(name, value, options)
+        })
+        return to
+    }
 
     // 1. Skip static assets, public webhooks, and public auth pages to avoid session conflicts
     const isPublicAuthPage =
@@ -127,12 +141,15 @@ export async function updateSession(request: NextRequest) {
         if (isPortalRoute || isAdminRoute) {
             const redirectUrl = new URL('/login', request.url)
             redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
-            return NextResponse.redirect(redirectUrl)
+            return copyCookies(supabaseResponse, NextResponse.redirect(redirectUrl))
         }
         if (isApiRoute) {
-            return new NextResponse(
-                JSON.stringify({ success: false, error: 'Unauthorized' }),
-                { status: 401, headers: { 'Content-Type': 'application/json' } }
+            return copyCookies(
+                supabaseResponse,
+                new NextResponse(
+                    JSON.stringify({ success: false, error: 'Unauthorized' }),
+                    { status: 401, headers: { 'Content-Type': 'application/json' } }
+                )
             )
         }
     }
@@ -153,7 +170,7 @@ export async function updateSession(request: NextRequest) {
                 // Redirect to member portal with a "not authorized" flag for UX
                 const url = new URL('/portal/member', request.url)
                 url.searchParams.set('unauthorized', '1')
-                return NextResponse.redirect(url)
+                return copyCookies(supabaseResponse, NextResponse.redirect(url))
             }
         }
     }
@@ -177,14 +194,17 @@ export async function updateSession(request: NextRequest) {
                 supabaseResponse.cookies.delete('nic_last_active')
                 
                 if (isApiRoute) {
-                    return new NextResponse(
-                        JSON.stringify({ success: false, error: 'Session expired' }),
-                        { status: 401, headers: { 'Content-Type': 'application/json' } }
+                    return copyCookies(
+                        supabaseResponse,
+                        new NextResponse(
+                            JSON.stringify({ success: false, error: 'Session expired' }),
+                            { status: 401, headers: { 'Content-Type': 'application/json' } }
+                        )
                     )
                 }
                 const redirectUrl = new URL('/login', request.url)
                 redirectUrl.searchParams.set('expired', 'true') // Provide UX context
-                return NextResponse.redirect(redirectUrl)
+                return copyCookies(supabaseResponse, NextResponse.redirect(redirectUrl))
             }
         }
 

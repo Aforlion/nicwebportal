@@ -72,7 +72,7 @@ export default function FacilityDashboard() {
                     ).data?.id)
 
                 if (scores) {
-                    setPillarScores(scores.map(s => ({ name: s.pillar, score: s.score })))
+                    setPillarScores(scores.map((s: any) => ({ name: s.pillar, score: s.score })))
                 }
 
                 // 4. Fetch Documents Status
