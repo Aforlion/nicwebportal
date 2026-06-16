@@ -107,28 +107,42 @@ export function Navbar() {
 
     React.useEffect(() => {
         const initAuth = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (session?.user) {
-                setUser(session.user)
-                const fullName = session.user.user_metadata?.full_name as string | undefined
-                setDisplayName(fullName || session.user.email?.split('@')[0] || 'User')
+            // Use getUser() (not getSession()) — it validates server-side and does NOT
+            // silently retry a stale refresh token in a loop on failure.
+            const { data: { user }, error } = await supabase.auth.getUser()
+            if (error || !user) {
+                // Stale/invalid token in storage — wipe it to stop the refresh loop.
+                await supabase.auth.signOut()
+                return
+            }
+            setUser(user)
+            const fullName = user.user_metadata?.full_name as string | undefined
+            setDisplayName(fullName || user.email?.split('@')[0] || 'User')
 
-                // Fetch role from profiles table
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('role, full_name')
-                    .eq('id', session.user.id)
-                    .single()
-                if (profile) {
-                    setUserRole(profile.role)
-                    if (profile.full_name) setDisplayName(profile.full_name)
-                }
+            // Fetch role from profiles table
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role, full_name')
+                .eq('id', user.id)
+                .single()
+            if (profile) {
+                setUserRole(profile.role)
+                if (profile.full_name) setDisplayName(profile.full_name)
             }
         }
         initAuth()
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
-            if (session?.user) {
+            if (event === 'SIGNED_OUT' || !session?.user) {
+                setUser(null)
+                setUserRole(undefined)
+                setDisplayName('')
+                return
+            }
+
+            // Only re-fetch profile on explicit sign-in or a successful token refresh —
+            // not on every auth event, which could trigger unnecessary DB calls.
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                 setUser(session.user)
                 const fullName = session.user.user_metadata?.full_name as string | undefined
                 setDisplayName(fullName || session.user.email?.split('@')[0] || 'User')
@@ -142,10 +156,6 @@ export function Navbar() {
                     setUserRole(profile.role)
                     if (profile.full_name) setDisplayName(profile.full_name)
                 }
-            } else {
-                setUser(null)
-                setUserRole(undefined)
-                setDisplayName('')
             }
         })
 
