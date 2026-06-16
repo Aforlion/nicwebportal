@@ -41,6 +41,7 @@ export async function saveAssessment(lessonId: string, formData: FormData) {
             title: formData.get('title') as string,
             description: formData.get('description') as string,
             passing_score: parseInt(formData.get('passing_score') as string) || 70,
+            grading_rubric: formData.get('grading_rubric') as string || '',
             questions: JSON.parse(formData.get('questions') as string || '[]'),
         }
 

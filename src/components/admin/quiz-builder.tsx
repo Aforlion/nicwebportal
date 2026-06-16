@@ -28,6 +28,7 @@ export default function QuizBuilder({ lessonId, initialData }: QuizBuilderProps)
     const [title, setTitle] = useState(initialData?.title || "")
     const [description, setDescription] = useState(initialData?.description || "")
     const [passingScore, setPassingScore] = useState(initialData?.passing_score || 70)
+    const [gradingRubric, setGradingRubric] = useState(initialData?.grading_rubric || "")
 
     // Default to one empty question if new, or parse existing
     const [questions, setQuestions] = useState<Question[]>(
@@ -83,6 +84,7 @@ export default function QuizBuilder({ lessonId, initialData }: QuizBuilderProps)
         formData.append('title', title)
         formData.append('description', description)
         formData.append('passing_score', passingScore.toString())
+        formData.append('grading_rubric', gradingRubric)
         formData.append('questions', JSON.stringify(questions))
 
         const result = await saveAssessment(lessonId, formData)
@@ -110,6 +112,14 @@ export default function QuizBuilder({ lessonId, initialData }: QuizBuilderProps)
                 <div className="grid gap-2">
                     <Label>Passing Score (%)</Label>
                     <Input type="number" value={passingScore} onChange={e => setPassingScore(parseInt(e.target.value))} max={100} min={1} />
+                </div>
+                <div className="grid gap-2">
+                    <Label>AI Grading Rubric (Optional)</Label>
+                    <Textarea 
+                        value={gradingRubric} 
+                        onChange={e => setGradingRubric(e.target.value)} 
+                        placeholder="Guidelines for the AI examiner. E.g. 'Assess student answers on safety, empathy, caregiver standards, and compliance. Award points based on thoroughness...'" 
+                    />
                 </div>
             </div>
 

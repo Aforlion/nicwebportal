@@ -31,6 +31,7 @@ export const AssessmentSchema = z.object({
     title: z.string().min(3).max(100),
     description: z.string().optional(),
     passing_score: z.number().int().min(0).max(100),
+    grading_rubric: z.string().optional(),
     questions: z.array(z.object({
         id: z.string(),
         text: z.string().min(1),
