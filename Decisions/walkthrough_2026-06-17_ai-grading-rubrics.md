@@ -48,4 +48,3 @@ All modules (including the advanced modules) have now had their corresponding gr
 
 > [!NOTE]
 > **AI Model Update:** During initial testing, the `gemini-2.0-flash` model encountered `429 Too Many Requests` (Quota Exceeded) errors on the project's API key. To resolve this, we updated [gemini.ts](file:///c:/Users/aforl/Desktop/NIC%20Portal/nicwebportal/src/lib/ai/gemini.ts) to utilize the newer **`gemini-2.5-flash`** model which is fully functional, supports structured JSON schema outputs, and has active quota available.
-

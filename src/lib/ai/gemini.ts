@@ -26,9 +26,9 @@ export async function gradeWithGemini(
   rubric: string
 ) {
   try {
-    // Switching to 2.0-flash for better reliability and faster inference
+    // Switching to 2.5-flash for better reliability and quota availability
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: gradingSchema,
