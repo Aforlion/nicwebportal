@@ -1,5 +1,6 @@
 import { getCertificateByCode } from "@/actions/student/certificate"
 import { notFound } from "next/navigation"
+import { headers } from "next/headers"
 import QRCodeDisplay from "@/components/certificate/qr-code-display"
 import CertificateActions from "@/components/certificate/certificate-actions"
 import Link from "next/link"
@@ -20,8 +21,14 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
         day: 'numeric', month: 'long', year: 'numeric'
     })
 
-    // Absolute URL for QR code (assuming env var is set, fallback to site URL or localhost for dev)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    // Dynamic fallback: construct URL using incoming request headers if environment variables aren't set
+    const headersList = await headers()
+    const host = headersList.get('host') || 'localhost:3000'
+    const protocol = headersList.get('x-forwarded-proto') || 'http'
+    const dynamicAppUrl = `${protocol}://${host}`
+
+    // Absolute URL for QR code (prioritize env vars, fallback to dynamic request URL)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || dynamicAppUrl
     const verificationUrl = `${appUrl}/certificates/${code}`
 
     return (
