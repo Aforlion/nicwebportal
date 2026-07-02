@@ -20,8 +20,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
         day: 'numeric', month: 'long', year: 'numeric'
     })
 
-    // Absolute URL for QR code (assuming env var is set, fallback to localhost for dev)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    // Absolute URL for QR code (assuming env var is set, fallback to site URL or localhost for dev)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
     const verificationUrl = `${appUrl}/certificates/${code}`
 
     return (

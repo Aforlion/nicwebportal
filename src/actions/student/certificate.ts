@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from "@/lib/supabase/server"
+import { supabaseAdmin } from "@/lib/supabase/admin"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { sendCertificateEmail } from "@/lib/email"
@@ -103,8 +104,8 @@ export async function issueCertificate(courseId: string, targetUserId?: string) 
     const random = Math.random().toString(36).substring(2, 7).toUpperCase()
     const code = `NIC-${year}-${random}`
 
-    // 5. Issue Certificate with Level info
-    const { error: insertError } = await supabase
+    // 5. Issue Certificate with Level info (using Admin client to bypass learner RLS restrictions)
+    const { error: insertError } = await supabaseAdmin
         .from('certificates')
         .insert({
             user_id: userId,
@@ -127,11 +128,8 @@ export async function issueCertificate(courseId: string, targetUserId?: string) 
 }
 
 export async function getCertificateByCode(code: string) {
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
-
-    // Fetch certificate with student and program details
-    const { data: cert, error } = await supabase
+    // Fetch certificate with student and program details (using Admin client to bypass public verification RLS restrictions)
+    const { data: cert, error } = await supabaseAdmin
         .from('certificates')
         .select(`
             *,
