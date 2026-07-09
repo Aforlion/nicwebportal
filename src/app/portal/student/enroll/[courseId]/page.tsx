@@ -57,7 +57,8 @@ export default async function EnrollmentPage({ params }: { params: Promise<{ cou
     const eligibility = isEligibleForCourse({
         membershipCategory: member?.category || 'student',
         academicLevel,
-        courseLevel: course.level
+        courseLevel: course.level,
+        userEmail: user.email
     })
 
     const benefits = [

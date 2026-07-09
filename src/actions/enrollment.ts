@@ -62,7 +62,8 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
         const eligibility = isEligibleForCourse({
             membershipCategory: member?.category || 'student',
             academicLevel,
-            courseLevel: course?.level || 'Foundation'
+            courseLevel: course?.level || 'Foundation',
+            userEmail: user.email
         })
 
         if (!eligibility.eligible) {
@@ -160,7 +161,8 @@ export async function enrollFreeCourse(courseId: string) {
     const eligibility = isEligibleForCourse({
         membershipCategory: member?.category || 'student',
         academicLevel,
-        courseLevel: course.level || 'Foundation'
+        courseLevel: course.level || 'Foundation',
+        userEmail: user.email
     })
 
     if (!eligibility.eligible) {

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { requireAdmin } from "@/lib/auth"
+import { startOfMonth, subMonths, endOfMonth } from "date-fns"
 
 export async function getDashboardStats() {
     await requireAdmin()
@@ -10,33 +11,57 @@ export async function getDashboardStats() {
         const cookieStore = await cookies()
         const supabase = createClient(cookieStore)
 
+        const now = new Date()
+        const currentMonthStart = startOfMonth(now).toISOString()
+        const lastMonthStart = startOfMonth(subMonths(now, 1)).toISOString()
+        const lastMonthEnd = endOfMonth(subMonths(now, 1)).toISOString()
+
         // Fetch counts in parallel
         const [
             { count: studentCount },
+            { count: lastMonthStudentCount },
             { count: memberCount },
+            { count: lastMonthMemberCount },
             { count: programCount },
             { count: pendingVerificationCount },
             { data: revenueData },
+            { data: lastMonthRevenueData },
             { data: recentActivity }
         ] = await Promise.all([
-            // Total Students
+            // Total Students (Current)
             supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
+            // Total Students (Last month)
+            supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student').lte('created_at', lastMonthEnd),
             // Certified Members (Active)
             supabase.from('memberships').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+            // Certified Members (Last Month)
+            supabase.from('memberships').select('*', { count: 'exact', head: true }).eq('status', 'active').lte('created_at', lastMonthEnd),
             // Active Programs (Published)
             supabase.from('programs').select('*', { count: 'exact', head: true }).eq('is_published', true),
             // Pending Verifications
             supabase.from('pending_registrations').select('*', { count: 'exact', head: true }).eq('status', 'paid'),
-            // Total Revenue
+            // Total Revenue (All time)
             supabase.from('payments').select('amount').eq('status', 'completed'),
+            // Last Month Revenue
+            supabase.from('payments').select('amount').eq('status', 'completed').gte('payment_date', lastMonthStart).lte('payment_date', lastMonthEnd),
             // Recent Activity (Mixed from different tables)
             supabase.from('pending_registrations').select('*').order('created_at', { ascending: false }).limit(5)
         ])
 
         // Calculate revenue
-        const totalRevenue = revenueData?.reduce((acc: number, item: any) => {
-            return acc + (item.amount || 0)
-        }, 0) || 0
+        const totalRevenue = revenueData?.reduce((acc: number, item: any) => acc + (Number(item.amount) || 0), 0) || 0
+        const lastMonthRevenue = lastMonthRevenueData?.reduce((acc: number, item: any) => acc + (Number(item.amount) || 0), 0) || 0
+
+        // Calculate trends
+        const prevStudents = lastMonthStudentCount || 0
+        const studentDiff = (studentCount || 0) - prevStudents
+        const studentChange = prevStudents === 0 ? 0 : (studentDiff / prevStudents) * 100
+
+        const prevMembers = lastMonthMemberCount || 0
+        const memberDiff = (memberCount || 0) - prevMembers
+        const memberChange = prevMembers === 0 ? 0 : (memberDiff / prevMembers) * 100
+
+        const revenueChange = lastMonthRevenue === 0 ? 0 : ((totalRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
 
         // Format recent activity for UI
         const activities = recentActivity?.map((act: any) => ({
@@ -48,35 +73,61 @@ export async function getDashboardStats() {
             status: act.status
         })) || []
 
+        // Monthly trends for chart
+        const monthlyRevenue = []
+        for (let i = 5; i >= 0; i--) {
+            const m = subMonths(now, i)
+            const ms = startOfMonth(m).toISOString()
+            const me = endOfMonth(m).toISOString()
+
+            const { data: monthPayments } = await supabase
+                .from('payments')
+                .select('amount')
+                .eq('status', 'completed')
+                .gte('payment_date', ms)
+                .lte('payment_date', me)
+
+            const monthTotal = monthPayments?.reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0
+            monthlyRevenue.push({
+                month: m.toLocaleString('en-US', { month: 'short' }),
+                amount: monthTotal
+            })
+        }
+
         return {
             stats: [
                 {
                     title: "Total Students",
                     value: (studentCount || 0).toLocaleString(),
                     description: "Total registered students",
-                    trend: "neutral",
+                    change: `${studentChange >= 0 ? '+' : ''}${studentChange.toFixed(1)}%`,
+                    trend: studentChange > 0 ? "up" : studentChange < 0 ? "down" : "neutral",
                 },
                 {
                     title: "Certified Members",
                     value: (memberCount || 0).toLocaleString(),
                     description: "Active official members",
-                    trend: "neutral",
+                    change: `${memberChange >= 0 ? '+' : ''}${memberChange.toFixed(1)}%`,
+                    trend: memberChange > 0 ? "up" : memberChange < 0 ? "down" : "neutral",
                 },
                 {
                     title: "Active Programs",
                     value: (programCount || 0).toLocaleString(),
                     description: "Published training courses",
+                    change: "Active",
                     trend: "neutral",
                 },
                 {
                     title: "Total Revenue",
                     value: `₦${(totalRevenue).toLocaleString()}`,
-                    description: "Calculated from paid enrollments",
-                    trend: "neutral",
+                    description: "All-time completed payments",
+                    change: `${revenueChange >= 0 ? '+' : ''}${revenueChange.toFixed(1)}%`,
+                    trend: revenueChange > 0 ? "up" : revenueChange < 0 ? "down" : "neutral",
                 },
             ],
             pendingVerifications: pendingVerificationCount || 0,
-            recentActivity: activities
+            recentActivity: activities,
+            monthlyRevenue
         }
     } catch (err: any) {
         console.error("[getDashboardStats] Error:", err)
@@ -94,10 +145,6 @@ function formatRelativeTime(date: Date) {
     return `${Math.floor(diffInSeconds / 86400)}d ago`;
 }
 
-/**
- * Safely extracts initials from registration form data.
- * Handles individual (fullName), facility (ownerFullName/facilityName), and missing data.
- */
 function extractInitials(formData: any): string {
     if (!formData) return '??';
 
@@ -112,4 +159,3 @@ function extractInitials(formData: any): string {
         .substring(0, 2)
         .toUpperCase() || '??';
 }
-

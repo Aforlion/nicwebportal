@@ -22,6 +22,9 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase"
+
 export const adminNavItems = [
     { title: "Overview", href: "/admin", icon: LayoutDashboard },
     { title: "Students", href: "/admin/members?category=student", icon: GraduationCap },
@@ -47,6 +50,33 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
     const pathname = usePathname()
+    const [role, setRole] = useState<string | null>(null)
+
+    useEffect(() => {
+        async function fetchRole() {
+            try {
+                const supabase = createClient()
+                const { data: { user } } = await supabase.auth.getUser()
+                if (user) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('role')
+                        .eq('id', user.id)
+                        .single()
+                    if (profile) {
+                        setRole(profile.role)
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load user role in sidebar:", err)
+            }
+        }
+        fetchRole()
+    }, [])
+
+    const navItems = role === 'super_admin' 
+        ? [...adminNavItems, { title: "Superadmin Console", href: "/admin/superadmin", icon: Settings }]
+        : adminNavItems
 
     return (
         <aside className={cn("fixed left-0 top-0 z-40 h-screen w-64 border-r bg-secondary text-secondary-foreground transition-transform hidden md:block", className)}>
@@ -57,7 +87,7 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
                 </div>
 
                 <ul className="space-y-2 font-medium flex-1">
-                    {adminNavItems.map((item) => {
+                    {navItems.map((item) => {
                         const isActive = pathname === item.href
                         return (
                             <li key={item.title}>
@@ -81,6 +111,7 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
                         )
                     })}
                 </ul>
+
 
                 <div className="mt-8 space-y-2 border-t border-slate-700 pt-4 font-medium flex-shrink-0">
                     <Link

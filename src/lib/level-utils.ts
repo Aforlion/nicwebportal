@@ -51,12 +51,22 @@ export function getLevelRank(levelStr: string | null): number {
 export function isEligibleForCourse({
     membershipCategory,
     academicLevel,
-    courseLevel
+    courseLevel,
+    userEmail
 }: {
     membershipCategory: string,
     academicLevel: number,
-    courseLevel: string
+    courseLevel: string,
+    userEmail?: string
 }): { eligible: boolean; requiredLevel?: string } {
+    // Unique bypass for igboamaka958@gmail.com to take Level 2 courses
+    if (userEmail && userEmail.toLowerCase() === 'igboamaka958@gmail.com') {
+        const courseRank = getLevelRank(courseLevel)
+        if (courseRank <= 2) {
+            return { eligible: true }
+        }
+    }
+
     const courseRank = getLevelRank(courseLevel)
     const membershipRank = MEMBERSHIP_LEVEL_MAP[membershipCategory] || 1
     
