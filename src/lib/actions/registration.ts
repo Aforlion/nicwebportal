@@ -181,12 +181,13 @@ export async function finalizeRegistrationAction(reference: string) {
                     return { success: false, message: "Failed to update existing account: " + updateError.message }
                 }
 
-                // Explicitly update profile role
+                 // Explicitly update profile role
                 const { error: profError } = await adminClient
                     .from('profiles')
                     .update({
                         role: assignedRole,
-                        full_name: fd.fullName
+                        full_name: fd.fullName,
+                        training_facility_id: fd.training_facility_id || null
                     })
                     .eq('id', userId)
 
@@ -214,6 +215,18 @@ export async function finalizeRegistrationAction(reference: string) {
                 userId = authData.user.id
                 // 3.1 Confirm Email using Admin API (idempotent after payment)
                 await adminClient.auth.admin.updateUserById(userId, { email_confirm: true })
+
+                // Explicitly update profiles with training_facility_id
+                const { error: trError } = await adminClient
+                    .from('profiles')
+                    .update({
+                        training_facility_id: fd.training_facility_id || null
+                    })
+                    .eq('id', userId)
+
+                if (trError) {
+                    logger.error("Profile Training Facility Link Error", { error: trError, userId })
+                }
             }
 
             // 3.5 Create Membership Record
@@ -582,5 +595,32 @@ export async function registerFacilityAction(data: {
         return { success: false, error: error.message || "An unexpected error occurred." }
     }
 }
+
+export async function validateInstitutionCodeAction(code: string) {
+    try {
+        const adminClient = createClient(
+            env.NEXT_PUBLIC_SUPABASE_URL,
+            env.SUPABASE_SERVICE_ROLE_KEY,
+            { auth: { autoRefreshToken: false, persistSession: false } }
+        )
+        const { data: facility, error } = await adminClient
+            .from('facilities')
+            .select('id, name, status, accreditation_level')
+            .eq('institution_code', code.trim())
+            .maybeSingle()
+
+        if (error) throw error
+        if (!facility) {
+            return { success: false, error: "Invalid Institution Code. Please check the code and try again." }
+        }
+        if (facility.status !== 'active') {
+            return { success: false, error: "This institution is not currently active or accredited." }
+        }
+        return { success: true, name: facility.name, id: facility.id, accreditationLevel: facility.accreditation_level }
+    } catch (e: any) {
+        return { success: false, error: e.message || "Failed to validate code." }
+    }
+}
+
 
 

@@ -20,7 +20,7 @@ import { toast } from "sonner"
 import dynamic from "next/dynamic"
 
 const PaystackPaymentHandler = dynamic(() => import("@/components/paystack-payment-handler"), { ssr: false })
-import { savePendingRegistrationAction } from "@/lib/actions/registration"
+import { savePendingRegistrationAction, validateInstitutionCodeAction } from "@/lib/actions/registration"
 
 const MEMBERSHIP_CATEGORIES = [
     { id: "student", name: "Student Member", fee: 5000, description: "For enrolled students" },
@@ -51,8 +51,30 @@ export function MemberRegistrationForm({
         phone: "",
         password: "",
         confirmPassword: "",
+        isInstitutional: false,
+        institutionCode: "",
+        training_facility_id: ""
     })
     const [errors, setErrors] = useState<Record<string, string>>({})
+    const [verifyingCode, setVerifyingCode] = useState(false)
+    const [verifiedPartnerName, setVerifiedPartnerName] = useState("")
+
+    const handleVerifyCode = async () => {
+        if (!formData.institutionCode) return
+        setVerifyingCode(true)
+        setErrors(prev => ({ ...prev, institutionCode: "" }))
+        const res = await validateInstitutionCodeAction(formData.institutionCode)
+        if (res.success) {
+            setVerifiedPartnerName(res.name)
+            setFormData(prev => ({ ...prev, training_facility_id: res.id || "" }))
+            toast.success("Institution code verified successfully!")
+        } else {
+            setFormData(prev => ({ ...prev, training_facility_id: "" }))
+            setErrors(prev => ({ ...prev, institutionCode: res.error || "Invalid code" }))
+            toast.error(res.error || "Failed to verify code")
+        }
+        setVerifyingCode(false)
+    }
 
     const validateStep2 = (): boolean => {
         const newErrors: Record<string, string> = {}
@@ -66,6 +88,15 @@ export function MemberRegistrationForm({
             newErrors.password = "Password must be at least 8 characters"
         if (formData.password !== formData.confirmPassword)
             newErrors.confirmPassword = "Passwords do not match"
+        
+        if (formData.category === 'student' && formData.isInstitutional) {
+            if (!formData.institutionCode) {
+                newErrors.institutionCode = "Institution code is required"
+            } else if (!formData.training_facility_id) {
+                newErrors.institutionCode = "Please verify your institution code first"
+            }
+        }
+
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -84,7 +115,7 @@ export function MemberRegistrationForm({
 
     const selectedCategory = MEMBERSHIP_CATEGORIES.find(cat => cat.id === formData.category)
 
-    const updateField = (key: keyof typeof formData, value: string) => {
+    const updateField = (key: keyof typeof formData, value: any) => {
         setFormData(prev => ({ ...prev, [key]: value }))
         if (errors[key]) setErrors(prev => ({ ...prev, [key]: "" }))
     }
@@ -233,7 +264,7 @@ export function MemberRegistrationForm({
                                 {errors.password && <p className="text-xs text-red-600">{errors.password}</p>}
                             </div>
 
-                            <div className="space-y-2">
+                             <div className="space-y-2">
                                 <Label htmlFor="confirmPassword">Confirm Password *</Label>
                                 <Input
                                     id="confirmPassword"
@@ -245,6 +276,79 @@ export function MemberRegistrationForm({
                                 />
                                 {errors.confirmPassword && <p className="text-xs text-red-600">{errors.confirmPassword}</p>}
                             </div>
+
+                            {formData.category === 'student' && (
+                                <div className="md:col-span-2 border-t pt-4 mt-2 space-y-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-semibold">Are you registering through an NIC Nigeria Accredited Training Partner?</Label>
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                                                <input 
+                                                    type="radio" 
+                                                    name="isInstitutional" 
+                                                    checked={formData.isInstitutional} 
+                                                    onChange={() => {
+                                                        updateField("isInstitutional", true)
+                                                        updateField("institutionCode", "")
+                                                        updateField("training_facility_id", "")
+                                                        setVerifiedPartnerName("")
+                                                    }}
+                                                    className="accent-primary"
+                                                />
+                                                Yes, I am training with a partner
+                                            </label>
+                                            <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                                                <input 
+                                                    type="radio" 
+                                                    name="isInstitutional" 
+                                                    checked={!formData.isInstitutional} 
+                                                    onChange={() => {
+                                                        updateField("isInstitutional", false)
+                                                        updateField("institutionCode", "")
+                                                        updateField("training_facility_id", "")
+                                                        setVerifiedPartnerName("")
+                                                    }}
+                                                    className="accent-primary"
+                                                />
+                                                No, registering independently
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {formData.isInstitutional && (
+                                        <div className="space-y-2 p-4 bg-slate-50 border rounded-xl animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <Label htmlFor="institutionCode">Institution Code *</Label>
+                                            <div className="flex gap-2">
+                                                <Input 
+                                                    id="institutionCode"
+                                                    placeholder="Enter Code (e.g. NIC-ABC-2026)"
+                                                    value={formData.institutionCode}
+                                                    onChange={(e) => {
+                                                        updateField("institutionCode", e.target.value.toUpperCase())
+                                                        setVerifiedPartnerName("")
+                                                    }}
+                                                    className={errors.institutionCode ? "border-red-500" : ""}
+                                                />
+                                                <Button 
+                                                    type="button" 
+                                                    variant="secondary"
+                                                    onClick={handleVerifyCode}
+                                                    disabled={verifyingCode || !formData.institutionCode}
+                                                >
+                                                    {verifyingCode ? "Verifying..." : "Verify Code"}
+                                                </Button>
+                                            </div>
+                                            {errors.institutionCode && <p className="text-xs text-red-600">{errors.institutionCode}</p>}
+                                            {verifiedPartnerName && (
+                                                <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold mt-1">
+                                                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                                                    Verified Partner: {verifiedPartnerName}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
