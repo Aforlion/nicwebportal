@@ -157,31 +157,70 @@ export async function finalizeRegistrationAction(reference: string) {
                 assignedRole = 'student';
             }
 
-            // 3. Create User Account in Supabase Auth
-            const { data: authData, error: signUpError } = await supabase.auth.signUp({
-                email: email,
-                password: fd.password,
-                options: {
-                    data: {
+            // Check if user already exists in profiles
+            const { data: existingProfile } = await adminClient
+                .from('profiles')
+                .select('id')
+                .eq('email', email)
+                .maybeSingle()
+
+            let userId: string
+            if (existingProfile) {
+                userId = existingProfile.id
+                // Update password and metadata for existing user
+                const { error: updateError } = await adminClient.auth.admin.updateUserById(userId, {
+                    password: fd.password,
+                    email_confirm: true,
+                    user_metadata: {
                         full_name: fd.fullName,
                         role: assignedRole
                     }
+                })
+                if (updateError) {
+                    logger.error("Existing User Update Error", { error: updateError, email, pendingId })
+                    return { success: false, message: "Failed to update existing account: " + updateError.message }
                 }
-            });
 
-            if (signUpError || !authData.user) {
-                logger.error("Student Auth Creation Error", { error: signUpError, email, pendingId });
-                return { success: false, message: "Failed to create account: " + (signUpError?.message || "User creation failed.") };
+                // Explicitly update profile role
+                const { error: profError } = await adminClient
+                    .from('profiles')
+                    .update({
+                        role: assignedRole,
+                        full_name: fd.fullName
+                    })
+                    .eq('id', userId)
+
+                if (profError) {
+                    logger.error("Existing Profile Role Update Error", { error: profError, email })
+                }
+            } else {
+                // 3. Create User Account in Supabase Auth
+                const { data: authData, error: signUpError } = await supabase.auth.signUp({
+                    email: email,
+                    password: fd.password,
+                    options: {
+                        data: {
+                            full_name: fd.fullName,
+                            role: assignedRole
+                        }
+                    }
+                });
+
+                if (signUpError || !authData.user) {
+                    logger.error("Student Auth Creation Error", { error: signUpError, email, pendingId });
+                    return { success: false, message: "Failed to create account: " + (signUpError?.message || "User creation failed.") };
+                }
+
+                userId = authData.user.id
+                // 3.1 Confirm Email using Admin API (idempotent after payment)
+                await adminClient.auth.admin.updateUserById(userId, { email_confirm: true })
             }
-
-            // 3.1 Confirm Email using Admin API (idempotent after payment)
-            await adminClient.auth.admin.updateUserById(authData.user.id, { email_confirm: true })
 
             // 3.5 Create Membership Record
             const { error: membershipError } = await supabase
                 .from('memberships')
                 .insert({
-                    user_id: authData.user.id,
+                    user_id: userId,
                     category: fd.category, // Matches DB enum now
                     status: 'active',
                     is_active: true,
@@ -243,29 +282,68 @@ export async function finalizeRegistrationAction(reference: string) {
                 return { success: false, message: "Invalid facility data: " + err.message };
             }
 
-            // 2. Create the Auth User (Owner) with facility_admin role
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: fd.ownerEmail,
-                password: fd.password,
-                options: {
-                    data: {
+            // Check if owner already exists in profiles
+            const { data: existingOwner } = await adminClient
+                .from('profiles')
+                .select('id')
+                .eq('email', fd.ownerEmail)
+                .maybeSingle()
+
+            let ownerId: string
+            if (existingOwner) {
+                ownerId = existingOwner.id
+                // Update password and metadata for existing user
+                const { error: updateError } = await adminClient.auth.admin.updateUserById(ownerId, {
+                    password: fd.password,
+                    email_confirm: true,
+                    user_metadata: {
                         full_name: fd.ownerFullName,
                         role: 'facility_admin'
                     }
+                })
+                if (updateError) {
+                    logger.error("Existing Owner Update Error", { error: updateError, email: fd.ownerEmail, pendingId })
+                    return { success: false, message: "Failed to update owner account: " + updateError.message }
                 }
-            })
 
-            if (authError || !authData.user) {
-                logger.error("Facility Owner Signup Error", { error: authError, email: fd.ownerEmail, pendingId });
-                return { success: false, message: authError?.message || "Failed to create owner account." }
+                // Explicitly update profile role
+                const { error: profError } = await adminClient
+                    .from('profiles')
+                    .update({
+                        role: 'facility_admin',
+                        full_name: fd.ownerFullName
+                    })
+                    .eq('id', ownerId)
+
+                if (profError) {
+                    logger.error("Existing Owner Profile Role Update Error", { error: profError, email: fd.ownerEmail })
+                }
+            } else {
+                // 2. Create the Auth User (Owner) with facility_admin role
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: fd.ownerEmail,
+                    password: fd.password,
+                    options: {
+                        data: {
+                            full_name: fd.ownerFullName,
+                            role: 'facility_admin'
+                        }
+                    }
+                })
+
+                if (authError || !authData.user) {
+                    logger.error("Facility Owner Signup Error", { error: authError, email: fd.ownerEmail, pendingId });
+                    return { success: false, message: authError?.message || "Failed to create owner account." }
+                }
+
+                ownerId = authData.user.id
+                // 2.1 Confirm Email using Admin API
+                await adminClient.auth.admin.updateUserById(ownerId, { email_confirm: true })
             }
-
-            // 2.1 Confirm Email using Admin API
-            await adminClient.auth.admin.updateUserById(authData.user.id, { email_confirm: true })
 
             // 3. Create Facility via existing action (pass owner details for profile upsert)
             const result = await registerFacilityAction({
-                ownerId: authData.user.id,
+                ownerId: ownerId,
                 ownerEmail: fd.ownerEmail,
                 ownerFullName: fd.ownerFullName,
                 facilityName: fd.facilityName,
@@ -288,7 +366,7 @@ export async function finalizeRegistrationAction(reference: string) {
             const { error: membershipError } = await adminClient
                 .from('memberships')
                 .insert({
-                    user_id: authData.user.id,
+                    user_id: ownerId,
                     category: 'institutional',
                     status: 'active',
                     is_active: true,

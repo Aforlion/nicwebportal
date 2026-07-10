@@ -88,8 +88,17 @@ function AdminMembersContent() {
         return matchesSearch && matchesStatus && matchesCategory
     })
 
-    const pageTitle = categoryFilter === 'student' ? "Student Management" : "Member Management"
-    const pageDescription = categoryFilter === 'student' ? "View and manage all registered NIC students" : "View and manage all professional NIC members"
+    const pageTitle = categoryFilter === 'student'
+        ? "Student Management"
+        : categoryFilter === 'facility_admin'
+        ? "Facility Administrators"
+        : "Member Management"
+
+    const pageDescription = categoryFilter === 'student'
+        ? "View and manage all registered NIC students"
+        : categoryFilter === 'facility_admin'
+        ? "View and manage registered facility representatives and owners"
+        : "View and manage all professional NIC members"
 
     const stats = {
         total: filteredMembers.length,
@@ -143,7 +152,9 @@ function AdminMembersContent() {
                     </div>
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total {categoryFilter === 'student' ? 'Students' : 'Members'}</p>
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                                Total {categoryFilter === 'student' ? 'Students' : categoryFilter === 'facility_admin' ? 'Facility Admins' : 'Members'}
+                            </p>
                             <p className="text-3xl font-bold text-slate-900 mt-1">{stats.total}</p>
                         </div>
                         <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center relative">
@@ -231,6 +242,7 @@ function AdminMembersContent() {
                                 <option value="full">Professional Member</option>
                                 <option value="trainer">Trainer</option>
                                 <option value="institutional">Institutional</option>
+                                <option value="facility_admin">Facility Admin</option>
                             </select>
                         </div>
                     </div>

@@ -29,6 +29,7 @@ export const adminNavItems = [
     { title: "Overview", href: "/admin", icon: LayoutDashboard },
     { title: "Students", href: "/admin/members?category=student", icon: GraduationCap },
     { title: "Members", href: "/admin/members?category=professional", icon: Users },
+    { title: "Facility Admins", href: "/admin/members?category=facility_admin", icon: ShieldCheck },
     { title: "CPD Review", href: "/admin/cpd-review", icon: ShieldCheck },
     { title: "Caregivers", href: "/admin/registry/caregivers", icon: Search },
     { title: "Facilities", href: "/admin/registry/facilities", icon: Building2 },
