@@ -1,15 +1,18 @@
 'use server'
 
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
+import { createClient as createAdminClient } from "@supabase/supabase-js"
+import { env } from "@/env"
 import { requireAdmin } from "@/lib/auth"
 import { startOfMonth, subMonths, endOfMonth } from "date-fns"
 
 export async function getDashboardStats() {
     await requireAdmin()
     try {
-        const cookieStore = await cookies()
-        const supabase = createClient(cookieStore)
+        const supabase = createAdminClient(
+            env.NEXT_PUBLIC_SUPABASE_URL,
+            env.SUPABASE_SERVICE_ROLE_KEY,
+            { auth: { autoRefreshToken: false, persistSession: false } }
+        )
 
         const now = new Date()
         const currentMonthStart = startOfMonth(now).toISOString()
@@ -37,7 +40,7 @@ export async function getDashboardStats() {
             // Certified Members (Last Month)
             supabase.from('memberships').select('*', { count: 'exact', head: true }).eq('status', 'active').lte('created_at', lastMonthEnd),
             // Active Programs (Published)
-            supabase.from('programs').select('*', { count: 'exact', head: true }).eq('is_published', true),
+            supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_published', true),
             // Pending Verifications
             supabase.from('pending_registrations').select('*', { count: 'exact', head: true }).eq('status', 'paid'),
             // Total Revenue (All time)
