@@ -36,6 +36,7 @@ import { admitMemberAction } from "@/actions/admin/admit-member"
 import { sendProfileUpdateRequestAction } from "@/actions/admin/send-update-request"
 import { inviteMemberAction } from "@/actions/admin/invite-member"
 import { assignNicIdAction } from "@/actions/admin/assign-nic-id"
+import { auditInternshipAction } from "@/actions/member/internships"
 import { toast } from "sonner"
 
 interface MemberDetailsSheetProps {
@@ -130,6 +131,19 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
         setInviting(false)
     }
 
+    const [auditingInternship, setAuditingInternship] = useState(false)
+    async function handleAuditInternship(internshipId: string, status: 'approved' | 'rejected') {
+        setAuditingInternship(true)
+        const result = await auditInternshipAction(internshipId, status)
+        if (result.success) {
+            toast.success(`Internship status successfully updated to ${status}!`)
+            await loadDetails()
+        } else {
+            toast.error(result.error || `Failed to update internship status`)
+        }
+        setAuditingInternship(false)
+    }
+
     const getStatusBadge = (status: string) => {
         switch (status?.toLowerCase()) {
             case "active":
@@ -180,11 +194,12 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                             <Tabs defaultValue="info" className="flex-1 flex flex-col min-h-0">
                                 <div className="px-6 border-b shrink-0">
-                                    <TabsList className="w-full justify-start bg-transparent border-none p-0 h-12">
+                                    <TabsList className="w-full justify-start bg-transparent border-none p-0 h-12 overflow-x-auto whitespace-nowrap">
                                         <TabsTrigger value="info" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">Info</TabsTrigger>
                                         <TabsTrigger value="courses" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">Courses</TabsTrigger>
                                         <TabsTrigger value="payments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">Payments</TabsTrigger>
                                         <TabsTrigger value="documents" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">Documents</TabsTrigger>
+                                        <TabsTrigger value="internship" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">Internship</TabsTrigger>
                                         <TabsTrigger value="cpd" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">CPD/Activity</TabsTrigger>
                                     </TabsList>
                                 </div>
@@ -324,6 +339,55 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                                                         <Button variant="ghost" size="sm" asChild>
                                                             <a href={doc.file_url} target="_blank" rel="noopener noreferrer">View</a>
                                                         </Button>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </TabsContent>
+
+                                        <TabsContent value="internship" className="m-0 space-y-4">
+                                            {(!data.internships || data.internships.length === 0) ? (
+                                                <div className="text-center py-10 text-slate-400">
+                                                    <Calendar className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                                                    <p>No internship submissions found</p>
+                                                </div>
+                                            ) : (
+                                                data.internships.map((intern: any) => (
+                                                    <div key={intern.id} className="border rounded-lg p-4 space-y-3 bg-white">
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <p className="text-sm font-semibold text-slate-800">{intern.custom_facility_name || 'Care Facility'}</p>
+                                                                <p className="text-xs text-slate-500">
+                                                                    {format(new Date(intern.start_date), "MMM d, yyyy")} - {format(new Date(intern.end_date), "MMM d, yyyy")}
+                                                                </p>
+                                                            </div>
+                                                            {getStatusBadge(intern.status)}
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <Button variant="outline" size="sm" className="flex-1" asChild>
+                                                                <a href={intern.certificate_url} target="_blank" rel="noopener noreferrer">View Certificate</a>
+                                                            </Button>
+                                                            {intern.status === 'pending' && (
+                                                                <>
+                                                                    <Button 
+                                                                        size="sm" 
+                                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1"
+                                                                        disabled={auditingInternship}
+                                                                        onClick={() => handleAuditInternship(intern.id, 'approved')}
+                                                                    >
+                                                                        Approve
+                                                                    </Button>
+                                                                    <Button 
+                                                                        size="sm" 
+                                                                        variant="destructive"
+                                                                        className="flex-1"
+                                                                        disabled={auditingInternship}
+                                                                        onClick={() => handleAuditInternship(intern.id, 'rejected')}
+                                                                    >
+                                                                        Reject
+                                                                    </Button>
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 ))
                                             )}

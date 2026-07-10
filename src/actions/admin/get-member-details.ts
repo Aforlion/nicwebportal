@@ -32,7 +32,16 @@ export async function getMemberDetails(profileId: string) {
 
         if (enrollmentsError) console.error('Error fetching enrollments:', enrollmentsError)
 
-        // 2. Fetch Membership by user_id (profile ID)
+        // 2. Fetch Internships
+        const { data: internships, error: internshipsError } = await supabase
+            .from('internships')
+            .select('*')
+            .eq('user_id', profileId)
+            .order('created_at', { ascending: false })
+
+        if (internshipsError) console.error('Error fetching internships:', internshipsError)
+
+        // 3. Fetch Membership by user_id (profile ID)
         const { data: membership, error: membershipError } = await supabase
             .from('memberships')
             .select(`
@@ -65,12 +74,13 @@ export async function getMemberDetails(profileId: string) {
                     payments: [],
                     documents: [],
                     cpd: [],
-                    enrollments: enrollments || []
+                    enrollments: enrollments || [],
+                    internships: internships || []
                 }
             }
         }
 
-        // 3. Fetch Payments
+        // 4. Fetch Payments
         const { data: payments, error: paymentsError } = await supabase
             .from('payments')
             .select('*')
@@ -79,7 +89,7 @@ export async function getMemberDetails(profileId: string) {
 
         if (paymentsError) console.error('Error fetching payments:', paymentsError)
 
-        // 4. Fetch Documents
+        // 5. Fetch Documents
         const { data: documents, error: documentsError } = await supabase
             .from('documents')
             .select('*')
@@ -87,7 +97,7 @@ export async function getMemberDetails(profileId: string) {
 
         if (documentsError) console.error('Error fetching documents:', documentsError)
 
-        // 5. Fetch CPD Activities
+        // 6. Fetch CPD Activities
         const { data: cpd_activities, error: cpdError } = await supabase
             .from('cpd_activities')
             .select('*')
@@ -104,7 +114,8 @@ export async function getMemberDetails(profileId: string) {
                 payments: payments || [],
                 documents: documents || [],
                 cpd: cpd_activities || [],
-                enrollments: enrollments || []
+                enrollments: enrollments || [],
+                internships: internships || []
             }
         }
     } catch (err: any) {
