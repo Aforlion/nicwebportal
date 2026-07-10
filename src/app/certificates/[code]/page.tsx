@@ -5,6 +5,7 @@ import QRCodeDisplay from "@/components/certificate/qr-code-display"
 import CertificateActions from "@/components/certificate/certificate-actions"
 import Link from "next/link"
 import Image from "next/image"
+import { Award } from "lucide-react"
 
 export default async function CertificatePage({ params }: { params: Promise<{ code: string }> }) {
     const { code } = await params

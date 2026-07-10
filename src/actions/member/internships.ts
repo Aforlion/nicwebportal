@@ -3,7 +3,7 @@
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { evaluateNCNAEligibilityAction } from "@/lib/actions/certification-engine"
+import { evaluateNCNAEligibilityAction } from "../../lib/actions/certification-engine"
 
 export async function getStudentInternships() {
     try {
