@@ -1,18 +1,38 @@
 'use server'
 
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
+import { createClient as createAdminClient } from "@supabase/supabase-js"
+import { env } from "@/env"
 import { requireAdmin } from "@/lib/auth"
 
 export async function getMemberDetails(profileId: string) {
     await requireAdmin()
 
     try {
-        const cookieStore = await cookies()
-        const supabase = createClient(cookieStore)
+        const supabase = createAdminClient(
+            env.NEXT_PUBLIC_SUPABASE_URL,
+            env.SUPABASE_SERVICE_ROLE_KEY,
+            { auth: { autoRefreshToken: false, persistSession: false } }
+        )
 
-        // 1. Fetch Membership by user_id (profile ID), since the admin members list
-        //    passes profile IDs — not membership IDs — when clicking "View Profile".
+        // 1. Fetch Enrollments first so we have them ready
+        const { data: enrollments, error: enrollmentsError } = await supabase
+            .from('enrollments')
+            .select(`
+                id,
+                status,
+                progress,
+                enrolled_at,
+                courses (
+                    title,
+                    level
+                )
+            `)
+            .eq('user_id', profileId)
+            .order('enrolled_at', { ascending: false })
+
+        if (enrollmentsError) console.error('Error fetching enrollments:', enrollmentsError)
+
+        // 2. Fetch Membership by user_id (profile ID)
         const { data: membership, error: membershipError } = await supabase
             .from('memberships')
             .select(`
@@ -44,12 +64,13 @@ export async function getMemberDetails(profileId: string) {
                     profile,
                     payments: [],
                     documents: [],
-                    cpd: []
+                    cpd: [],
+                    enrollments: enrollments || []
                 }
             }
         }
 
-        // 2. Fetch Payments
+        // 3. Fetch Payments
         const { data: payments, error: paymentsError } = await supabase
             .from('payments')
             .select('*')
@@ -58,7 +79,7 @@ export async function getMemberDetails(profileId: string) {
 
         if (paymentsError) console.error('Error fetching payments:', paymentsError)
 
-        // 3. Fetch Documents
+        // 4. Fetch Documents
         const { data: documents, error: documentsError } = await supabase
             .from('documents')
             .select('*')
@@ -66,7 +87,7 @@ export async function getMemberDetails(profileId: string) {
 
         if (documentsError) console.error('Error fetching documents:', documentsError)
 
-        // 4. Fetch CPD Activities
+        // 5. Fetch CPD Activities
         const { data: cpd_activities, error: cpdError } = await supabase
             .from('cpd_activities')
             .select('*')
@@ -82,7 +103,8 @@ export async function getMemberDetails(profileId: string) {
                 profile: membership.profiles,
                 payments: payments || [],
                 documents: documents || [],
-                cpd: cpd_activities || []
+                cpd: cpd_activities || [],
+                enrollments: enrollments || []
             }
         }
     } catch (err: any) {

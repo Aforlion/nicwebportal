@@ -182,6 +182,7 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                                 <div className="px-6 border-b shrink-0">
                                     <TabsList className="w-full justify-start bg-transparent border-none p-0 h-12">
                                         <TabsTrigger value="info" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">Info</TabsTrigger>
+                                        <TabsTrigger value="courses" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">Courses</TabsTrigger>
                                         <TabsTrigger value="payments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">Payments</TabsTrigger>
                                         <TabsTrigger value="documents" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">Documents</TabsTrigger>
                                         <TabsTrigger value="cpd" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4">CPD/Activity</TabsTrigger>
@@ -246,6 +247,40 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                                                     </div>
                                                 </div>
                                             </section>
+                                        </TabsContent>
+
+                                        <TabsContent value="courses" className="m-0 space-y-4">
+                                            {(!data.enrollments || data.enrollments.length === 0) ? (
+                                                <div className="text-center py-10 text-slate-400">
+                                                    <Award className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                                                    <p>No course enrollments found</p>
+                                                </div>
+                                            ) : (
+                                                data.enrollments.map((enroll: any) => (
+                                                    <div key={enroll.id} className="border rounded-lg p-4 space-y-2">
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <p className="text-sm font-semibold text-slate-800">{enroll.courses?.title || 'Unknown Course'}</p>
+                                                                <p className="text-xs text-slate-500">{enroll.courses?.level || 'Foundation'}</p>
+                                                            </div>
+                                                            <Badge variant="outline" className="text-[10px] capitalize">{enroll.status}</Badge>
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <div className="flex justify-between text-xs text-slate-500">
+                                                                <span>Progress</span>
+                                                                <span>{enroll.progress || 0}%</span>
+                                                            </div>
+                                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                                                <div 
+                                                                    className="bg-primary h-full rounded-full transition-all duration-300" 
+                                                                    style={{ width: `${enroll.progress || 0}%` }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-[10px] text-slate-400">Enrolled: {format(new Date(enroll.enrolled_at), "PPP")}</p>
+                                                    </div>
+                                                ))
+                                            )}
                                         </TabsContent>
 
                                         <TabsContent value="payments" className="m-0 space-y-4">

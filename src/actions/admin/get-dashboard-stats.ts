@@ -29,7 +29,9 @@ export async function getDashboardStats() {
             { count: pendingVerificationCount },
             { data: revenueData },
             { data: lastMonthRevenueData },
-            { data: recentActivity }
+            { data: recentRegs },
+            { data: recentEnrollments },
+            { data: recentFacilities }
         ] = await Promise.all([
             // Total Students (Current)
             supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
@@ -47,8 +49,12 @@ export async function getDashboardStats() {
             supabase.from('payments').select('amount').eq('status', 'completed'),
             // Last Month Revenue
             supabase.from('payments').select('amount').eq('status', 'completed').gte('payment_date', lastMonthStart).lte('payment_date', lastMonthEnd),
-            // Recent Activity (Mixed from different tables)
-            supabase.from('pending_registrations').select('*').order('created_at', { ascending: false }).limit(5)
+            // Recent Registrations
+            supabase.from('pending_registrations').select('*').order('created_at', { ascending: false }).limit(5),
+            // Recent Enrollments
+            supabase.from('enrollments').select('id, enrolled_at, course_id, courses(title), profiles(full_name, email)').order('enrolled_at', { ascending: false }).limit(5),
+            // Recent Facilities
+            supabase.from('facilities').select('id, registered_at, name, profiles(full_name, email)').order('registered_at', { ascending: false }).limit(5)
         ])
 
         // Calculate revenue
@@ -66,15 +72,63 @@ export async function getDashboardStats() {
 
         const revenueChange = lastMonthRevenue === 0 ? 0 : ((totalRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
 
-        // Format recent activity for UI
-        const activities = recentActivity?.map((act: any) => ({
-            id: act.id,
-            type: act.registration_type === 'individual' ? 'Membership Registration' : 'Facility Registration',
-            description: act.status === 'paid' ? `Paid verification pending: ${act.email}` : `New registration started: ${act.email}`,
-            time: formatRelativeTime(new Date(act.created_at)),
-            initials: extractInitials(act.form_data),
-            status: act.status
-        })) || []
+        // Combine activities
+        const combinedActivities: any[] = []
+
+        if (recentRegs) {
+            recentRegs.forEach((act: any) => {
+                combinedActivities.push({
+                    id: act.id,
+                    type: act.registration_type === 'individual' ? 'Membership Registration' : 'Facility Registration',
+                    description: act.status === 'completed' 
+                        ? `Completed registration: ${act.email}` 
+                        : act.status === 'paid' 
+                        ? `Paid verification pending: ${act.email}` 
+                        : `New registration started: ${act.email}`,
+                    time: new Date(act.created_at),
+                    initials: extractInitials(act.form_data),
+                    status: act.status
+                })
+            })
+        }
+
+        if (recentEnrollments) {
+            recentEnrollments.forEach((enroll: any) => {
+                const userName = enroll.profiles?.full_name || 'Caregiver'
+                const courseTitle = enroll.courses?.title || 'Course'
+                combinedActivities.push({
+                    id: enroll.id,
+                    type: 'Course Enrollment',
+                    description: `${userName} enrolled in "${courseTitle}"`,
+                    time: new Date(enroll.enrolled_at),
+                    initials: userName.split(' ').filter((p: string) => p.length > 0).map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'CE',
+                    status: 'completed'
+                })
+            })
+        }
+
+        if (recentFacilities) {
+            recentFacilities.forEach((fac: any) => {
+                const ownerName = fac.profiles?.full_name || 'Owner'
+                combinedActivities.push({
+                    id: fac.id,
+                    type: 'Facility Registered',
+                    description: `New Facility: "${fac.name}" registered by ${ownerName}`,
+                    time: new Date(fac.registered_at),
+                    initials: fac.name.split(' ').filter((p: string) => p.length > 0).map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'FR',
+                    status: 'completed'
+                })
+            })
+        }
+
+        // Sort combined activities by time descending
+        combinedActivities.sort((a, b) => b.time.getTime() - a.time.getTime())
+
+        // Format relative times and take top 5
+        const activities = combinedActivities.slice(0, 5).map(act => ({
+            ...act,
+            time: formatRelativeTime(act.time)
+        }))
 
         // Monthly trends for chart
         const monthlyRevenue = []
