@@ -25,7 +25,19 @@ export default async function PolicyPage({ params }: PageProps) {
         'inspection-scoring-matrix': 'NIC Inspection Scoring Matrix & Compliance Framework.txt',
         'accreditation-terms': 'NIC ACCREDITATION TERMS & CONDITIONS.txt',
         'student-training-agreement': 'NIC STUDENT & TRAINING AGREEME.txt',
-        'terms-and-privacy': 'NIC Terms and Privacy.txt'
+        'terms-and-privacy': 'NIC Terms and Privacy.txt',
+        'accreditation-framework': 'Accreditation Framework.md',
+        'code-of-ethics-professional': 'Code of Ethics & Professional Conduct.md',
+        'cpd-framework': 'Continuing Professional Development (CPD) Framework.md',
+        'curriculum-approval-framework': 'Curriculum Approval Framework.md',
+        'digital-credentials-verification': 'Digital Credentials & Verification Framework.md',
+        'inspection-compliance-framework': 'Inspection & Compliance Framework.md',
+        'instructor-approval-framework': 'Instructor Approval Framework.md',
+        'internship-framework': 'Internship Framework.md',
+        'professional-certification-framework': 'Professional Certification Framework.md',
+        'research-innovation-framework': 'Research, Innovation & Publications Framework.md',
+        'training-education-framework': 'Training_&_Education_Framework.md',
+        'constitution-governance': 'Constitution and Governance Chart.md'
     }
 
     const filename = fileMap[slug]
