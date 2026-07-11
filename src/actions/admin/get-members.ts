@@ -42,10 +42,10 @@ export async function getMembers() {
             
             // Map category based on profile role if no membership exists, or use the membership category
             let category = 'Student'
-            if (membership?.category) {
-                category = membership.category
-            } else if (profile.role === 'facility_admin') {
+            if (profile.role === 'facility_admin' || membership?.category === 'institutional' || membership?.category === 'facility_admin') {
                 category = 'facility_admin'
+            } else if (membership?.category) {
+                category = membership.category
             } else if (profile.role === 'admin' || profile.role === 'super_admin') {
                 category = 'admin'
             } else if (profile.role === 'member') {

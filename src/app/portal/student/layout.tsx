@@ -1,6 +1,7 @@
 import { PortalSidebar } from "@/components/portal-sidebar";
 import { getUserProfile } from "@/lib/auth";
 import { AutoLogout } from "@/components/auto-logout";
+import { redirect } from "next/navigation";
 import Image from "next/image";
 
 export default async function StudentLayout({
@@ -9,6 +10,10 @@ export default async function StudentLayout({
     children: React.ReactNode;
 }>) {
     const profile = await getUserProfile();
+    
+    if (profile?.role === 'facility_admin') {
+        redirect('/portal/facility');
+    }
     const displayName = profile?.full_name ?? 'Student';
     const initials = displayName
         .split(' ')

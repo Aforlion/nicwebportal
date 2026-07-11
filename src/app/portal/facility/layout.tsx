@@ -20,6 +20,19 @@ export default function FacilityLayout({
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 setUser(user);
+
+                // Enforce RBAC
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile && (profile.role === 'student' || profile.role === 'member')) {
+                    window.location.href = '/portal/student';
+                    return;
+                }
+
                 // Fetch facility linked to this owner
                 const { data } = await supabase
                     .from('facilities')
