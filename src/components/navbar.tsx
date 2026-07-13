@@ -276,6 +276,9 @@ export function Navbar() {
                                 </Link>
                             </Button>
                         )}
+                        <Button variant="outline" size="sm" asChild className="hidden lg:flex border-accent text-accent hover:bg-accent/5">
+                            <Link href="/join/facility">Accredit Facility</Link>
+                        </Button>
                         <Button size="sm" asChild className="bg-primary hover:bg-primary/90">
                             <Link href="/programs">Enrol Now</Link>
                         </Button>
