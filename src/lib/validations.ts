@@ -80,7 +80,7 @@ export const IndividualRegistrationSchema = z.object({
     category: z.enum(['student', 'associate', 'full', 'professional']),
     password: z.string().min(8, "Password must be at least 8 characters"),
     institutionCode: z.string().optional().nullable(),
-    training_facility_id: z.string().uuid().optional().nullable(),
+    training_facility_id: z.string().uuid().optional().nullable().or(z.literal("")),
 })
 
 export const FacilityRegistrationSchema = z.object({
