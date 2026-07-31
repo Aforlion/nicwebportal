@@ -28,6 +28,25 @@ export async function admitMemberAction(profileId: string) {
       return { success: false, error: 'Profile not found' }
     }
 
+    // 1.5 Fetch pending registration to check category
+    const { data: pendingReg } = await supabase
+      .from('pending_registrations')
+      .select('*')
+      .eq('email', profile.email)
+      .maybeSingle()
+
+    let category = 'student'
+    if (profile.role === 'facility_admin') {
+      category = 'institutional'
+    } else if (pendingReg && pendingReg.form_data) {
+      const formData = pendingReg.form_data as any
+      if (formData.category) {
+        category = formData.category
+      }
+    } else if (profile.role === 'member') {
+      category = 'full'
+    }
+
     // 2. Update membership status to active
     // We check for existence first because the database lacks a unique constraint on user_id for upsert
     const { data: existingMembership, error: checkError } = await supabase
@@ -47,7 +66,6 @@ export async function admitMemberAction(profileId: string) {
 
     let result;
     const isFacilityAdmin = profile.role === 'facility_admin'
-    const category = isFacilityAdmin ? 'institutional' : 'student'
 
     if (existingMembership) {
       const updateData: any = {
@@ -63,6 +81,7 @@ export async function admitMemberAction(profileId: string) {
         .from('memberships')
         .update(updateData)
         .eq('id', existingMembership.id)
+        .select()
     } else {
       result = await supabase
         .from('memberships')
@@ -73,6 +92,7 @@ export async function admitMemberAction(profileId: string) {
           nic_id: new_nic_id,
           joined_date: new Date().toISOString().split('T')[0]
         })
+        .select()
     }
 
     if (result.error) {
@@ -81,15 +101,9 @@ export async function admitMemberAction(profileId: string) {
     }
 
     // 3. Process Pending Registration (Courses & Payments)
-    const { data: pendingReg } = await supabase
-      .from('pending_registrations')
-      .select('*')
-      .eq('email', profile.email)
-      .maybeSingle()
-
     if (pendingReg && pendingReg.form_data) {
       const formData = pendingReg.form_data as any
-      const membershipRecordId = existingMembership?.id || (result.data as any)?.id
+      const membershipRecordId = existingMembership?.id || result.data?.[0]?.id
 
       // a. Create Enrollments
       if (Array.isArray(formData.courses_paid)) {
