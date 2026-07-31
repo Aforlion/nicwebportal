@@ -72,7 +72,7 @@ export const FoundingRegistrationSchema = z.object({
 
 export const IndividualRegistrationSchema = z.object({
     fullName: z.string().min(2, "Full name is required"),
-    email: z.string().email("Invalid email address"),
+    email: z.string().trim().email("Invalid email address"),
     phone: z.string().min(10, "Valid phone number is required"),
     address: z.string().optional(),
     state: z.string().optional(),
@@ -88,13 +88,13 @@ export const FacilityRegistrationSchema = z.object({
     regNumber: z.string().min(1, "Registration number is required"),
     tin: z.string().optional(),
     facilityType: z.string().min(1, "Facility type is required"),
-    email: z.string().email("Invalid facility email"),
+    email: z.string().trim().email("Invalid facility email"),
     phone: z.string().min(10, "Facility phone is required"),
     address: z.string().min(5, "Facility address is required"),
     state: z.string().min(1, "State is required"),
     city: z.string().min(1, "City is required"),
     capacity: z.string().or(z.number()),
-    ownerEmail: z.string().email("Owner email is required"),
+    ownerEmail: z.string().trim().email("Owner email is required"),
     ownerFullName: z.string().min(2, "Owner name is required"),
     password: z.string().min(8, "Password must be at least 8 characters"),
 })

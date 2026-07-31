@@ -9,6 +9,7 @@ import logger from "@/lib/logger"
 import { env } from "@/env"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { createClient } from "@supabase/supabase-js"
+import { ZodError } from "zod"
 
 export async function savePendingRegistrationAction(data: {
     email: string,
@@ -51,6 +52,9 @@ export async function savePendingRegistrationAction(data: {
         return { success: true, id: record.id }
     } catch (e: any) {
         logger.error("Save Pending Error", { error: e.message, email: data.email });
+        if (e instanceof ZodError) {
+            return { success: false, error: e.errors.map(err => err.message).join(", ") }
+        }
         return { success: false, error: e.message || "Validation failed" }
     }
 }
@@ -319,17 +323,24 @@ export async function finalizeRegistrationAction(reference: string) {
                     return { success: false, message: "Failed to update owner account: " + updateError.message }
                 }
 
-                // Explicitly update profile role
+                // Update profile role to facility_admin if not already
                 const { error: profError } = await adminClient
                     .from('profiles')
-                    .update({
-                        role: 'facility_admin',
-                        full_name: fd.ownerFullName
-                    })
+                    .update({ role: 'facility_admin' })
                     .eq('id', ownerId)
 
                 if (profError) {
                     logger.error("Existing Owner Profile Role Update Error", { error: profError, email: fd.ownerEmail })
+                }
+
+                // Update existing membership category to institutional
+                const { error: memError } = await adminClient
+                    .from('memberships')
+                    .update({ category: 'institutional' })
+                    .eq('user_id', ownerId)
+
+                if (memError) {
+                    logger.error("Existing Owner Membership Category Update Error", { error: memError, email: fd.ownerEmail })
                 }
             } else {
                 // 2. Create the Auth User (Owner) with facility_admin role
