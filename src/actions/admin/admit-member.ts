@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { requireAdmin } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
-import { sendEmail } from "@/lib/email"
+import { sendEmail, sendFacilityRegistrationEmail } from "@/lib/email"
 import { NICAdmissionConfirmationEmail } from "@/emails/NIC_AdmissionConfirmation"
 import * as React from "react"
 import { env } from "@/env"
@@ -20,7 +20,7 @@ export async function admitMemberAction(profileId: string) {
     // 1. Fetch profile so we have name + email for the notification
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('full_name, email')
+      .select('full_name, email, role')
       .eq('id', profileId)
       .single()
 
@@ -46,9 +46,13 @@ export async function admitMemberAction(profileId: string) {
     const new_nic_id = `NIC/MEM/${year}/${random}`
 
     let result;
+    const isFacilityAdmin = profile.role === 'facility_admin'
+    const category = isFacilityAdmin ? 'institutional' : 'student'
+
     if (existingMembership) {
       const updateData: any = {
         status: 'active',
+        category,
         updated_at: new Date().toISOString()
       }
       if (!existingMembership.nic_id) {
@@ -65,7 +69,7 @@ export async function admitMemberAction(profileId: string) {
         .insert({
           user_id: profileId,
           status: 'active',
-          category: 'student', // default for admitted members
+          category,
           nic_id: new_nic_id,
           joined_date: new Date().toISOString().split('T')[0]
         })
@@ -158,17 +162,27 @@ export async function admitMemberAction(profileId: string) {
     })
 
     // Send the consolidated confirmation email
-    await sendEmail({
-      to: profile.email,
-      subject: 'Congratulations! Your NIC Student Application Has Been Approved',
-      template: React.createElement(NICAdmissionConfirmationEmail, {
-        fullName: profile.full_name,
-        coursesUrl: `${baseUrl}/portal/student/courses`,
-        loginUrl: `${baseUrl}/login`,
-        resetUrl: linkData?.properties?.action_link,
-        temporaryPassword: tempPassword
+    if (isFacilityAdmin) {
+      const { data: facility } = await supabase
+        .from('facilities')
+        .select('name')
+        .eq('owner_id', profileId)
+        .maybeSingle()
+
+      await sendFacilityRegistrationEmail(profile.email, profile.full_name, facility?.name || 'your facility')
+    } else {
+      await sendEmail({
+        to: profile.email,
+        subject: 'Congratulations! Your NIC Student Application Has Been Approved',
+        template: React.createElement(NICAdmissionConfirmationEmail, {
+          fullName: profile.full_name,
+          coursesUrl: `${baseUrl}/portal/student/courses`,
+          loginUrl: `${baseUrl}/login`,
+          resetUrl: linkData?.properties?.action_link,
+          temporaryPassword: tempPassword
+        })
       })
-    })
+    }
 
     revalidatePath('/admin/members')
     return { success: true }
