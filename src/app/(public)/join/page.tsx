@@ -112,6 +112,58 @@ export default async function JoinPage({ searchParams }: PageProps) {
                                     </Link>
                                 </div>
                             </div>
+
+                            {/* Visual Timeline Section */}
+                            <div className="bg-slate-50 border rounded-3xl p-8 md:p-12 mt-16 max-w-4xl mx-auto shadow-sm">
+                                <div className="text-center max-w-2xl mx-auto mb-12">
+                                    <h3 className="text-2xl font-bold text-secondary">Student Certification Pathway</h3>
+                                    <p className="text-muted-foreground text-sm mt-2">Our structured progression guarantees that all certified caregivers possess verified clinical skills and professional competency.</p>
+                                </div>
+
+                                <div className="grid md:grid-cols-3 gap-8 relative">
+                                    {/* Progression Step 1 */}
+                                    <div className="relative bg-white border p-6 rounded-2xl flex flex-col items-center text-center shadow-sm">
+                                        <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg mb-4 shrink-0">
+                                            1
+                                        </div>
+                                        <h4 className="font-bold text-secondary mb-2">Core Fundamentals</h4>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Pass the Core Caregiver Fundamentals curriculum. This builds your theoretical knowledge of care standards.
+                                        </p>
+                                    </div>
+
+                                    {/* Progression Step 2 */}
+                                    <div className="relative bg-white border p-6 rounded-2xl flex flex-col items-center text-center shadow-sm">
+                                        <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg mb-4 shrink-0">
+                                            2
+                                        </div>
+                                        <h4 className="font-bold text-secondary mb-2">Chosen Specialisation</h4>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Unlock and complete a specialized care module (e.g. Geriatric, Pediatric, or In-Home Care) to align with your career goals.
+                                        </p>
+                                    </div>
+
+                                    {/* Progression Step 3 */}
+                                    <div className="relative bg-white border p-6 rounded-2xl flex flex-col items-center text-center shadow-sm">
+                                        <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg mb-4 shrink-0">
+                                            3
+                                        </div>
+                                        <h4 className="font-bold text-secondary mb-2">Clinical Internship</h4>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Complete hands-on practical hours at an accredited healthcare facility or care partner agency to verify clinical competency.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="text-center mt-12 bg-emerald-50 border border-emerald-100 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-center gap-4">
+                                    <div className="h-10 w-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                                    </div>
+                                    <p className="text-xs text-emerald-800 font-medium max-w-xl text-left leading-relaxed">
+                                        <strong>Accredited Certification:</strong> Upon completing all three stages, students are awarded the official Nursing Assistant Certificate, receive a verified digital ID, and are listed in the public verification registry.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         /* Main Form Split */

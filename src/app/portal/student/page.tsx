@@ -52,7 +52,7 @@ async function RecommendedCourses() {
 }
 
 export default async function StudentDashboard() {
-    const { enrollments, recent, events, tip, cpdCredits, currentLevel, profileComplete } = await getStudentDashboardData()
+    const { enrollments, recent, events, tip, cpdCredits, currentLevel, profileComplete, hasFundamental, hasSpecialized, hasInternship } = await getStudentDashboardData()
 
     return (
         <ErrorBoundary>
@@ -237,7 +237,12 @@ export default async function StudentDashboard() {
                     <div className="space-y-6">
                         <CPDProgress currentCredits={cpdCredits || 0} level={currentLevel || 1} />
                         
-                        <CertificationPathway currentLevel={currentLevel || 1} />
+                        <CertificationPathway 
+                            currentLevel={currentLevel || 1} 
+                            hasFundamental={hasFundamental}
+                            hasSpecialized={hasSpecialized}
+                            hasInternship={hasInternship}
+                        />
 
                         <h2 className="text-xl font-bold text-secondary">Upcoming</h2>
                         <Card>

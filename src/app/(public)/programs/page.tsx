@@ -29,6 +29,54 @@ export default async function ProgramsPage() {
                     <EducationPathway />
                 </div>
             </section>
+ 
+            {/* Certification Journey Stepper */}
+            <section className="bg-slate-50 border-y py-16">
+                <div className="container mx-auto px-4">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold text-secondary">Path to Nursing Assistant Certification</h2>
+                            <p className="text-muted-foreground mt-2 max-w-xl mx-auto">Follow our verified training progression model to receive national accreditation and join the official Caregiver Register.</p>
+                        </div>
+ 
+                        <div className="grid md:grid-cols-3 gap-8 relative">
+                            {/* Card 1 */}
+                            <div className="bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative">
+                                <div className="absolute -top-4 left-6 h-8 w-8 rounded-full bg-primary text-white font-bold text-sm flex items-center justify-center">1</div>
+                                <h3 className="font-bold text-secondary text-lg mb-2 mt-2">1. Core Fundamentals</h3>
+                                <p className="text-muted-foreground text-xs leading-relaxed">
+                                    Enrol and pass the Core Caregiver Fundamentals curriculum. This builds your foundational theoretical knowledge of caregiving ethics, hygiene, and patient safety.
+                                </p>
+                            </div>
+ 
+                            {/* Card 2 */}
+                            <div className="bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative">
+                                <div className="absolute -top-4 left-6 h-8 w-8 rounded-full bg-primary text-white font-bold text-sm flex items-center justify-center">2</div>
+                                <h3 className="font-bold text-secondary text-lg mb-2 mt-2">2. Choose Specialisation</h3>
+                                <p className="text-muted-foreground text-xs leading-relaxed">
+                                    Complete a specialized program track matching your career goals, such as Caregiver Level 2: Elderly Care, Disability Support, or Home Care.
+                                </p>
+                            </div>
+ 
+                            {/* Card 3 */}
+                            <div className="bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative">
+                                <div className="absolute -top-4 left-6 h-8 w-8 rounded-full bg-primary text-white font-bold text-sm flex items-center justify-center">3</div>
+                                <h3 className="font-bold text-secondary text-lg mb-2 mt-2">3. Clinical Internship</h3>
+                                <p className="text-muted-foreground text-xs leading-relaxed">
+                                    Undertake a practical clinical internship placement at an accredited healthcare facility or partner agency to verify your hands-on competency in care.
+                                </p>
+                            </div>
+                        </div>
+ 
+                        <div className="mt-12 text-center bg-primary/5 rounded-2xl p-6 border border-primary/10">
+                            <p className="text-xs text-secondary leading-relaxed">
+                                🌟 <strong>Nursing Assistant Certificate:</strong> Upon completion of all 3 milestones, you will receive your official certificate, verifiable digital ID card, and public registry listing.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
 
             {/* Program Grid */}
             <section className="py-20">

@@ -63,21 +63,13 @@ export const NICAdmissionConfirmationEmail = ({
                     </Section>
 
                     <Section style={infoBlock}>
-                        <Heading as="h3" style={h3}>📋 What to do next</Heading>
-                        {resetUrl ? (
-                            <>
-                                <Text style={stepText}>1. Finalize your account by setting your password</Text>
-                                <Text style={stepText}>2. Browse our available courses and programmes</Text>
-                                <Text style={stepText}>3. Enrol in a course to begin your journey</Text>
-                            </>
-                        ) : (
-                            <>
-                                <Text style={stepText}>1. Log in to your student portal</Text>
-                                <Text style={stepText}>2. Browse our available courses and programmes</Text>
-                                <Text style={stepText}>3. Enrol in a course to begin your professional caregiver journey</Text>
-                                <Text style={stepText}>4. Complete your profile with updated personal information</Text>
-                            </>
-                        )}
+                        <Heading as="h3" style={h3}>🎓 Your 3-Step Pathway to Certification</Heading>
+                        <Text style={stepText}><strong>1. Core Fundamentals:</strong> Log in and complete your Core Caregiver Fundamentals course (Foundation level).</Text>
+                        <Text style={stepText}><strong>2. Area of Specialisation:</strong> Choose and pass a specialized course (e.g., Elderly Care, Pediatrics, Home Care).</Text>
+                        <Text style={stepText}><strong>3. Clinical Internship:</strong> Complete practical hours at an accredited care partner agency to verify clinical skills.</Text>
+                        <Text style={stepTextSmall}>
+                            * Completing these three milestones triggers your official Nursing Assistant Certification, verified ID, and public registry listing.
+                        </Text>
                     </Section>
 
                     <Section style={ctaSection}>

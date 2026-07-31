@@ -118,6 +118,24 @@ export async function getStudentDashboardData() {
 
     const currentLevel = await getStudentLevel(supabase, user.id, enrollments)
 
+    // Calculate progression statuses
+    const hasFundamental = enrollments.some((e: any) => {
+        const course = Array.isArray(e.course) ? e.course[0] : e.course;
+        return e.status === 'completed' && course?.level === 'Foundation';
+    });
+
+    const hasSpecialized = enrollments.some((e: any) => {
+        const course = Array.isArray(e.course) ? e.course[0] : e.course;
+        return e.status === 'completed' && (course?.level === 'Specialized' || course?.level === 'Intermediate' || course?.level === 'Advanced');
+    });
+
+    const { data: internships } = await supabase
+        .from('internships')
+        .select('status')
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+    const hasInternship = (internships || []).length > 0;
+
     return {
         enrollments,
         recent: activeEnrollment || null,
@@ -125,7 +143,10 @@ export async function getStudentDashboardData() {
         tip,
         cpdCredits,
         currentLevel,
-        profileComplete
+        profileComplete,
+        hasFundamental,
+        hasSpecialized,
+        hasInternship
     }
 }
 
