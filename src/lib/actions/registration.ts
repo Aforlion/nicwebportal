@@ -9,7 +9,6 @@ import logger from "@/lib/logger"
 import { env } from "@/env"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { createClient } from "@supabase/supabase-js"
-import { ZodError } from "zod"
 
 export async function savePendingRegistrationAction(data: {
     email: string,
@@ -52,8 +51,8 @@ export async function savePendingRegistrationAction(data: {
         return { success: true, id: record.id }
     } catch (e: any) {
         logger.error("Save Pending Error", { error: e.message, email: data.email });
-        if (e instanceof ZodError) {
-            return { success: false, error: e.errors.map(err => err.message).join(", ") }
+        if (e.name === 'ZodError') {
+            return { success: false, error: e.errors.map((err: any) => err.message).join(", ") }
         }
         return { success: false, error: e.message || "Validation failed" }
     }
