@@ -12,11 +12,18 @@ export async function getStudentDashboardData() {
     // Fetch profile for completeness check
     const { data: profileData } = await supabase
         .from('profiles')
-        .select('address, photo_url')
+        .select(`
+            avatar_url,
+            memberships (
+                address,
+                photo_url
+            )
+        `)
         .eq('id', user.id)
         .single()
 
-    const profileComplete = !!(profileData?.address && profileData?.photo_url)
+    const membership = profileData?.memberships?.[0]
+    const profileComplete = !!(membership?.address && (membership?.photo_url || profileData?.avatar_url))
 
     // Fetch enrollments with course details
     const { data: rawEnrollments, error } = await supabase

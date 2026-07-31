@@ -17,8 +17,7 @@ export async function getMemberDashboardData() {
         .select(`
             role,
             full_name,
-            address,
-            photo_url,
+            avatar_url,
             memberships (
                 id,
                 nic_id,
@@ -26,7 +25,9 @@ export async function getMemberDashboardData() {
                 status,
                 is_active,
                 expiry_date,
-                created_at
+                created_at,
+                address,
+                photo_url
             )
         `)
         .eq('id', user.id)
@@ -101,7 +102,7 @@ export async function getMemberDashboardData() {
         status: e.status
     })) || []
 
-    const profileComplete = !!(profileData.address && profileData.photo_url)
+    const profileComplete = !!(membership?.address && (membership?.photo_url || profileData.avatar_url))
 
     return {
         member: {
