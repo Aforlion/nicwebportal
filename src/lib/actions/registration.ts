@@ -16,8 +16,14 @@ export async function savePendingRegistrationAction(data: {
     registrationType: string
 }) {
     try {
-        const headerList = await headers();
-        const ip = headerList.get('x-forwarded-for') ?? 'unknown';
+        let ip = 'unknown';
+        try {
+            const headerList = await headers();
+            ip = headerList.get('x-forwarded-for') ?? 'unknown';
+        } catch (e) {
+            logger.warn("Failed to retrieve headers for rate limiting", { error: e });
+        }
+        
         const isAllowed = await checkRateLimit('auth', `pending-reg:${ip}`);
         if (!isAllowed) {
             logger.warn("Rate limit exceeded for pending registration", { ip, email: data.email });
