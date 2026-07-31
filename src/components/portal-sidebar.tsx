@@ -3,6 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react"
 import {
     LayoutDashboard,
     BookOpen,
@@ -64,10 +65,37 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
         { title: "ID Card", href: "/portal/member/id-card", icon: Contact },
     ]
 
+    const [isAgency, setIsAgency] = useState(false)
+
+    useEffect(() => {
+        if (role === 'facility') {
+            const checkFacilityType = async () => {
+                try {
+                    const { createClient } = await import("@/lib/supabase")
+                    const supabase = createClient()
+                    const { data: { user } } = await supabase.auth.getUser()
+                    if (user) {
+                        const { data } = await supabase
+                            .from('facilities')
+                            .select('facility_type')
+                            .eq('owner_id', user.id)
+                            .single()
+                        if (data && data.facility_type === 'agency') {
+                            setIsAgency(true)
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error checking facility type in sidebar:", e)
+                }
+            }
+            checkFacilityType()
+        }
+    }, [role])
+
     const facilityNavItems = [
         { title: "Dashboard", href: "/portal/facility", icon: LayoutDashboard },
-        { title: "Staff Directory", href: "/portal/facility/staff", icon: Users },
-        { title: "Link Caregiver", href: "/portal/facility/link", icon: UserPlus },
+        { title: isAgency ? "Caregivers Directory" : "Staff Directory", href: "/portal/facility/staff", icon: Users },
+        { title: isAgency ? "Connect Caregiver" : "Link Caregiver", href: "/portal/facility/link", icon: UserPlus },
         { title: "Inspections", href: "/portal/facility/inspections", icon: CheckSquare },
         { title: "Accreditation", href: "/portal/facility/accreditation", icon: ShieldCheck },
         { title: "Documents & Certificates", href: "/portal/facility/certificates", icon: FileText },

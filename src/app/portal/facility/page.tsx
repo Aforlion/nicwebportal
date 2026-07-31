@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AccreditationTracker } from "@/components/facility/accreditation-tracker"
+import { AgencyDashboard } from "@/components/facility/agency-dashboard"
 import Image from "next/image"
 
 export default function FacilityDashboard() {
@@ -133,6 +134,10 @@ export default function FacilityDashboard() {
             </CardContent>
         </Card>
     )
+
+    if (facility.facility_type === 'agency') {
+        return <AgencyDashboard facility={facility} staffCount={staffCount} courses={courses} />
+    }
 
     return (
         <div className="space-y-8 relative overflow-hidden">
