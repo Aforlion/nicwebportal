@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge"
 import { Clock, GraduationCap, Laptop, Users, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { getPublishedCourses } from "@/actions/get-courses"
-import { EducationPathway } from "@/components/education-pathway"
 import { SpecializationTracks } from "@/components/specialization-tracks"
 
 export default async function ProgramsPage() {
@@ -21,12 +20,6 @@ export default async function ProgramsPage() {
                     <p className="mx-auto max-w-2xl text-lg opacity-90">
                         Elevate your career with our nationally recognized caregiver training programs. From foundational skills to specialized care management.
                     </p>
-                </div>
-            </section>
-
-            <section className="bg-muted/30">
-                <div className="container mx-auto px-4">
-                    <EducationPathway />
                 </div>
             </section>
  
