@@ -58,7 +58,12 @@ export async function savePendingRegistrationAction(data: {
     } catch (e: any) {
         logger.error("Save Pending Error", { error: e.message, email: data.email });
         if (e.name === 'ZodError') {
-            return { success: false, error: e.errors.map((err: any) => err.message).join(", ") }
+            const errorList = Array.isArray(e.errors) 
+                ? e.errors 
+                : (Array.isArray(e.issues) ? e.issues : []);
+            if (errorList.length > 0) {
+                return { success: false, error: errorList.map((err: any) => err.message).join(", ") }
+            }
         }
         return { success: false, error: e.message || "Validation failed" }
     }
