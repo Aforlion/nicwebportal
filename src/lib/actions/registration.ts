@@ -251,7 +251,7 @@ export async function finalizeRegistrationAction(reference: string) {
                     category: fd.category, // Matches DB enum now
                     status: 'active',
                     is_active: true,
-                    paid_at: new Date().toISOString(),
+                    last_payment_date: new Date().toISOString(),
                     last_payment_reference: reference,
                     expiry_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
                 });
@@ -404,7 +404,7 @@ export async function finalizeRegistrationAction(reference: string) {
                     category: 'institutional',
                     status: 'active',
                     is_active: true,
-                    paid_at: new Date().toISOString(),
+                    last_payment_date: new Date().toISOString(),
                     last_payment_reference: reference,
                     expiry_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
                 });
