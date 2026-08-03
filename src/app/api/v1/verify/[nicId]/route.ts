@@ -140,7 +140,7 @@ export async function GET(
  */
 async function logApiCall(supabase: any, request: NextRequest, nicId: string, status: string) {
     try {
-        const callerIp = request.headers.get("x-forwarded-for") || request.ip || null
+        const callerIp = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || null
         const userAgent = request.headers.get("user-agent") || null
 
         await supabase
