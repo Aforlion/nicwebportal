@@ -1,5 +1,6 @@
 import { ShieldCheck, Target, Eye, Award, Users, Crown } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 
 export default function AboutPage() {
@@ -121,19 +122,32 @@ export default function AboutPage() {
                     <h2 className="mb-12 text-center text-3xl font-bold text-secondary">Governing Council & Management</h2>
                     <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
                         {[
-                            { name: "Victor Olusan", role: "President", desc: "Economist and ACA certified caregiver." },
+                            { name: "Victor Olusan", role: "President", desc: "Economist and ACA certified caregiver.", image: "/team/victor-olusan.jpg" },
                             { name: "Mohammed Kazeem Oladimeji", role: "Vice President", desc: "Administrative expert and certified caregiver." },
                             { name: "Alimot E. Afe", role: "Secretary", desc: "Lawyer and peace & conflict resolution focus." },
                             { name: "Abraham P. Olanrewaju", role: "P.R.O/Strategy", desc: "Media and publicity expert." },
+                            { name: "Afolayan Olatunji Joel", role: "Program Director", desc: "Strategic program development and management.", image: "/team/afolayan-joel.jpg" },
                             { name: "Zainab Gafar Babatunde", role: "Training Director", desc: "Registered Nurse and Midwife (RN, RM)." },
                             { name: "Barr. Godwin Okuja", role: "Legal Adviser", desc: "Principal Partner at Okuja & Associates." },
                             { name: "Dr. Mrs. Gladys Olufunke Etim", role: "Executive Director", desc: "Experienced organization leader." },
                             { name: "Desmond Onyemechi Okocha", role: "Director", desc: "PhD in Mass Communication." },
                         ].map((member) => (
-                            <div key={member.name} className="flex flex-col items-center rounded-2xl border bg-background p-6 text-center shadow-sm">
-                                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary/10">
-                                    <Users className="h-8 w-8 text-secondary" />
-                                </div>
+                            <div key={member.name} className="flex flex-col items-center rounded-2xl border bg-background p-6 text-center shadow-sm hover:shadow-md transition-all duration-200">
+                                {member.image ? (
+                                    <div className="mb-4 relative h-20 w-20 overflow-hidden rounded-full border-2 border-primary/20 shadow-sm">
+                                        <Image
+                                            src={member.image}
+                                            alt={member.name}
+                                            width={80}
+                                            height={80}
+                                            className="h-full w-full object-cover object-center"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-secondary/10">
+                                        <Users className="h-9 w-9 text-secondary" />
+                                    </div>
+                                )}
                                 <h3 className="text-lg font-bold text-secondary">{member.name}</h3>
                                 <p className="mb-2 text-sm font-medium text-primary">{member.role}</p>
                                 <p className="text-xs text-muted-foreground">{member.desc}</p>
