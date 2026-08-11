@@ -15,7 +15,11 @@ export const metadata: Metadata = {
   title: "NIC | National Institute of Caregivers",
   description: "The professional body for caregivers in Nigeria - Training, Certification, and Regulation.",
   icons: {
-    icon: "/logo.jpg",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png" },
+      { url: "/logo.jpg", type: "image/jpeg" },
+    ],
     apple: "/logo.jpg",
   },
 };
