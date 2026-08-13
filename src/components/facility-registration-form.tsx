@@ -21,6 +21,7 @@ const FACILITY_TYPES = [
     { value: "nursing_home", label: "Nursing Home" },
     { value: "hospital", label: "Hospital / Medical Center" },
     { value: "agency", label: "Care Agency" },
+    { value: "training_agency", label: "Training Agency / Institution" },
     { value: "rehab", label: "Rehabilitation Center" },
     { value: "home_care", label: "In-Home Care Provider" },
 ]

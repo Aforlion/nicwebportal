@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { AccreditationTracker } from "@/components/facility/accreditation-tracker"
 import { AgencyDashboard } from "@/components/facility/agency-dashboard"
+import { TrainingAgencyDashboard } from "@/components/facility/training-agency-dashboard"
 import Image from "next/image"
 
 export default function FacilityDashboard() {
@@ -137,6 +138,10 @@ export default function FacilityDashboard() {
 
     if (facility.facility_type === 'agency') {
         return <AgencyDashboard facility={facility} staffCount={staffCount} courses={courses} />
+    }
+
+    if (facility.facility_type === 'training_agency' || facility.facility_type === 'training_institution') {
+        return <TrainingAgencyDashboard facility={facility} staffCount={staffCount} courses={courses} />
     }
 
     return (
