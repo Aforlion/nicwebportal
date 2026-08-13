@@ -24,7 +24,7 @@ export function Hero() {
                     >
                         <div className="mb-6 inline-flex items-center rounded-full bg-accent/10 px-4 py-1.5 text-sm font-medium text-accent">
                             <Image src="/logo.jpg" alt="NIC" width={16} height={16} className="mr-2 h-4 w-4 rounded-full" />
-                            The Official Regulatory Body for Caregivers
+                            The Apex Professional Body for Caregivers in Nigeria
                         </div>
                         <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-secondary md:text-5xlg lg:text-6xl">
                             Professionalizing <span className="text-primary">Care</span> across Nigeria
