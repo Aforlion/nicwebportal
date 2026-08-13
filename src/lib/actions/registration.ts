@@ -628,16 +628,27 @@ export async function registerFacilityAction(data: {
 
 export async function validateInstitutionCodeAction(code: string) {
     try {
+        const cleanCode = code.trim().toUpperCase()
         const adminClient = createClient(
             env.NEXT_PUBLIC_SUPABASE_URL,
             env.SUPABASE_SERVICE_ROLE_KEY,
             { auth: { autoRefreshToken: false, persistSession: false } }
         )
-        const { data: facility, error } = await adminClient
+
+        let { data: facility, error } = await adminClient
             .from('facilities')
             .select('id, name, status, accreditation_level')
-            .eq('institution_code', code.trim())
+            .ilike('institution_code', cleanCode)
             .maybeSingle()
+
+        if (!facility) {
+            const { data: facByReg } = await adminClient
+                .from('facilities')
+                .select('id, name, status, accreditation_level')
+                .ilike('registration_number', cleanCode)
+                .maybeSingle()
+            facility = facByReg
+        }
 
         if (error) throw error
         if (!facility) {
