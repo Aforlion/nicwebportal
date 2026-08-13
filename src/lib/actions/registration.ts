@@ -584,12 +584,21 @@ export async function registerFacilityAction(data: {
             logger.error("Profile upsert failed for facility owner", { error: profileError, ownerId: data.ownerId })
         }
 
+        // 1.5 Auto-generate NIC Institution / Agency Code if not present
+        const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const year = new Date().getFullYear();
+        let prefix = 'FAC';
+        if (data.facilityType === 'agency') prefix = 'AGY';
+        if (data.facilityType === 'training_agency' || data.facilityType === 'training_institution') prefix = 'TRN';
+        const generatedCode = `NIC/${prefix}/${year}/${randomSuffix}`;
+
         // 2. Create the facility record using adminClient to bypass RLS
         const { data: facility, error: facilityError } = await adminClient
             .from('facilities')
             .insert({
                 name: data.facilityName,
                 registration_number: data.regNumber,
+                institution_code: generatedCode,
                 tin: data.tin,
                 facility_type: data.facilityType,
                 email: data.email,

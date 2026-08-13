@@ -142,8 +142,8 @@ export function AgencyDashboard({ facility, staffCount, courses }: AgencyDashboa
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Agency Code</p>
-                            <p className="text-sm font-mono font-bold text-slate-700 mt-2">
-                                {facility.institution_code || 'Pending Code'}
+                            <p className="text-sm font-mono font-bold text-slate-700 mt-2 select-all">
+                                {facility.institution_code || (facility.registration_number?.startsWith('NIC/') ? facility.registration_number : 'Pending Code')}
                             </p>
                         </div>
                         <Building2 className="h-8 w-8 text-slate-400 opacity-80" />
