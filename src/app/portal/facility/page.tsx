@@ -286,9 +286,9 @@ export default function FacilityDashboard() {
                                     </div>
                                 )
                             })}
-                            <Button className="w-full text-xs" variant="outline" size="sm" asChild>
-                                <a href="/portal/facility/certificates">Manage Documents</a>
-                            </Button>
+                             <Button className="w-full text-xs font-bold bg-[#D97706] hover:bg-[#b45309] text-white" size="sm" asChild>
+                                 <a href="/portal/facility/certificates">Download Certificate & Documents</a>
+                             </Button>
                         </CardContent>
                     </Card>
 

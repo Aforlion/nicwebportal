@@ -1,11 +1,10 @@
 import { getCertificateByCode } from "@/actions/student/certificate"
 import { notFound } from "next/navigation"
-import { headers } from "next/headers"
-import QRCodeDisplay from "@/components/certificate/qr-code-display"
+import { headers as getHeaders } from "next/headers"
 import CertificateActions from "@/components/certificate/certificate-actions"
+import PremiumCertificateView from "@/components/certificate/premium-certificate-view"
 import Link from "next/link"
-import Image from "next/image"
-import { Award } from "lucide-react"
+import { PremiumCertificateData, FacilityTypeKey } from "@/types/certificate"
 
 export default async function CertificatePage({ params }: { params: Promise<{ code: string }> }) {
     const { code } = await params
@@ -15,171 +14,60 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
         notFound()
     }
 
-    const studentName = (cert.profiles as any)?.full_name || (cert.profiles as any)?.email || "Student"
-    // For program-based certs: use program title. For course-based certs: use course title.
-    const courseTitle = (cert.programs as any)?.title || (cert.courses as any)?.title || "NIC Course"
-    const issueDate = new Date(cert.issue_date).toLocaleDateString("en-GB", {
-        day: 'numeric', month: 'long', year: 'numeric'
-    })
+    const recipientName = (cert.profiles as any)?.full_name || (cert.profiles as any)?.email || (cert.facilities as any)?.name || "Recipient"
+    const courseTitle = (cert.programs as any)?.title || (cert.courses as any)?.title || "NIC Certification Program"
 
-    // Dynamic fallback: construct URL using incoming request headers if environment variables aren't set
-    const headersList = await headers()
+    // Absolute URL for QR code (prioritize env vars, fallback to dynamic request URL)
+    const headersList = await getHeaders()
     const host = headersList.get('host') || 'localhost:3000'
     const protocol = headersList.get('x-forwarded-proto') || 'http'
     const dynamicAppUrl = `${protocol}://${host}`
-
-    // Absolute URL for QR code (prioritize env vars, fallback to dynamic request URL)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || dynamicAppUrl
     const verificationUrl = `${appUrl}/certificates/${code}`
 
     const isNCNA = cert.type === 'ncna'
+    const isFacility = cert.type === 'facility_membership' || cert.facility_id
+
+    // Construct PremiumCertificateData structure for the view component
+    let typeKey: FacilityTypeKey = 'general'
+    if (cert.facility_type) {
+        const ft = cert.facility_type.toLowerCase()
+        if (ft === 'agency' || ft.includes('care_agency')) typeKey = 'agency'
+        else if (ft === 'care_home' || ft.includes('assisted_living')) typeKey = 'care_home'
+        else if (ft.includes('training')) typeKey = 'training_agency'
+        else if (ft.includes('hospital') || ft.includes('clinical')) typeKey = 'hospital'
+    }
+
+    const issueDateStr = cert.issue_date || cert.created_at || new Date().toISOString()
+    const issueYear = new Date(issueDateStr).getFullYear()
+
+    const certData: PremiumCertificateData = {
+        certificateNumber: cert.certificate_number,
+        recipientName: isFacility ? (cert.facilities?.name || recipientName) : recipientName,
+        facilityTypeKey: typeKey,
+        facilityType: cert.facility_type ? cert.facility_type.replace('_', ' ').toUpperCase() : undefined,
+        category: isFacility ? 'facility_membership' : isNCNA ? 'ncna_license' : 'course_completion',
+        courseOrProgramName: courseTitle,
+        issueDate: issueDateStr,
+        duration: isFacility ? `12 Months (${issueYear} - ${issueYear + 1})` : `Lifetime Credential (Issued ${issueYear})`,
+        verificationUrl,
+        studentIdOrRegNumber: cert.user_id ? `ID-${cert.user_id.substring(0, 7).toUpperCase()}` : `LIC-${code}`,
+        signatoryName: "Prof. M. A. Ojo",
+        signatoryTitle: "Registrar General, NIC Nigeria",
+    }
 
     return (
-        <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4 print:bg-white print:p-0">
-            {/* Action Bar — rendered as a Client Component to support onClick/window.print() */}
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 print:bg-white print:p-0">
+            {/* Action Bar — Client Component for Print/Share */}
             <CertificateActions verificationUrl={verificationUrl} />
 
-            {/* Certificate Container */}
-            {isNCNA ? (
-                /* High-Security Cream & Gold Layout for NCNA Professional License */
-                <div className="bg-[#FAF9F5] text-center p-12 shadow-2xl border-[6px] border-double border-[#C5A029] w-full max-w-[800px] aspect-[1.414] flex flex-col items-center justify-between text-[#2D2A26] relative overflow-hidden print:shadow-none print:border-none print:w-[100%] print:h-[100vh] print:m-0">
-                    {/* Security Gold Badge Watermark */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none">
-                        <Image src="/coat-of-arm.png" alt="Watermark" width={420} height={420} />
-                    </div>
-                    <div className="absolute top-0 left-0 w-32 h-32 bg-[url('/pattern.png')] opacity-10" />
+            {/* Render High-Fidelity Premium Certificate */}
+            <div className="w-full flex justify-center py-4 print:py-0">
+                <PremiumCertificateView data={certData} />
+            </div>
 
-                    <div className="w-full space-y-4 relative z-10">
-                        {/* Logo Area */}
-                        <div className="mx-auto flex flex-col items-center mb-4">
-                            <Image 
-                                src="/logo.jpg" 
-                                alt="NIC Logo" 
-                                width={75} 
-                                height={75} 
-                                className="mb-2 rounded-lg shadow-md border border-[#C5A029]"
-                            />
-                            <div className="h-0.5 w-24 bg-[#C5A029] mb-1" />
-                            <span className="text-[#C5A029] font-serif font-bold text-lg tracking-widest">NIC NIGERIA</span>
-                        </div>
-
-                        <h1 className="text-3xl font-serif text-[#1C1A17] uppercase tracking-[0.2em] mb-1 font-bold">
-                            National Certified Nursing Assistant
-                        </h1>
-                        <p className="text-xs font-semibold uppercase text-[#A58219] tracking-[0.3em] mb-4">
-                            Official Professional Caregiving License
-                        </p>
-
-                        <p className="text-sm italic text-slate-600">This is to certify that</p>
-
-                        <h2 className="text-3xl font-bold font-serif my-2 capitalize text-[#1C1A17] border-b border-[#C5A029] inline-block px-8 pb-1">
-                            {studentName}
-                        </h2>
-
-                        <p className="text-sm italic text-slate-600 mt-2">
-                            having fulfilled all requirements, completed the fundamental and advanced training curricula, 
-                            and completed the supervised clinical internship, is hereby awarded the credential of
-                        </p>
-
-                        <h3 className="text-xl font-bold text-[#A58219] uppercase tracking-wider my-3 font-serif bg-[#C5A029]/10 py-2 px-6 rounded-md inline-block">
-                            Certified Nursing Assistant (CNA)
-                        </h3>
-
-                        <p className="text-[11px] text-slate-500 max-w-md mx-auto">
-                            In witness whereof, the Seal of the National Institute of Caregivers (NIC Nigeria) is hereunto 
-                            affixed. Valid as a professional licensing standard.
-                        </p>
-                    </div>
-
-                    {/* Footer Section */}
-                    <div className="w-full flex justify-between items-end mt-4 pt-6 border-t border-[#C5A029]/20 relative z-10">
-                        <div className="text-left">
-                            <p className="text-xs font-bold text-[#1C1A17]">National Certification Authority</p>
-                            <p className="text-[10px] text-slate-500">Official Licensing Board</p>
-                            <p className="text-[10px] text-slate-400 mt-3">Date Issued: {issueDate}</p>
-                        </div>
-
-                        <div className="flex flex-col items-center">
-                            {/* Gold Seal Graphic */}
-                            <div className="h-16 w-16 rounded-full border-4 border-dashed border-[#C5A029] flex items-center justify-center bg-[#FAF9F5] shadow-inner mb-2 relative">
-                                <Award className="h-8 w-8 text-[#C5A029] animate-pulse" />
-                            </div>
-                            <p className="text-[9px] font-serif italic text-slate-500">Registrar General</p>
-                        </div>
-
-                        <div className="text-right flex flex-col items-end">
-                            <QRCodeDisplay value={verificationUrl} size={70} />
-                            <p className="text-[9px] text-slate-400 font-mono mt-1 tracking-wider">LICENSE: {cert.certificate_number}</p>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                /* Regular Certificate Layout */
-                <div className="bg-white text-center p-12 shadow-2xl border-4 border-double border-slate-200 w-full max-w-[800px] aspect-[1.414] flex flex-col items-center justify-between text-slate-800 relative overflow-hidden print:shadow-none print:border-none print:w-[100%] print:h-[100vh] print:m-0">
-                    {/* Decorative Background Elements & Watermark */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
-                        <Image src="/coat-of-arm.png" alt="Watermark" width={400} height={400} />
-                    </div>
-                    <div className="absolute top-0 left-0 w-32 h-32 bg-[url('/pattern.png')] opacity-10" />
-
-                    <div className="w-full space-y-4 relative z-10">
-                        {/* Logo Area */}
-                        <div className="mx-auto flex flex-col items-center mb-6">
-                            <Image 
-                                src="/logo.jpg" 
-                                alt="NIC Logo" 
-                                width={80} 
-                                height={80} 
-                                className="mb-4 rounded-lg shadow-sm"
-                            />
-                            <div className="h-0.5 w-24 bg-slate-900 mb-2" />
-                            <span className="text-slate-900 font-bold text-2xl tracking-tighter">NIC</span>
-                        </div>
-
-                        <h1 className="text-4xl font-serif text-slate-900 uppercase tracking-widest mb-1">Certificate</h1>
-                        <p className="text-xl font-light uppercase text-slate-500 tracking-[0.2em] mb-8">of Completion</p>
-
-                        <p className="text-lg italic text-slate-600">This is to certify that</p>
-
-                        <h2 className="text-4xl font-bold font-serif my-4 capitalize text-slate-900 border-b-2 border-slate-200 inline-block px-8 pb-2">
-                            {studentName}
-                        </h2>
-
-                        <p className="text-lg italic text-slate-600 mt-4">Has successfully completed the course</p>
-
-                        <h3 className="text-2xl font-bold text-primary my-4 max-w-lg mx-auto">
-                            {courseTitle}
-                        </h3>
-
-                        <p className="text-sm text-slate-500 mb-8 max-w-md mx-auto">
-                            Demonstrating commitment to excellence and professional development in caregiving services.
-                        </p>
-                    </div>
-
-                    {/* Footer Section */}
-                    <div className="w-full flex justify-between items-end mt-8 pt-8 border-t border-slate-100 relative z-10">
-                        <div className="text-left">
-                            <p className="text-sm font-bold text-slate-900">National Institute Content</p>
-                            <p className="text-xs text-slate-500">Official Certification Authority</p>
-                            <p className="text-xs text-slate-400 mt-4">Date Issued: {issueDate}</p>
-                        </div>
-
-                        <div className="flex flex-col items-center">
-                            {/* Signature Area (Mock) */}
-                            <div className="w-32 border-b border-slate-300 mb-2" />
-                            <p className="text-xs font-serif italic text-slate-500">Director of Training</p>
-                        </div>
-
-                        <div className="text-right flex flex-col items-end">
-                            <QRCodeDisplay value={verificationUrl} size={84} />
-                            <p className="text-[10px] text-slate-400 font-mono mt-2 tracking-wider">ID: {cert.certificate_number}</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <p className="mt-8 text-sm text-muted-foreground print:hidden">
-                Verify this certificate at: <Link href={verificationUrl} className="underline">{verificationUrl}</Link>
+            <p className="mt-6 text-xs text-slate-400 font-mono print:hidden">
+                Official Authenticity Verification URL: <Link href={verificationUrl} className="underline text-amber-400">{verificationUrl}</Link>
             </p>
         </div>
     )

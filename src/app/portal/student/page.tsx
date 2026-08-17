@@ -239,9 +239,9 @@ export default async function StudentDashboard() {
                         
                         <CertificationPathway 
                             currentLevel={currentLevel || 1} 
-                            hasFundamental={hasFundamental}
-                            hasSpecialized={hasSpecialized}
-                            hasInternship={hasInternship}
+                            hasFundamental={hasFundamental || false}
+                            hasSpecialized={hasSpecialized || false}
+                            hasInternship={hasInternship || false}
                         />
 
                         <h2 className="text-xl font-bold text-secondary">Upcoming</h2>

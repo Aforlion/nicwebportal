@@ -12,6 +12,9 @@ import {
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase"
 import { saveDocumentRecord, deleteDocumentRecord } from "@/actions/member/documents"
+import { getFacilityCertificateDetails } from "@/actions/facility/certificate"
+import FacilityCertificateCard from "@/components/facility/facility-certificate-card"
+import { PremiumCertificateData } from "@/types/certificate"
 
 interface Document {
     id: string
@@ -42,6 +45,8 @@ export default function FacilityCertificatesPage() {
     const [loading, setLoading] = useState(true)
     const [documents, setDocuments] = useState<Document[]>([])
     const [membershipId, setMembershipId] = useState<string | null>(null)
+    const [certData, setCertData] = useState<PremiumCertificateData | null>(null)
+    const [facilityDetails, setFacilityDetails] = useState<any>(null)
 
     // Upload form state
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -54,11 +59,31 @@ export default function FacilityCertificatesPage() {
     const supabase = createClient()
 
     useEffect(() => {
-        fetchDocuments()
+        initPage()
     }, [])
 
-    const fetchDocuments = async () => {
+    const initPage = async () => {
         setLoading(true)
+        await Promise.all([
+            fetchCertDetails(),
+            fetchDocuments()
+        ])
+        setLoading(false)
+    }
+
+    const fetchCertDetails = async () => {
+        try {
+            const res = await getFacilityCertificateDetails()
+            if (res.success && res.certificate) {
+                setCertData(res.certificate)
+                setFacilityDetails(res.facility)
+            }
+        } catch (err) {
+            console.error("Error fetching facility certificate:", err)
+        }
+    }
+
+    const fetchDocuments = async () => {
         try {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
@@ -68,41 +93,32 @@ export default function FacilityCertificatesPage() {
                 .from('memberships')
                 .select('id')
                 .eq('user_id', user.id)
-                .single()
+                .maybeSingle()
 
-            if (!membership) {
-                console.error("No membership record found for user.")
-                return
-            }
+            if (membership) {
+                setMembershipId(membership.id)
 
-            setMembershipId(membership.id)
+                const { data: docData, error } = await supabase
+                    .from('documents')
+                    .select('*')
+                    .eq('membership_id', membership.id)
+                    .order('uploaded_at', { ascending: false })
 
-            // Get uploaded documents
-            const { data: docData, error } = await supabase
-                .from('documents')
-                .select('*')
-                .eq('membership_id', membership.id)
-                .order('uploaded_at', { ascending: false })
-
-            if (error) throw error
-
-            if (docData) {
-                const formatted = docData.map((doc: any) => ({
-                    id: doc.id,
-                    name: doc.document_name,
-                    type: doc.document_type,
-                    uploadDate: new Date(doc.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                    size: doc.file_size ? `${(doc.file_size / (1024 * 1024)).toFixed(1)} MB` : 'Unknown size',
-                    status: (doc.status ?? 'pending').charAt(0).toUpperCase() + (doc.status ?? 'pending').slice(1),
-                    url: doc.file_url,
-                }))
-                setDocuments(formatted)
+                if (!error && docData) {
+                    const formatted = docData.map((doc: any) => ({
+                        id: doc.id,
+                        name: doc.document_name,
+                        type: doc.document_type,
+                        uploadDate: new Date(doc.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                        size: doc.file_size ? `${(doc.file_size / (1024 * 1024)).toFixed(1)} MB` : 'Unknown size',
+                        status: (doc.status ?? 'pending').charAt(0).toUpperCase() + (doc.status ?? 'pending').slice(1),
+                        url: doc.file_url,
+                    }))
+                    setDocuments(formatted)
+                }
             }
         } catch (err) {
             console.error("Error loading documents:", err)
-            toast.error("Failed to load documents")
-        } finally {
-            setLoading(false)
         }
     }
 
@@ -120,7 +136,6 @@ export default function FacilityCertificatesPage() {
     const handleUpload = async () => {
         if (!selectedFile) { toast.error("Please select a file first"); return }
         if (!docName.trim()) { toast.error("Please enter a document name"); return }
-        if (!membershipId) { toast.error("Membership details missing"); return }
 
         setIsUploading(true)
         try {
@@ -130,7 +145,7 @@ export default function FacilityCertificatesPage() {
             const ext = selectedFile.name.split(".").pop()
             const storagePath = `${user.id}/${Date.now()}_${docName.replace(/\s+/g, "_")}.${ext}`
 
-            // 1. Upload to Storage bucket (using member-documents)
+            // 1. Upload to Storage bucket
             const { error: uploadError } = await supabase.storage
                 .from("member-documents")
                 .upload(storagePath, selectedFile, { upsert: false })
@@ -146,7 +161,7 @@ export default function FacilityCertificatesPage() {
                 .from("member-documents")
                 .getPublicUrl(storagePath)
 
-            // 3. Save to database using saveDocumentRecord action
+            // 3. Save record
             const result = await saveDocumentRecord({
                 documentName: docName.trim(),
                 documentType: docType,
@@ -160,9 +175,7 @@ export default function FacilityCertificatesPage() {
                 return
             }
 
-            toast.success("Document uploaded successfully for review.")
-
-            // Refresh documents list
+            toast.success("Document uploaded successfully.")
             await fetchDocuments()
 
             // Reset form
@@ -172,7 +185,7 @@ export default function FacilityCertificatesPage() {
             if (fileInputRef.current) fileInputRef.current.value = ""
         } catch (err: any) {
             console.error("Unexpected upload error:", err)
-            toast.error("An unexpected error occurred. Please try again.")
+            toast.error("An unexpected error occurred.")
         } finally {
             setIsUploading(false)
         }
@@ -202,15 +215,30 @@ export default function FacilityCertificatesPage() {
     }
 
     if (loading) {
-        return <div className="p-8 text-center">Loading Compliance & Documents...</div>
+        return (
+            <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-[#D97706]" />
+                <p className="text-sm text-slate-500 font-medium">Loading Institutional Certificate & Compliance...</p>
+            </div>
+        )
     }
 
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-secondary">Compliance & Documents</h1>
-                <p className="text-muted-foreground">Upload and manage your institutional credentials, licenses, and safety policies.</p>
+                <h1 className="text-3xl font-bold tracking-tight text-secondary">Membership & Compliance</h1>
+                <p className="text-muted-foreground">Download your official institutional membership certificate and manage compliance credentials.</p>
             </div>
+
+            {/* Official Facility Membership Certificate Card */}
+            {certData && (
+                <FacilityCertificateCard
+                    certificateData={certData}
+                    facilityName={facilityDetails?.name || certData.recipientName}
+                    facilityType={facilityDetails?.facility_type || certData.facilityTypeKey || 'agency'}
+                    registrationNumber={facilityDetails?.registration_number || certData.studentIdOrRegNumber || certData.certificateNumber}
+                />
+            )}
 
             {/* Compliance Status Cards */}
             <div className="grid gap-6 md:grid-cols-3">
@@ -244,8 +272,8 @@ export default function FacilityCertificatesPage() {
                                         </a>
                                     </div>
                                 ) : (
-                                    <div className="text-destructive font-medium flex items-center gap-1.5 mt-2">
-                                        <ShieldAlert className="h-3.5 w-3.5" /> Action Required: Please upload.
+                                    <div className="text-amber-700 font-medium flex items-center gap-1.5 mt-2">
+                                        <ShieldAlert className="h-3.5 w-3.5" /> Optional compliance upload.
                                     </div>
                                 )}
                             </CardContent>
@@ -258,8 +286,8 @@ export default function FacilityCertificatesPage() {
                 {/* Upload Form */}
                 <Card className="lg:col-span-1 h-fit">
                     <CardHeader>
-                        <CardTitle>Upload Document</CardTitle>
-                        <CardDescription>Submit compliance files for administrator review.</CardDescription>
+                        <CardTitle>Upload Compliance File</CardTitle>
+                        <CardDescription>Submit updated institutional credentials or licenses.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div
@@ -334,16 +362,16 @@ export default function FacilityCertificatesPage() {
                 {/* Document List */}
                 <Card className="lg:col-span-2">
                     <CardHeader>
-                        <CardTitle>Repository</CardTitle>
-                        <CardDescription>All uploaded files and their current review status.</CardDescription>
+                        <CardTitle>Institutional Repository</CardTitle>
+                        <CardDescription>All submitted institutional files and regulatory documents.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
                             {documents.length === 0 ? (
                                 <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
                                     <FileText className="mx-auto h-12 w-12 mb-2 opacity-10" />
-                                    <p className="text-sm font-medium">No documents uploaded yet</p>
-                                    <p className="text-xs mt-1">Submit your verification documents using the upload panel.</p>
+                                    <p className="text-sm font-medium">No custom documents uploaded yet</p>
+                                    <p className="text-xs mt-1">Submit your optional regulatory files using the upload panel.</p>
                                 </div>
                             ) : (
                                 documents.map(doc => (
