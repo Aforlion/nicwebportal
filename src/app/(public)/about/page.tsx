@@ -120,17 +120,17 @@ export default function AboutPage() {
             <section className="py-20">
                 <div className="container mx-auto px-4">
                     <h2 className="mb-12 text-center text-3xl font-bold text-secondary">Governing Council & Management</h2>
-                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                         {[
-                            { name: "Victor Olusan", role: "President", desc: "Economist and ACA certified caregiver.", image: "/team/victor-olusan.jpg" },
-                            { name: "Mohammed Kazeem Oladimeji", role: "Vice President", desc: "Administrative expert and certified caregiver." },
-                            { name: "Alimot E. Afe", role: "Secretary", desc: "Lawyer and peace & conflict resolution focus." },
-                            { name: "Abraham P. Olanrewaju", role: "P.R.O/Strategy", desc: "Media and publicity expert." },
-                            { name: "Afolayan Olatunji Joel", role: "Program Director", desc: "Strategic program development and management.", image: "/team/afolayan-joel.jpg" },
-                            { name: "Zainab Gafar Babatunde", role: "Training Director", desc: "Registered Nurse and Midwife (RN, RM)." },
-                            { name: "Barr. Godwin Okuja", role: "Legal Adviser", desc: "Principal Partner at Okuja & Associates." },
-                            { name: "Dr. Mrs. Gladys Olufunke Etim", role: "Executive Director", desc: "Experienced organization leader." },
-                            { name: "Desmond Onyemechi Okocha", role: "Director", desc: "PhD in Mass Communication." },
+                            { name: "Victor Olusan", role: "Director-General", desc: "Economist and ACA certified caregiver.", image: "/team/victor-olusan.jpg" },
+                            { name: "Afolayan Olatunji Joel", role: "Executive Director, Programmes & Strategic Development", desc: "Strategic program development, institutional expansion, and management.", image: "/team/afolayan-joel.jpg" },
+                            { name: "Barr. Godwin Okuja", role: "Executive Director, Legal & Regulatory Affairs", desc: "Principal Partner at Okuja & Associates." },
+                            { name: "Abraham P. Olanrewaju", role: "Executive Director, Corporate Affairs & Communications", desc: "Media, publicity, and strategic corporate communications expert." },
+                            { name: "Mohammed Kazeem Oladimeji", role: "Executive Director, Operations & Administration", desc: "Administrative expert and certified caregiver." },
+                            { name: "Alimot E. Afe", role: "Executive Director, Regulatory Secretariat", desc: "Lawyer and peace & conflict resolution focus." },
+                            { name: "Zainab Gafar Babatunde", role: "Executive Director, Training & Accreditation", desc: "Registered Nurse and Midwife (RN, RM)." },
+                            { name: "Dr. Mrs. Gladys Olufunke Etim", role: "Executive Director, Institutional Governance", desc: "Experienced organization leader and strategist." },
+                            { name: "Desmond Onyemechi Okocha", role: "Executive Director, Research & Public Relations", desc: "PhD in Mass Communication." },
                         ].map((member) => (
                             <div key={member.name} className="flex flex-col items-center rounded-2xl border bg-background p-6 text-center shadow-sm hover:shadow-md transition-all duration-200">
                                 {member.image ? (
