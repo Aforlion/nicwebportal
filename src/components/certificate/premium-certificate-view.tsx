@@ -488,30 +488,6 @@ export default function PremiumCertificateView({ data, className = '' }: Premium
                 </p>
               </div>
 
-              {/* Official Gold Rosette Seal (Gold Sunburst Medallion from Image 2) */}
-              <div className="relative flex flex-col items-center justify-center flex-shrink-0">
-                <div className="relative w-22 h-22 rounded-full bg-gradient-to-tr from-[#78350f] via-[#f59e0b] to-[#fef3c7] p-1 shadow-2xl flex items-center justify-center border-2 border-amber-600">
-                  <div className="w-full h-full rounded-full border-2 border-amber-950/70 border-dashed flex flex-col items-center justify-center text-center p-1 bg-gradient-to-br from-[#d97706] via-[#b45309] to-[#78350f] text-white shadow-inner">
-                    <div className="w-full h-full rounded-full border border-amber-200/80 flex flex-col items-center justify-center p-1 bg-gradient-to-tr from-[#92400e] to-[#d97706]">
-                      <span className="text-[5.5px] font-extrabold tracking-widest text-amber-200 uppercase leading-none mb-0.5">
-                        NIC NIGERIA
-                      </span>
-                      <span className="text-amber-200 text-[8px] leading-none mb-0.5">★</span>
-                      <span className="text-[6.5px] font-black tracking-widest uppercase text-white leading-none">
-                        OFFICIAL
-                      </span>
-                      <span className="text-[6.5px] font-black tracking-widest uppercase text-amber-100 leading-none mt-0.5">
-                        SEAL
-                      </span>
-                      <div className="flex gap-0.5 mt-0.5">
-                        <span className="text-amber-200 text-[6px]">🌿</span>
-                        <span className="text-amber-200 text-[6px]">🌿</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
             </div>
 
           </div>
