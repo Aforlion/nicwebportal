@@ -416,53 +416,72 @@ export default function PremiumCertificateView({ data, className = '' }: Premium
 
         </div>
 
-        {/* FOOTER SECTION: SIGNATURES, SEAL & QR CODE */}
-        <div className="relative z-10 w-full flex items-end justify-between pt-1 border-t border-slate-200/90">
+        {/* FOOTER SECTION: SIGNATURE, OFFICIAL GOLD SEAL & QR CODE */}
+        <div className="relative z-10 w-full flex flex-col items-center pt-1 border-t border-slate-200/90">
           
-          {/* Bottom Left: QR Code & Verify Badge */}
-          <div className="flex flex-col items-center">
-            <div className="p-1 bg-white rounded-md border border-slate-200 shadow-sm">
-              <QRCodeDisplay value={data.verificationUrl} size={54} />
-            </div>
-            <div className="mt-1 bg-slate-900 text-white px-2 py-0.5 rounded text-[7px] font-bold tracking-wider uppercase">
-              SCAN TO VERIFY
-            </div>
-          </div>
-
-          {/* Bottom Center: Validity Disclaimer */}
-          <div className="text-center max-w-sm px-2">
-            <p className="text-[8.5px] font-medium text-slate-600 leading-tight">
-              This certificate is issued electronically and is valid without alteration.
-            </p>
-            <p className="text-[8.5px] font-bold text-slate-800 mt-0.5">
-              Verify authenticity at: <span className="underline font-mono text-[8.5px] text-[#B45309]">www.nicnigeria.org/verify</span>
-            </p>
-          </div>
-
-          {/* Bottom Right: Signature & Embossed Gold Seal */}
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="w-28 border-b border-slate-400 mb-0.5 ml-auto" />
-              <p className="text-[10.5px] font-bold text-slate-900 leading-tight">{data.signatoryName || 'Prof. M. A. Ojo'}</p>
-              <p className="text-[8px] text-slate-500 font-medium leading-tight">{data.signatoryTitle || 'Registrar General, NIC Nigeria'}</p>
+          <div className="w-full flex items-end justify-between px-2 mb-1">
+            
+            {/* Left Column: Signatory Signature & Title (The User) */}
+            <div className="flex flex-col items-start min-w-[170px]">
+              {/* Calligraphic Signature Stroke */}
+              <div className="h-8 flex items-end mb-1 pl-2">
+                <span className="font-serif italic font-extrabold text-xl text-slate-800 tracking-wide transform -rotate-2 select-none opacity-90">
+                  {data.signatoryName ? (data.signatoryName.split(' ')[0] + ' ' + (data.signatoryName.split(' ').pop() || '')) : 'Dr. J. Adebola'}
+                </span>
+              </div>
+              <div className="w-36 border-b-2 border-slate-800 mb-1" />
+              <p className="text-[11px] font-bold text-slate-900 leading-tight">
+                {data.signatoryName || 'Dr. Joshua A. Adebola'}
+              </p>
+              <p className="text-[8px] text-slate-500 font-semibold leading-tight">
+                {data.signatoryTitle || 'President & Chief Executive Officer'}
+              </p>
             </div>
 
-            {/* Embossed Official Seal Stamp */}
-            <div className="relative flex flex-col items-center flex-shrink-0">
-              <div className="relative w-15 h-15 rounded-full bg-gradient-to-tr from-[#78350f] via-[#f59e0b] to-[#fef3c7] p-[2px] shadow-md flex items-center justify-center">
-                <div className="w-full h-full rounded-full border border-amber-950/50 border-dashed flex flex-col items-center justify-center text-center p-0.5 bg-gradient-to-br from-[#d97706] via-[#b45309] to-[#78350f] text-white shadow-inner">
-                  <div className="w-full h-full rounded-full border border-amber-200/40 flex flex-col items-center justify-center p-0.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-amber-200 mb-0.5 drop-shadow-sm" />
-                    <span className="text-[5.5px] font-black tracking-wider uppercase text-amber-100 leading-none">
+            {/* Center Column: Official Embossed Gold Medallion Seal */}
+            <div className="relative flex flex-col items-center justify-center -mb-1 z-20">
+              {/* Gold Ribbon Tails */}
+              <div className="absolute -bottom-3 flex gap-1.5 pointer-events-none z-0">
+                <div className="w-3.5 h-6 bg-gradient-to-b from-[#d97706] via-[#b45309] to-[#78350f] transform -rotate-12 shadow-md border-t border-amber-300/40" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)' }} />
+                <div className="w-3.5 h-6 bg-gradient-to-b from-[#d97706] via-[#b45309] to-[#78350f] transform rotate-12 shadow-md border-t border-amber-300/40" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)' }} />
+              </div>
+
+              {/* Gold Sunburst Medallion */}
+              <div className="relative w-20 h-20 rounded-full bg-gradient-to-tr from-[#78350f] via-[#f59e0b] to-[#fef3c7] p-1 shadow-xl flex items-center justify-center border border-amber-600/50 z-10">
+                <div className="w-full h-full rounded-full border-2 border-amber-950/60 border-dashed flex flex-col items-center justify-center text-center p-1 bg-gradient-to-br from-[#d97706] via-[#b45309] to-[#78350f] text-white shadow-inner">
+                  <div className="w-full h-full rounded-full border border-amber-200/60 flex flex-col items-center justify-center p-1 bg-gradient-to-tr from-[#92400e] to-[#d97706]">
+                    <ShieldCheck className="w-4 h-4 text-amber-200 mb-0.5 drop-shadow" />
+                    <span className="text-[5.5px] font-black tracking-widest uppercase text-amber-100 leading-none">
                       OFFICIAL SEAL
                     </span>
-                    <span className="text-[4.5px] font-extrabold tracking-tight text-amber-200/90 leading-none mt-0.5">
+                    <span className="text-[5.5px] font-extrabold tracking-wider text-amber-200 leading-none mt-0.5">
                       NIC NIGERIA
                     </span>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Right Column: QR Code & Verification Badge */}
+            <div className="flex flex-col items-end min-w-[140px]">
+              <div className="p-1 bg-white rounded-lg border border-slate-300 shadow-md">
+                <QRCodeDisplay value={data.verificationUrl} size={54} />
+              </div>
+              <div className="mt-1 bg-slate-900 text-amber-400 px-2 py-0.5 rounded text-[7px] font-bold tracking-widest uppercase flex items-center gap-1 shadow-sm">
+                <ShieldCheck className="w-2.5 h-2.5" /> SCAN TO VERIFY
+              </div>
+            </div>
+
+          </div>
+
+          {/* Bottom Center: Validity Disclaimer */}
+          <div className="text-center w-full max-w-lg mt-1 pt-1 border-t border-slate-200/70">
+            <p className="text-[8px] font-medium text-slate-600 leading-tight">
+              This certificate is issued electronically and is valid without alteration.
+            </p>
+            <p className="text-[8px] font-bold text-slate-800 mt-0.5">
+              Verify authenticity at: <span className="underline font-mono text-[8px] text-[#B45309]">www.nicnigeria.org/verify</span>
+            </p>
           </div>
 
         </div>
