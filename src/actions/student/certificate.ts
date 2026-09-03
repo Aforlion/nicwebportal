@@ -151,7 +151,22 @@ export async function getCertificateByCode(code: string) {
         return null
     }
 
-    return cert
+    // Fetch exact verifiable Student/Member NIC ID from database
+    let studentId = null
+    if (cert.user_id) {
+        const { data: mem } = await supabaseAdmin
+            .from('memberships')
+            .select('nic_id, member_id')
+            .eq('user_id', cert.user_id)
+            .maybeSingle()
+
+        studentId = mem?.nic_id || mem?.member_id || null
+    }
+
+    return {
+        ...cert,
+        student_id: studentId
+    }
 }
 
 export async function getStudentCertificates() {

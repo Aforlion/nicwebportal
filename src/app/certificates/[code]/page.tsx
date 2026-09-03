@@ -51,9 +51,10 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
         issueDate: issueDateStr,
         duration: isFacility ? `12 Months (${issueYear} - ${issueYear + 1})` : `Lifetime Credential (Issued ${issueYear})`,
         verificationUrl,
-        studentIdOrRegNumber: cert.user_id ? `ID-${cert.user_id.substring(0, 7).toUpperCase()}` : `LIC-${code}`,
+        studentIdOrRegNumber: cert.student_id || (cert.user_id ? `NIC-STU-${cert.user_id.substring(0, 5).toUpperCase()}` : `LIC-${code}`),
         signatoryName: "Olatunji Joel",
         signatoryTitle: "Executive Director, Programmes",
+        signatorySignatureUrl: "/signature.png",
     }
 
     return (
