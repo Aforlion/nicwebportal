@@ -13,19 +13,19 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-async function checkPayments() {
-  const membershipId = '99cb01e9-40b4-4cf4-9cbb-207f278c0e5e'
-  const { data: payments, error } = await supabase
-    .from('payments')
-    .select('*')
-    .eq('membership_id', membershipId)
+async function findAdmin() {
+  console.log('Querying for admin/super_admin profiles...')
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('email, role')
+    .in('role', ['admin', 'super_admin'])
 
   if (error) {
-    console.error('Error fetching payments:', error.message)
+    console.error('Error fetching admins:', error.message)
     return
   }
 
-  console.log(`Payments for membership ${membershipId}:`, JSON.stringify(payments, null, 2))
+  console.log('Admin profiles:', data)
 }
 
-checkPayments()
+findAdmin()

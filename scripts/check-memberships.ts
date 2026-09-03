@@ -41,4 +41,4 @@ async function checkMemberships(email: string) {
   console.log(JSON.stringify(memberships, null, 2))
 }
 
-checkMemberships('vistingangelsnig@gmail.com')
+checkMemberships('igboamaka958@gmail.com')

@@ -488,11 +488,16 @@ export function TrainingAgencyDashboard({ facility, staffCount, courses }: Train
                 <div className="mt-8 border-t pt-8">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
                         <div>
-                            <h2 className="text-xl font-bold text-secondary flex items-center gap-2">
-                                <GraduationCap className="h-5 w-5 text-primary" />
-                                Accredited NIC Caregiver Curricula & Programs
-                            </h2>
-                            <p className="text-muted-foreground text-sm">Official NIC certification syllabi available for your institution to deliver.</p>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-xl font-bold text-secondary flex items-center gap-2">
+                                    <GraduationCap className="h-5 w-5 text-primary" />
+                                    Accredited NIC Caregiver Curricula & Programs
+                                </h2>
+                                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 font-bold text-[10px] uppercase">
+                                    25% Institutional Discount Applied
+                                </Badge>
+                            </div>
+                            <p className="text-muted-foreground text-sm">Official NIC certification syllabi available for your institution with automatic 25% Training Center discount.</p>
                         </div>
                         <Button variant="outline" size="sm" className="w-fit flex items-center gap-2 border-primary text-primary hover:bg-primary/5" asChild>
                             <a href="/programs">
@@ -503,49 +508,71 @@ export function TrainingAgencyDashboard({ facility, staffCount, courses }: Train
                     </div>
 
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {courses.map((course) => (
-                            <Card key={course.id} className="group overflow-hidden border border-muted hover:border-primary/30 hover:shadow-md transition-all flex flex-col h-full bg-white">
-                                <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                                    {course.thumbnail_url ? (
-                                        <Image 
-                                            src={course.thumbnail_url} 
-                                            alt={course.title}
-                                            fill
-                                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                        />
-                                    ) : (
-                                        <div className="absolute inset-0 bg-primary/5 flex items-center justify-center">
-                                            <GraduationCap className="h-10 w-10 text-primary/20" />
-                                        </div>
-                                    )}
-                                    <div className="absolute top-2 left-2">
-                                        <Badge className="bg-primary/90 text-white backdrop-blur text-[10px] uppercase font-bold py-0.5 px-2 border-none">
-                                            {course.level || 'Professional'}
-                                        </Badge>
-                                    </div>
-                                </div>
-                                <CardContent className="p-4 flex-1 flex flex-col justify-between">
-                                    <div>
-                                        <h3 className="font-bold text-secondary text-sm line-clamp-2 group-hover:text-primary transition-colors duration-200 mb-1" title={course.title}>
-                                            {course.title}
-                                        </h3>
-                                        <p className="text-xs text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
-                                            {course.description}
-                                        </p>
-                                    </div>
-                                    <div className="pt-3 border-t border-muted flex items-center justify-between mt-auto">
-                                        <div className="text-xs text-muted-foreground">
-                                            <span className="font-bold text-secondary">{course.duration_hours || 0} hrs</span> syllabus
+                        {courses.map((course) => {
+                            const rawPrice = Number(course.price) || 0
+                            const discountedPrice = Math.round(rawPrice * 0.75)
+                            return (
+                                <Card key={course.id} className="group overflow-hidden border border-muted hover:border-primary/30 hover:shadow-md transition-all flex flex-col h-full bg-white">
+                                    <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                                        {course.thumbnail_url ? (
+                                            <Image 
+                                                src={course.thumbnail_url} 
+                                                alt={course.title}
+                                                fill
+                                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                            />
+                                        ) : (
+                                            <div className="absolute inset-0 bg-primary/5 flex items-center justify-center">
+                                                <GraduationCap className="h-10 w-10 text-primary/20" />
+                                            </div>
+                                        )}
+                                        <div className="absolute top-2 left-2 flex gap-1.5 flex-wrap">
+                                            <Badge className="bg-primary/90 text-white backdrop-blur text-[10px] uppercase font-bold py-0.5 px-2 border-none">
+                                                {course.level || 'Professional'}
+                                            </Badge>
+                                            {rawPrice > 0 && (
+                                                <Badge className="bg-emerald-600 text-white backdrop-blur text-[10px] uppercase font-bold py-0.5 px-2 border-none">
+                                                    25% OFF TC Rate
+                                                </Badge>
+                                            )}
                                         </div>
                                     </div>
-                                </CardContent>
-                                <div className="p-4 pt-0">
-                                    <Button variant="outline" size="sm" className="w-full text-xs font-semibold group-hover:bg-primary group-hover:text-white transition-all border-primary/25 group-hover:border-primary" asChild>
-                                        <a href={`/programs/${course.slug}`}>View Official Syllabus</a>
-                                    </Button>
-                                </div>
-                            </Card>
-                        ))}
+                                    <CardContent className="p-4 flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <h3 className="font-bold text-secondary text-sm line-clamp-2 group-hover:text-primary transition-colors duration-200 mb-1" title={course.title}>
+                                                {course.title}
+                                            </h3>
+                                            <p className="text-xs text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
+                                                {course.description}
+                                            </p>
+                                        </div>
+                                        <div className="pt-3 border-t border-muted flex items-center justify-between mt-auto">
+                                            <div className="text-xs text-muted-foreground">
+                                                <span className="font-bold text-secondary">{course.duration_hours || 0} hrs</span> syllabus
+                                            </div>
+                                            {rawPrice > 0 ? (
+                                                <div className="text-right">
+                                                    <span className="text-[10px] text-muted-foreground line-through block">₦{rawPrice.toLocaleString()}</span>
+                                                    <span className="text-sm font-extrabold text-emerald-700 block">₦{discountedPrice.toLocaleString()}</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs font-bold text-emerald-600">Free</span>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                    <div className="p-4 pt-0 space-y-2">
+                                        <Button size="sm" className="w-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white" asChild>
+                                            <a href={`/portal/student/enroll/${course.id}`}>
+                                                Enroll Now ({rawPrice > 0 ? `₦${discountedPrice.toLocaleString()}` : 'Free'})
+                                            </a>
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground hover:text-primary" asChild>
+                                            <a href={`/programs/${course.slug}`}>View Syllabus Outline</a>
+                                        </Button>
+                                    </div>
+                                </Card>
+                            )
+                        })}
                     </div>
                 </div>
             )}

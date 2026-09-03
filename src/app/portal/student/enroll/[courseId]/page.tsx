@@ -3,11 +3,13 @@ import { cookies } from "next/headers"
 import { notFound, redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import PaystackButton from "@/components/enrollment/paystack-button"
 import EnrollFreeButton from "@/components/enrollment/enroll-free-button"
-import { Check, ShieldCheck, Clock, BookOpen, User, Lock, AlertCircle } from "lucide-react"
+import { Check, ShieldCheck, Clock, BookOpen, User, Lock, AlertCircle, Sparkles, Tag } from "lucide-react"
 import { getStudentLevel } from "@/actions/get-student-progress"
 import { isEligibleForCourse } from "@/lib/level-utils"
+import { checkTrainingCenterDiscount } from "@/lib/discounts"
 
 export default async function EnrollmentPage({ params }: { params: Promise<{ courseId: string }> }) {
     const { courseId } = await params
@@ -61,6 +63,9 @@ export default async function EnrollmentPage({ params }: { params: Promise<{ cou
         userEmail: user.email
     })
 
+    // Check Institutional Training Center 25% Discount
+    const discountInfo = await checkTrainingCenterDiscount(supabase, user.id, course.price)
+
     const benefits = [
         "Full access to all course materials",
         "Certificate of completion",
@@ -107,20 +112,41 @@ export default async function EnrollmentPage({ params }: { params: Promise<{ cou
                 <div className="md:pl-8">
                     <Card className="border-2 shadow-lg sticky top-24">
                         <CardHeader>
-                            <CardTitle>Order Summary</CardTitle>
+                            <div className="flex items-center justify-between">
+                                <CardTitle>Order Summary</CardTitle>
+                                {discountInfo.isTrainingCenter && (
+                                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 font-bold text-xs flex items-center gap-1">
+                                        <Sparkles className="h-3 w-3 text-emerald-600" />
+                                        25% TC DISCOUNT
+                                    </Badge>
+                                )}
+                            </div>
                             <CardDescription>Review your enrollment details.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex justify-between items-center py-2 border-b">
-                                <span className="font-medium text-muted-foreground">Course Price</span>
-                                <span className="text-xl font-bold">
+                                <span className="font-medium text-muted-foreground">Standard Course Price</span>
+                                <span className={`text-xl font-bold ${discountInfo.isTrainingCenter ? 'line-through text-muted-foreground' : ''}`}>
                                     {course.price > 0 ? `₦${course.price.toLocaleString()}` : "Free"}
                                 </span>
                             </div>
+
+                            {discountInfo.isTrainingCenter && (
+                                <div className="flex justify-between items-center py-2 border-b bg-emerald-50/50 p-2.5 rounded-lg text-emerald-900 text-sm">
+                                    <span className="font-semibold flex items-center gap-1">
+                                        <Tag className="h-4 w-4 text-emerald-600" />
+                                        Training Center Discount (25%)
+                                    </span>
+                                    <span className="font-bold text-emerald-700">
+                                        -₦{discountInfo.discountAmount.toLocaleString()}
+                                    </span>
+                                </div>
+                            )}
+
                             <div className="flex justify-between items-center py-2">
                                 <span className="font-medium">Total Due</span>
                                 <span className="text-2xl font-bold text-primary">
-                                    {course.price > 0 ? `₦${course.price.toLocaleString()}` : "Free"}
+                                    {discountInfo.finalPrice > 0 ? `₦${discountInfo.finalPrice.toLocaleString()}` : "Free"}
                                 </span>
                             </div>
 
@@ -158,10 +184,10 @@ export default async function EnrollmentPage({ params }: { params: Promise<{ cou
                                 </div>
                             ) : (
                                 <>
-                                    {course.price > 0 ? (
+                                    {discountInfo.finalPrice > 0 ? (
                                         <PaystackButton
                                             courseId={course.id}
-                                            amount={course.price}
+                                            amount={discountInfo.finalPrice}
                                             courseTitle={course.title}
                                             email={user.email || ""}
                                         />

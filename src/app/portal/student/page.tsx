@@ -135,19 +135,36 @@ export default async function StudentDashboard() {
                             value: (enrollments || []).filter((e: any) => e?.status === 'completed').length.toString(),
                             icon: Award,
                             color: "text-accent",
-                            bg: "bg-accent/10"
+                            bg: "bg-accent/10",
+                            href: "/portal/student/certificates"
                         },
-                    ].map((stat) => (
-                        <Card key={stat.title}>
-                            <CardContent className="flex items-center gap-4 p-6">
-                                <div className={`${stat.bg} flex h-12 w-12 items-center justify-center rounded-xl`}>
-                                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                                    <div className="text-2xl font-bold text-secondary">{stat.value}</div>
-                                </div>
-                            </CardContent>
+                    ].map((stat: any) => (
+                        <Card key={stat.title} className={stat.href ? "hover:border-primary/40 transition-all group" : ""}>
+                            {stat.href ? (
+                                <Link href={stat.href}>
+                                    <CardContent className="flex items-center gap-4 p-6">
+                                        <div className={`${stat.bg} flex h-12 w-12 items-center justify-center rounded-xl`}>
+                                            <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-muted-foreground flex items-center gap-1 group-hover:text-primary transition-colors">
+                                                {stat.title} <ArrowRight className="h-3 w-3" />
+                                            </p>
+                                            <div className="text-2xl font-bold text-secondary">{stat.value}</div>
+                                        </div>
+                                    </CardContent>
+                                </Link>
+                            ) : (
+                                <CardContent className="flex items-center gap-4 p-6">
+                                    <div className={`${stat.bg} flex h-12 w-12 items-center justify-center rounded-xl`}>
+                                        <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                                        <div className="text-2xl font-bold text-secondary">{stat.value}</div>
+                                    </div>
+                                </CardContent>
+                            )}
                         </Card>
                     ))}
                 </div>

@@ -430,13 +430,12 @@ export default function PremiumCertificateView({ data, className = '' }: Premium
           </div>
 
           {/* Bottom Center: Validity Disclaimer */}
-          <div className="text-center max-w-xs px-2">
-            <p className="text-[8px] text-slate-500 leading-tight">
-              This certificate is issued electronically under the authority of the National Institute of Caregivers (NIC Nigeria) 
-              and is valid without alteration.
+          <div className="text-center max-w-sm px-2">
+            <p className="text-[8.5px] font-medium text-slate-600 leading-tight">
+              This certificate is issued electronically and is valid without alteration.
             </p>
-            <p className="text-[8px] font-semibold text-slate-700 mt-0.5">
-              Verify authenticity at: <span className="underline font-mono text-[8px] text-[#D97706]">nicnigeria.org/verify</span>
+            <p className="text-[8.5px] font-bold text-slate-800 mt-0.5">
+              Verify authenticity at: <span className="underline font-mono text-[8.5px] text-[#B45309]">www.nicnigeria.org/verify</span>
             </p>
           </div>
 
@@ -449,15 +448,19 @@ export default function PremiumCertificateView({ data, className = '' }: Premium
             </div>
 
             {/* Embossed Official Seal Stamp */}
-            <div className="relative w-13 h-13 rounded-full bg-gradient-to-tr from-[#b45309] via-[#f59e0b] to-[#fef3c7] p-0.5 shadow-sm flex items-center justify-center flex-shrink-0">
-              <div className="w-full h-full rounded-full border border-amber-900/40 border-dashed flex flex-col items-center justify-center text-center p-0.5 bg-gradient-to-br from-[#d97706] to-[#b45309] text-white">
-                <Award className="w-3.5 h-3.5 text-amber-200 mb-0.5" />
-                <span className="text-[5px] font-black tracking-widest uppercase text-amber-100 leading-none">
-                  NIC OFFICIAL
-                </span>
-                <span className="text-[5px] font-extrabold tracking-tighter text-white leading-none">
-                  SEAL
-                </span>
+            <div className="relative flex flex-col items-center flex-shrink-0">
+              <div className="relative w-15 h-15 rounded-full bg-gradient-to-tr from-[#78350f] via-[#f59e0b] to-[#fef3c7] p-[2px] shadow-md flex items-center justify-center">
+                <div className="w-full h-full rounded-full border border-amber-950/50 border-dashed flex flex-col items-center justify-center text-center p-0.5 bg-gradient-to-br from-[#d97706] via-[#b45309] to-[#78350f] text-white shadow-inner">
+                  <div className="w-full h-full rounded-full border border-amber-200/40 flex flex-col items-center justify-center p-0.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-200 mb-0.5 drop-shadow-sm" />
+                    <span className="text-[5.5px] font-black tracking-wider uppercase text-amber-100 leading-none">
+                      OFFICIAL SEAL
+                    </span>
+                    <span className="text-[4.5px] font-extrabold tracking-tight text-amber-200/90 leading-none mt-0.5">
+                      NIC NIGERIA
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

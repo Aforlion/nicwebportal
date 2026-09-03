@@ -14,24 +14,38 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function checkTables() {
-  const { count: programsCount, error: pError } = await supabase
-    .from('programs')
-    .select('*', { count: 'exact', head: true })
-  
-  const { count: coursesCount, error: cError } = await supabase
-    .from('courses')
-    .select('*', { count: 'exact', head: true })
+  console.log('Replacing protect_profile_roles trigger function...')
 
-  console.log(`Programs count: ${programsCount} (Error: ${pError?.message})`)
-  console.log(`Courses count: ${coursesCount} (Error: ${cError?.message})`)
+  const sql = `
+CREATE OR REPLACE FUNCTION protect_profile_roles()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Allow service_role to change roles
+    IF auth.role() = 'service_role' THEN
+        RETURN NEW;
+    END IF;
 
-  // Check columns of programs
-  const { data: programs } = await supabase.from('programs').select('*').limit(2)
-  console.log('Programs sample:', JSON.stringify(programs, null, 2))
+    IF (OLD.role IS DISTINCT FROM NEW.role) AND 
+       NOT EXISTS (
+           SELECT 1 FROM profiles 
+           WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
+       ) THEN
+        RAISE EXCEPTION 'Only admins can change user roles';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+  `
 
-  // Check columns of courses
-  const { data: courses } = await supabase.from('courses').select('*').limit(2)
-  console.log('Courses sample:', JSON.stringify(courses, null, 2))
+  const { data, error } = await supabase.rpc('exec_sql', {
+    sql_query: sql
+  })
+
+  if (error) {
+    console.error('Error running exec_sql RPC:', error.message)
+  } else {
+    console.log('Successfully updated protect_profile_roles function!', data)
+  }
 }
 
 checkTables()

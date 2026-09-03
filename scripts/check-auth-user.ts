@@ -54,4 +54,4 @@ async function checkAuthUser(email: string) {
   }
 }
 
-checkAuthUser('vistingangelsnig@gmail.com')
+checkAuthUser('telldirector@live.com')

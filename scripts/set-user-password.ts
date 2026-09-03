@@ -14,8 +14,8 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function setPassword() {
-  const email = 'vistingangelsnig@gmail.com'
-  const newPassword = 'Vistingangelsnig@Vmaris12'
+  const email = 'gofrank333@gmail.com'
+  const newPassword = 'Frank@NIC2026!'
 
   console.log(`Searching for user with email: ${email}...`)
   

@@ -14,7 +14,8 @@ import {
     GraduationCap,
     BookOpen,
     AlertCircle,
-    ArrowRight
+    ArrowRight,
+    Award
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -136,6 +137,11 @@ export default function MemberDashboardClient({ data }: MemberDashboardClientPro
                             <Button className="w-full bg-primary justify-start" asChild>
                                 <Link href="/portal/member/id-card">
                                     <Download className="mr-2 h-4 w-4" /> Download Digital ID
+                                </Link>
+                            </Button>
+                            <Button variant="outline" className="w-full justify-start border-[#D97706]/30 hover:bg-[#D97706]/10 text-[#B45309] font-bold" asChild>
+                                <Link href="/portal/member/certificates">
+                                    <Award className="mr-2 h-4 w-4 text-[#D97706]" /> View / Download Certificates
                                 </Link>
                             </Button>
                             <Button variant="outline" className="w-full justify-start" asChild>

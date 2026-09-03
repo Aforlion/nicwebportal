@@ -6,8 +6,8 @@ import { checkRateLimit } from "@/lib/rate-limit"
 import logger from "@/lib/logger"
 
 export async function loginAction(formData: FormData) {
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
+    const email = (formData.get("email") as string)?.trim().toLowerCase()
+    const password = (formData.get("password") as string)?.trim()
 
     if (!email || !password) {
         return { success: false, error: "Email and password are required" }

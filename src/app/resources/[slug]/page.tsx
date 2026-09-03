@@ -16,9 +16,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
 interface ResourceDetailPageProps {
-    params: {
+    params: Promise<{
         slug: string
-    }
+    }>
 }
 
 export default async function ResourceDetailPage({ params }: ResourceDetailPageProps) {

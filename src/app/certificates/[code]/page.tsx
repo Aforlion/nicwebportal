@@ -14,8 +14,11 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
         notFound()
     }
 
-    const recipientName = (cert.profiles as any)?.full_name || (cert.profiles as any)?.email || (cert.facilities as any)?.name || "Recipient"
-    const courseTitle = (cert.programs as any)?.title || (cert.courses as any)?.title || "NIC Certification Program"
+    const isNCNA = cert.type === 'ncna' || (cert.certificate_number && cert.certificate_number.startsWith('NCNA'))
+    const isFacility = cert.type === 'facility_membership' || cert.facility_id
+
+    const recipientName = (cert.profiles as any)?.full_name?.trim() || (cert.profiles as any)?.email || (cert.facilities as any)?.name || "Recipient"
+    const courseTitle = (cert.programs as any)?.title || (cert.courses as any)?.title || (isNCNA ? "National Certified Nursing Assistant (NCNA)" : cert.course_level || "NIC Certification Program")
 
     // Absolute URL for QR code (prioritize env vars, fallback to dynamic request URL)
     const headersList = await getHeaders()
@@ -24,9 +27,6 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
     const dynamicAppUrl = `${protocol}://${host}`
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || dynamicAppUrl
     const verificationUrl = `${appUrl}/certificates/${code}`
-
-    const isNCNA = cert.type === 'ncna'
-    const isFacility = cert.type === 'facility_membership' || cert.facility_id
 
     // Construct PremiumCertificateData structure for the view component
     let typeKey: FacilityTypeKey = 'general'

@@ -108,7 +108,7 @@ export default function PublicVerifyPage() {
                     return
                 }
 
-                // 3. Search for Course Certificate
+                // 3. Search for Course & NCNA Certificate
                 const { data: courseCert, error: courseError } = await supabase
                     .from('certificates')
                     .select('*, profiles(full_name), programs(title)')
@@ -118,17 +118,18 @@ export default function PublicVerifyPage() {
                 if (courseError) console.error("Course cert search error:", courseError)
 
                 if (courseCert) {
+                    const isNCNA = courseCert.type === 'ncna' || courseCert.certificate_number?.startsWith('NCNA')
                     setResult({
                         success: true,
-                        type: "Course Certificate",
-                        name: (courseCert.profiles as any)?.full_name || "N/A",
+                        type: isNCNA ? "National Certified Nursing Assistant License" : "Professional Certificate",
+                        name: (courseCert.profiles as any)?.full_name?.trim() || "N/A",
                         status: courseCert.is_verified ? "Verified" : "Under Review",
-                        expiry: "Permanent",
-                        specialization: (courseCert.programs as any)?.title || "NIC Training",
+                        expiry: "Permanent Credential",
+                        specialization: (courseCert.programs as any)?.title || courseCert.course_level || (isNCNA ? "National Certified Nursing Assistant (NCNA)" : "NIC Certification"),
                         certNumber: courseCert.certificate_number,
-                        issueDate: new Date(courseCert.issue_date).toLocaleDateString()
+                        issueDate: courseCert.issue_date ? new Date(courseCert.issue_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : "N/A"
                     })
-                    toast.success("Course certificate verified!")
+                    toast.success(isNCNA ? "NCNA License verified successfully!" : "Certificate verified successfully!")
                     return
                 }
 

@@ -4,9 +4,9 @@ import { env } from "@/env"
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { nicId: string } }
+    { params }: { params: Promise<{ nicId: string }> }
 ) {
-    const { nicId } = params
+    const { nicId } = await params
 
     if (!nicId) {
         return NextResponse.json(

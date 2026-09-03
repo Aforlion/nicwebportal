@@ -7,7 +7,7 @@ import { ShieldCheck, Calendar, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
-export default async function FacilityInspectionPage({ params }: { params: { id: string } }) {
+export default async function FacilityInspectionPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
