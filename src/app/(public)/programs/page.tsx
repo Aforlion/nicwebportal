@@ -17,9 +17,16 @@ export default async function ProgramsPage() {
                     <h1 className="mb-6 text-4xl font-extrabold tracking-tight md:text-5xl">
                         Training & Certifications
                     </h1>
-                    <p className="mx-auto max-w-2xl text-lg opacity-90">
+                    <p className="mx-auto max-w-2xl text-lg opacity-90 mb-6">
                         Elevate your career with our nationally recognized caregiver training programs. From foundational skills to specialized care management.
                     </p>
+                    <div className="flex flex-wrap items-center justify-center gap-4">
+                        <Link href="/programs/cpd">
+                            <Button className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm px-6 shadow-md">
+                                Browse 15+ CPD Micro-Credentials ➔
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
             </section>
  

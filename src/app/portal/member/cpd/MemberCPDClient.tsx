@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import {
     FilePlus, History, Award, CheckCircle2,
-    Search, ExternalLink, Clock, X, Loader2, AlertCircle
+    Search, ExternalLink, Clock, X, Loader2, AlertCircle, Sparkles, ArrowUpRight
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { logCPDActivity } from "@/actions/member/cpd"
@@ -143,6 +143,30 @@ export default function MemberCPDClient({
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Official NIC CPD Micro-Credentials Library Banner */}
+            <Card className="border-2 border-amber-500/30 bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 text-white shadow-lg overflow-hidden">
+                <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="space-y-2">
+                        <div className="inline-flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                            <Sparkles className="w-3 h-3" /> OFFICIAL NIC CPD LIBRARY
+                        </div>
+                        <h3 className="text-2xl font-serif font-bold text-amber-300">
+                            15 Professional CPD Micro-Credentials
+                        </h3>
+                        <p className="text-slate-300 text-xs max-w-2xl leading-relaxed">
+                            Access publication-ready curriculum handbooks, complete modules, and earn official CPD points toward your annual membership renewal compliance.
+                        </p>
+                    </div>
+
+                    <a href="/programs/cpd" target="_blank" rel="noopener noreferrer">
+                        <Button className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-md flex items-center gap-1.5 whitespace-nowrap">
+                            <span>Browse 15 CPD Courses</span>
+                            <ArrowUpRight className="w-4 h-4" />
+                        </Button>
+                    </a>
+                </CardContent>
+            </Card>
 
             {/* No membership warning */}
             {!membershipId && (
