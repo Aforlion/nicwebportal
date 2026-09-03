@@ -52,8 +52,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
         duration: isFacility ? `12 Months (${issueYear} - ${issueYear + 1})` : `Lifetime Credential (Issued ${issueYear})`,
         verificationUrl,
         studentIdOrRegNumber: cert.user_id ? `ID-${cert.user_id.substring(0, 7).toUpperCase()}` : `LIC-${code}`,
-        signatoryName: "Dr. Joshua A. Adebola",
-        signatoryTitle: "President & Chief Executive Officer, NIC Nigeria",
+        signatoryName: "Olatunji Joel",
+        signatoryTitle: "Executive Director, Programmes",
     }
 
     return (

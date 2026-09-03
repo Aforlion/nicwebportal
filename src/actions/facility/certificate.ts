@@ -100,8 +100,8 @@ export async function getFacilityCertificateDetails(targetFacilityId?: string) {
       duration,
       verificationUrl,
       studentIdOrRegNumber: facility.registration_number || facility.institution_code || `FAC-${facility.id.substring(0, 6)}`,
-      signatoryName: 'Dr. Joshua A. Adebola',
-      signatoryTitle: 'President & Chief Executive Officer, NIC Nigeria',
+      signatoryName: 'Olatunji Joel',
+      signatoryTitle: 'Executive Director, Programmes',
     }
 
     return {

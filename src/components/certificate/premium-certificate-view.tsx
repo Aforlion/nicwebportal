@@ -421,20 +421,20 @@ export default function PremiumCertificateView({ data, className = '' }: Premium
           
           <div className="w-full flex items-end justify-between px-2 mb-1">
             
-            {/* Left Column: Signatory Signature & Title (The User) */}
+            {/* Left Column: Signatory Signature & Title */}
             <div className="flex flex-col items-start min-w-[170px]">
               {/* Calligraphic Signature Stroke */}
               <div className="h-8 flex items-end mb-1 pl-2">
                 <span className="font-serif italic font-extrabold text-xl text-slate-800 tracking-wide transform -rotate-2 select-none opacity-90">
-                  {data.signatoryName ? (data.signatoryName.split(' ')[0] + ' ' + (data.signatoryName.split(' ').pop() || '')) : 'Dr. J. Adebola'}
+                  {data.signatoryName || 'Olatunji Joel'}
                 </span>
               </div>
               <div className="w-36 border-b-2 border-slate-800 mb-1" />
               <p className="text-[11px] font-bold text-slate-900 leading-tight">
-                {data.signatoryName || 'Dr. Joshua A. Adebola'}
+                {data.signatoryName || 'Olatunji Joel'}
               </p>
               <p className="text-[8px] text-slate-500 font-semibold leading-tight">
-                {data.signatoryTitle || 'President & Chief Executive Officer'}
+                {data.signatoryTitle || 'Executive Director, Programmes'}
               </p>
             </div>
 
