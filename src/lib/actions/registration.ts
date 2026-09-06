@@ -244,7 +244,7 @@ export async function finalizeRegistrationAction(reference: string) {
             }
 
             // 3.5 Create Membership Record
-            const { error: membershipError } = await supabase
+            const { data: memData, error: membershipError } = await adminClient
                 .from('memberships')
                 .insert({
                     user_id: userId,
@@ -254,11 +254,39 @@ export async function finalizeRegistrationAction(reference: string) {
                     last_payment_date: new Date().toISOString(),
                     last_payment_reference: reference,
                     expiry_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
-                });
+                })
+                .select('id')
+                .maybeSingle();
 
             if (membershipError) {
                 logger.error("Membership Creation Error", { error: membershipError, email, pendingId });
                 // We'll continue anyway as auth is created, but log it
+            }
+
+            let membershipId = memData?.id
+            if (!membershipId) {
+                const { data: existingMem } = await adminClient
+                    .from('memberships')
+                    .select('id')
+                    .eq('user_id', userId)
+                    .maybeSingle()
+                membershipId = existingMem?.id
+            }
+
+            // 3.6 Record Payment in payments table
+            if (membershipId) {
+                const paidAmount = verification.data?.amount ? (verification.data.amount / 100) : (fd.category === 'student' ? 35000 : 50000)
+                await adminClient
+                    .from('payments')
+                    .insert({
+                        membership_id: membershipId,
+                        amount: paidAmount,
+                        payment_type: 'membership_dues',
+                        payment_method: 'paystack',
+                        transaction_reference: reference,
+                        status: 'completed',
+                        payment_date: new Date().toISOString()
+                    })
             }
 
             await adminClient
@@ -397,7 +425,7 @@ export async function finalizeRegistrationAction(reference: string) {
             }
 
             // 4. Create Institutional Membership (use adminClient to bypass RLS)
-            const { error: membershipError } = await adminClient
+            const { data: facMemData, error: membershipError } = await adminClient
                 .from('memberships')
                 .insert({
                     user_id: ownerId,
@@ -407,10 +435,38 @@ export async function finalizeRegistrationAction(reference: string) {
                     last_payment_date: new Date().toISOString(),
                     last_payment_reference: reference,
                     expiry_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
-                });
+                })
+                .select('id')
+                .maybeSingle();
 
             if (membershipError) {
                 logger.error("Facility Membership Creation Error", { error: membershipError, pendingId });
+            }
+
+            let facilityMembershipId = facMemData?.id
+            if (!facilityMembershipId) {
+                const { data: existingFacMem } = await adminClient
+                    .from('memberships')
+                    .select('id')
+                    .eq('user_id', ownerId)
+                    .maybeSingle()
+                facilityMembershipId = existingFacMem?.id
+            }
+
+            // 4.5 Create Payment Record for Facility
+            if (facilityMembershipId) {
+                const paidAmount = verification.data?.amount ? (verification.data.amount / 100) : 100000
+                await adminClient
+                    .from('payments')
+                    .insert({
+                        membership_id: facilityMembershipId,
+                        amount: paidAmount,
+                        payment_type: 'facility_registration',
+                        payment_method: 'paystack',
+                        transaction_reference: reference,
+                        status: 'completed',
+                        payment_date: new Date().toISOString()
+                    })
             }
 
             // 4. Mark Pending as Completed
