@@ -81,14 +81,55 @@ export default function PublicFAQPage() {
     }
   }
 
-  const filteredArticles = articles.filter((art) => {
-    const matchesCategory = selectedCategory === "all" || art.category === selectedCategory;
-    const matchesSearch =
-      art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      art.short_answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      art.content_markdown.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  // Tokenized & Synonym-Aware Search Logic
+  const getFilteredArticles = () => {
+    const rawQuery = searchQuery.trim().toLowerCase();
+
+    if (!rawQuery) {
+      return articles.filter(
+        (art) => selectedCategory === "all" || art.category === selectedCategory
+      );
+    }
+
+    // Tokenize search query & handle spelling variants (enrol/enroll, etc.)
+    const queryTokens = rawQuery
+      .replace(/enrolment|enrollment|enrolling|enrolled/g, "enrol enroll register")
+      .replace(/programmes|programs/g, "programme program course")
+      .split(/\s+/)
+      .filter((t) => t.length > 1);
+
+    const scored = articles.map((art) => {
+      const title = art.title.toLowerCase();
+      const shortAns = art.short_answer.toLowerCase();
+      const content = art.content_markdown.toLowerCase();
+      const category = art.category.toLowerCase();
+      const slug = art.slug.toLowerCase();
+
+      let score = 0;
+
+      queryTokens.forEach((token) => {
+        if (title.includes(token)) score += 5;
+        if (shortAns.includes(token)) score += 3;
+        if (slug.includes(token)) score += 3;
+        if (category.includes(token)) score += 2;
+        if (content.includes(token)) score += 1;
+      });
+
+      // Bonus if category filter matches
+      if (selectedCategory !== "all" && art.category === selectedCategory) {
+        score += 2;
+      }
+
+      return { article: art, score };
+    });
+
+    return scored
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((item) => item.article);
+  };
+
+  const filteredArticles = getFilteredArticles();
 
   const handleFeedback = async (articleId: string, isHelpful: boolean) => {
     if (feedbackGiven[articleId]) return;
@@ -127,10 +168,10 @@ export default function PublicFAQPage() {
             <Sparkles className="h-3.5 w-3.5 text-amber-400" /> NIC Knowledge Hub & Admissions Guide
           </div>
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white max-w-3xl mx-auto">
-            Everything You Need to Know About NIC Pathways & Admissions
+            Frequently Asked Questions & Admissions Knowledge
           </h1>
           <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto">
-            Verified, accurate information on Nursing Assistant certification, clinical internships in Abuja & Lagos, fees, and international qualification verification.
+            Verified answers on Nursing Assistant certification, clinical internships in Abuja & Lagos, fees, and international qualification verification.
           </p>
 
           {/* Search Bar */}
@@ -139,11 +180,19 @@ export default function PublicFAQPage() {
               <Search className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search queries (e.g. fees, clinical internship, US EB-3, QQI Ireland)..."
+                placeholder="Search queries (e.g. how to enrol, fees, clinical internship, US EB-3, QQI Ireland)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-2xl border-0 bg-white/95 text-slate-900 pl-12 pr-4 py-3.5 text-base shadow-lg focus:ring-2 focus:ring-emerald-400 outline-none placeholder:text-slate-400"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-4 top-3.5 text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded-full"
+                >
+                  Clear Search
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -156,14 +205,17 @@ export default function PublicFAQPage() {
             return (
               <button
                 key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => {
+                  setSelectedCategory(cat.id);
+                  setSearchQuery(""); // Clear search query when changing explicit topic tab
+                }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-                  isSelected
+                  isSelected && !searchQuery
                     ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 scale-105"
                     : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
                 }`}
               >
-                <Icon className={`h-4 w-4 ${isSelected ? "text-white" : "text-emerald-600"}`} />
+                <Icon className={`h-4 w-4 ${isSelected && !searchQuery ? "text-white" : "text-emerald-600"}`} />
                 {cat.name}
               </button>
             );
@@ -173,20 +225,32 @@ export default function PublicFAQPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Main FAQ Accordion List (2 cols) */}
           <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-emerald-600" />
-              Frequently Asked Questions ({filteredArticles.length})
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <HelpCircle className="h-5 w-5 text-emerald-600" />
+                {searchQuery ? `Search Results for "${searchQuery}"` : "Frequently Asked Questions"}{" "}
+                <span className="text-sm text-slate-500 font-normal">({filteredArticles.length})</span>
+              </h2>
+            </div>
 
             {isLoading ? (
               <div className="text-center py-12 text-slate-500">Loading verified answers...</div>
             ) : filteredArticles.length === 0 ? (
-              <div className="bg-white rounded-2xl border p-8 text-center text-slate-500 space-y-3">
+              <div className="bg-white rounded-2xl border p-8 text-center text-slate-500 space-y-3 shadow-sm">
                 <HelpCircle className="h-10 w-10 text-slate-300 mx-auto" />
-                <p className="font-semibold text-slate-700">No matching questions found.</p>
-                <p className="text-xs text-slate-500">
-                  Try searching for terms like "fees", "internship", "Abuja", "certificate", or "EB-3".
+                <p className="font-semibold text-slate-700">No matching questions found for "{searchQuery}".</p>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Try searching with keywords like <strong>"enrol"</strong>, <strong>"fees"</strong>, <strong>"internship"</strong>, <strong>"Abuja"</strong>, or <strong>"certificate"</strong>.
                 </p>
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedCategory("all");
+                  }}
+                  className="px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors inline-block"
+                >
+                  View All Questions
+                </button>
               </div>
             ) : (
               <div className="space-y-3">

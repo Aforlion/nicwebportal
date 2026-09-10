@@ -150,6 +150,28 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* FEATURED FAQ SECTION */}
+      <section className="bg-slate-900 text-white py-16">
+        <div className="container mx-auto px-4 text-center max-w-4xl space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold uppercase tracking-wider border border-emerald-500/30">
+            Admissions & Student Help Center
+          </div>
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+            Have Questions About Enrolment, Clinical Placements, or Fees?
+          </h2>
+          <p className="text-slate-300 text-base max-w-2xl mx-auto">
+            Get instant, verified answers on Nursing Assistant certification, clinical internships in Abuja & Lagos, total pathway fees (₦505,000 – ₦555,000), and international credential verification.
+          </p>
+          <div className="pt-2">
+            <Link href="/faq">
+              <button className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-base font-extrabold px-8 py-4 rounded-xl shadow-lg shadow-emerald-500/20 transition-all inline-flex items-center gap-2">
+                Browse FAQ & Admissions Hub <ArrowRight className="h-5 w-5" />
+              </button>
+            </Link>
+          </div>
+        </div>
+      </section>
     </>
   )
 }

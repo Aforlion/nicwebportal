@@ -50,6 +50,7 @@ export function Footer() {
                     <div>
                         <h3 className="mb-6 text-base font-bold uppercase tracking-wider text-white">Quick Links</h3>
                         <ul className="space-y-3 text-sm text-slate-400">
+                            <li><Link href="/faq" className="hover:text-amber-400 transition-colors font-semibold text-amber-400">FAQ & Admissions Hub</Link></li>
                             <li><Link href="/about" className="hover:text-amber-400 transition-colors">About Us</Link></li>
                             <li><Link href="/programs" className="hover:text-amber-400 transition-colors">Training Programs</Link></li>
                             <li><Link href="/membership" className="hover:text-amber-400 transition-colors">Membership</Link></li>

@@ -31,6 +31,11 @@ export default async function ProgramsPage() {
                                 Browse 15+ CPD Micro-Credentials ➔
                             </Button>
                         </Link>
+                        <Link href="/faq">
+                            <Button variant="outline" className="bg-white/10 border-white/30 hover:bg-white/20 text-white font-bold text-sm px-6">
+                                ❓ Have Questions? Read FAQ & Admissions Hub
+                            </Button>
+                        </Link>
                     </div>
                 </div>
             </section>

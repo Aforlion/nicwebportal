@@ -33,15 +33,6 @@ import type { User as SupabaseUser } from "@supabase/supabase-js"
 const navItems = [
     { title: "Home", href: "/" },
     {
-        title: "About NIC",
-        href: "/about",
-        children: [
-            { title: "About Us", href: "/about" },
-            { title: "Regulatory Framework", href: "/regulatory" },
-            { title: "Contact Us", href: "/contact" },
-        ]
-    },
-    {
         title: "Programs",
         href: "/programs",
         children: [
@@ -50,6 +41,7 @@ const navItems = [
             { title: "Specialty Care", href: "/programs/specialty" },
         ],
     },
+    { title: "FAQ", href: "/faq" },
     {
         title: "Join NIC",
         href: "/join",
@@ -59,6 +51,15 @@ const navItems = [
         ],
     },
     { title: "Verify", href: "/verify" },
+    {
+        title: "About NIC",
+        href: "/about",
+        children: [
+            { title: "About Us", href: "/about" },
+            { title: "Regulatory Framework", href: "/regulatory" },
+            { title: "Contact Us", href: "/contact" },
+        ]
+    },
     {
         title: "Knowledge Center",
         href: "/resources",
