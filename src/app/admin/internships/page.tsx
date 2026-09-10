@@ -47,6 +47,15 @@ interface CohortItem {
   location?: LocationItem;
 }
 
+const DEFAULT_LOCATIONS: LocationItem[] = [
+  { id: "loc-abuja", city_name: "Abuja", state: "FCT", address: "NIC Clinical Skills Centre, Central Business District, Abuja", status: "active", default_fee_amount: 200000, facility_partner_name: "NIC Clinical Skills Centre" },
+  { id: "loc-lagos", city_name: "Lagos", state: "Lagos State", address: "NIC Affiliated Hospital Partner, Ikeja, Lagos", status: "coming_soon", default_fee_amount: 150000, facility_partner_name: "" },
+  { id: "loc-uyo", city_name: "Uyo", state: "Akwa Ibom State", address: "NIC Training Facility Network, Uyo", status: "coming_soon", default_fee_amount: 200000, facility_partner_name: "" },
+  { id: "loc-osun", city_name: "Osun", state: "Osun State", address: "NIC Partner Network, Osogbo", status: "coming_soon", default_fee_amount: null, facility_partner_name: "" },
+  { id: "loc-enugu", city_name: "Enugu", state: "Enugu State", address: "NIC Partner Network, Enugu", status: "coming_soon", default_fee_amount: null, facility_partner_name: "" },
+  { id: "loc-kaduna", city_name: "Kaduna", state: "Kaduna State", address: "NIC Partner Network, Kaduna", status: "coming_soon", default_fee_amount: null, facility_partner_name: "" }
+];
+
 export default function AdminInternshipsPage() {
   const [activeTab, setActiveTab] = useState<"cohorts" | "locations">("cohorts");
   const [locations, setLocations] = useState<LocationItem[]>([]);
@@ -67,6 +76,8 @@ export default function AdminInternshipsPage() {
   // Location Edit Form State
   const [editingLocation, setEditingLocation] = useState<Partial<LocationItem> | null>(null);
 
+  const effectiveLocations = locations.length > 0 ? locations : DEFAULT_LOCATIONS;
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -80,8 +91,9 @@ export default function AdminInternshipsPage() {
         .select("*")
         .order("city_name", { ascending: true });
 
-      if (locErr) throw locErr;
-      setLocations(locData || []);
+      if (!locErr && locData) {
+        setLocations(locData);
+      }
 
       const { data: cohortData, error: cohortErr } = await supabase
         .from("internship_cohorts")
@@ -103,18 +115,17 @@ export default function AdminInternshipsPage() {
     if (!dateVal) return;
 
     const start = new Date(dateVal);
-    // 3 Months duration: Add 3 calendar months
     const end = new Date(start);
     end.setMonth(end.getMonth() + 3);
 
-    // 30 Days late join window
     const lateJoin = new Date(start);
     lateJoin.setDate(lateJoin.getDate() + 30);
   };
 
   const handleOpenNewCohort = () => {
-    const abuja = locations.find((l) => l.city_name === "Abuja");
-    const locId = abuja ? abuja.id : locations[0]?.id || "";
+    const list = effectiveLocations;
+    const abuja = list.find((l) => l.city_name === "Abuja");
+    const locId = abuja ? abuja.id : list[0]?.id || "";
     const locFee = abuja?.default_fee_amount || 200000;
 
     setSelectedLocationId(locId);
@@ -127,7 +138,7 @@ export default function AdminInternshipsPage() {
 
   const handleLocationSelect = (locId: string) => {
     setSelectedLocationId(locId);
-    const loc = locations.find((l) => l.id === locId);
+    const loc = effectiveLocations.find((l) => l.id === locId);
     if (loc) {
       setCohortName(`${loc.city_name} Cohort`);
       setFeeAmount(loc.default_fee_amount || 150000);
@@ -142,8 +153,35 @@ export default function AdminInternshipsPage() {
 
     try {
       const supabase = createClient();
+      let targetLocId = selectedLocationId;
+
+      // Handle fallback location insertion if selected from default array
+      if (selectedLocationId.startsWith("loc-")) {
+        const defLoc = DEFAULT_LOCATIONS.find((l) => l.id === selectedLocationId);
+        if (defLoc) {
+          const { data: newLoc, error: locErr } = await supabase
+            .from("internship_locations")
+            .upsert(
+              {
+                city_name: defLoc.city_name,
+                state: defLoc.state,
+                address: defLoc.address,
+                status: defLoc.status,
+                default_fee_amount: defLoc.default_fee_amount,
+                facility_partner_name: defLoc.facility_partner_name
+              },
+              { onConflict: "city_name" }
+            )
+            .select()
+            .single();
+
+          if (!locErr && newLoc) {
+            targetLocId = newLoc.id;
+          }
+        }
+      }
+
       const start = new Date(startDate);
-      
       const end = new Date(start);
       end.setMonth(end.getMonth() + 3);
 
@@ -154,7 +192,7 @@ export default function AdminInternshipsPage() {
       const lateJoinStr = lateJoin.toISOString().split("T")[0];
 
       const { error } = await supabase.from("internship_cohorts").insert({
-        location_id: selectedLocationId,
+        location_id: targetLocId,
         cohort_name: cohortName,
         start_date: startDate,
         end_date: endDateStr,
@@ -191,10 +229,10 @@ export default function AdminInternshipsPage() {
         facility_partner_name: editingLocation.facility_partner_name || ""
       };
 
-      if (editingLocation.id) {
+      if (editingLocation.id && !editingLocation.id.startsWith("loc-")) {
         await supabase.from("internship_locations").update(payload).eq("id", editingLocation.id);
       } else {
-        await supabase.from("internship_locations").insert(payload);
+        await supabase.from("internship_locations").upsert(payload, { onConflict: "city_name" });
       }
 
       toast.success("Location saved successfully!");
@@ -247,7 +285,7 @@ export default function AdminInternshipsPage() {
           <span className="text-xs font-semibold text-slate-500 uppercase">Active Locations</span>
           <div className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <MapPin className="h-5 w-5 text-emerald-600" />
-            {locations.filter((l) => l.status === "active").length} / {locations.length}
+            {effectiveLocations.filter((l) => l.status === "active").length} / {effectiveLocations.length}
           </div>
         </div>
         <div className="bg-white border rounded-xl p-4 space-y-1">
@@ -295,7 +333,7 @@ export default function AdminInternshipsPage() {
           }`}
         >
           <MapPin className="h-4 w-4" />
-          Locations & Fee Matrix ({locations.length})
+          Locations & Fee Matrix ({effectiveLocations.length})
         </button>
       </div>
 
@@ -305,8 +343,14 @@ export default function AdminInternshipsPage() {
           {isLoading ? (
             <div className="text-center py-12 text-slate-500">Loading internship cohorts...</div>
           ) : cohorts.length === 0 ? (
-            <div className="bg-slate-50 border border-dashed rounded-xl p-8 text-center text-slate-500">
-              No active cohorts scheduled. Click "Schedule 3-Month Cohort" to create your first cohort.
+            <div className="bg-slate-50 border border-dashed rounded-xl p-8 text-center text-slate-500 space-y-3">
+              <p>No active cohorts scheduled yet in database.</p>
+              <button
+                onClick={handleOpenNewCohort}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition-colors"
+              >
+                Schedule First 3-Month Cohort
+              </button>
             </div>
           ) : (
             <div className="grid gap-4">
@@ -379,7 +423,7 @@ export default function AdminInternshipsPage() {
       {activeTab === "locations" && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {locations.map((loc) => {
+            {effectiveLocations.map((loc) => {
               const isActive = loc.status === "active";
               return (
                 <div key={loc.id} className="bg-white border rounded-2xl p-5 shadow-sm space-y-3 relative">
@@ -424,9 +468,10 @@ export default function AdminInternshipsPage() {
 
       {/* MODAL 1: CREATE COHORT MODAL */}
       {isCohortModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border animate-in zoom-in-95 duration-150">
-            <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col my-auto">
+            {/* Header */}
+            <div className="bg-slate-900 text-white p-5 flex items-center justify-between flex-shrink-0">
               <h3 className="font-bold text-lg flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-emerald-400" />
                 Schedule 3-Month Internship Cohort
@@ -436,20 +481,35 @@ export default function AdminInternshipsPage() {
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            {/* Scrollable Body */}
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className="text-xs font-bold text-slate-700 uppercase">Internship Location *</label>
-                <select
-                  value={selectedLocationId}
-                  onChange={(e) => handleLocationSelect(e.target.value)}
-                  className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-emerald-500 outline-none"
-                >
-                  {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>
-                      {loc.city_name} ({loc.status === "active" ? "Active" : "Coming Soon"} - {loc.default_fee_amount ? `₦${Number(loc.default_fee_amount).toLocaleString()}` : "Fee TBD"})
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2 mt-1">
+                  <select
+                    value={selectedLocationId}
+                    onChange={(e) => handleLocationSelect(e.target.value)}
+                    className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none font-medium"
+                  >
+                    <option value="" disabled>Select Internship Location...</option>
+                    {effectiveLocations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.city_name} ({loc.state}) - {loc.default_fee_amount ? `₦${Number(loc.default_fee_amount).toLocaleString()}` : "Fee TBD"}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingLocation({ status: "coming_soon" });
+                      setIsLocationModalOpen(true);
+                    }}
+                    className="px-3 py-2 bg-slate-100 border hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700 whitespace-nowrap"
+                    title="Add a new location"
+                  >
+                    + New Location
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -459,7 +519,7 @@ export default function AdminInternshipsPage() {
                   value={cohortName}
                   onChange={(e) => setCohortName(e.target.value)}
                   placeholder="e.g. Abuja Oct-Dec 2026 Cohort"
-                  className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-emerald-500 outline-none"
+                  className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                 />
               </div>
 
@@ -470,7 +530,7 @@ export default function AdminInternshipsPage() {
                     type="date"
                     value={startDate}
                     onChange={(e) => handleStartDateChange(e.target.value)}
-                    className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-emerald-500 outline-none"
+                    className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                   />
                 </div>
                 <div>
@@ -492,7 +552,7 @@ export default function AdminInternshipsPage() {
                   value={feeAmount}
                   onChange={(e) => setFeeAmount(Number(e.target.value))}
                   placeholder="200000"
-                  className="w-full mt-1 p-2.5 border rounded-lg text-sm font-bold focus:ring-emerald-500 outline-none"
+                  className="w-full mt-1 p-2.5 border rounded-lg text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                 />
               </div>
 
@@ -503,7 +563,8 @@ export default function AdminInternshipsPage() {
               </div>
             </div>
 
-            <div className="bg-slate-50 p-4 border-t flex items-center justify-end gap-3">
+            {/* Footer */}
+            <div className="bg-slate-50 p-4 border-t flex items-center justify-end gap-3 flex-shrink-0">
               <button
                 onClick={() => setIsCohortModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900"
@@ -512,7 +573,7 @@ export default function AdminInternshipsPage() {
               </button>
               <button
                 onClick={handleCreateCohort}
-                className="px-5 py-2 text-sm font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center gap-2"
+                className="px-5 py-2 text-sm font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center gap-2 shadow-sm"
               >
                 <Save className="h-4 w-4" /> Create Cohort
               </button>
@@ -523,9 +584,10 @@ export default function AdminInternshipsPage() {
 
       {/* MODAL 2: EDIT LOCATION & PRICING MODAL */}
       {isLocationModalOpen && editingLocation && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border animate-in zoom-in-95 duration-150">
-            <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col my-auto">
+            {/* Header */}
+            <div className="bg-slate-900 text-white p-5 flex items-center justify-between flex-shrink-0">
               <h3 className="font-bold text-lg flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-emerald-400" />
                 {editingLocation.id ? `Edit Location (${editingLocation.city_name})` : "Add New Location"}
@@ -535,7 +597,8 @@ export default function AdminInternshipsPage() {
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            {/* Scrollable Body */}
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 uppercase">City Name *</label>
@@ -544,7 +607,7 @@ export default function AdminInternshipsPage() {
                     value={editingLocation.city_name || ""}
                     onChange={(e) => setEditingLocation({ ...editingLocation, city_name: e.target.value })}
                     placeholder="e.g. Lagos"
-                    className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-emerald-500 outline-none"
+                    className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                   />
                 </div>
                 <div>
@@ -554,7 +617,7 @@ export default function AdminInternshipsPage() {
                     value={editingLocation.state || ""}
                     onChange={(e) => setEditingLocation({ ...editingLocation, state: e.target.value })}
                     placeholder="e.g. Lagos State"
-                    className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-emerald-500 outline-none"
+                    className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                   />
                 </div>
               </div>
@@ -564,7 +627,7 @@ export default function AdminInternshipsPage() {
                 <select
                   value={editingLocation.status || "coming_soon"}
                   onChange={(e) => setEditingLocation({ ...editingLocation, status: e.target.value })}
-                  className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-emerald-500 outline-none"
+                  className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white text-slate-900"
                 >
                   <option value="active">Active & Open for Booking</option>
                   <option value="coming_soon">Under Preparation / Coming Soon</option>
@@ -583,7 +646,7 @@ export default function AdminInternshipsPage() {
                     })
                   }
                   placeholder="e.g. 150000 (Leave blank if TBD)"
-                  className="w-full mt-1 p-2.5 border rounded-lg text-sm font-bold focus:ring-emerald-500 outline-none"
+                  className="w-full mt-1 p-2.5 border rounded-lg text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                 />
                 <span className="text-[10px] text-slate-400">Abuja: ₦200k, Lagos: ₦150k, Uyo: ₦200k, Others TBD</span>
               </div>
@@ -595,12 +658,13 @@ export default function AdminInternshipsPage() {
                   value={editingLocation.address || ""}
                   onChange={(e) => setEditingLocation({ ...editingLocation, address: e.target.value })}
                   placeholder="Facility address details..."
-                  className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-emerald-500 outline-none"
+                  className="w-full mt-1 p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                 />
               </div>
             </div>
 
-            <div className="bg-slate-50 p-4 border-t flex items-center justify-end gap-3">
+            {/* Footer */}
+            <div className="bg-slate-50 p-4 border-t flex items-center justify-end gap-3 flex-shrink-0">
               <button
                 onClick={() => setIsLocationModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900"
@@ -609,7 +673,7 @@ export default function AdminInternshipsPage() {
               </button>
               <button
                 onClick={handleSaveLocation}
-                className="px-5 py-2 text-sm font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center gap-2"
+                className="px-5 py-2 text-sm font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center gap-2 shadow-sm"
               >
                 <Save className="h-4 w-4" /> Save Location
               </button>
@@ -620,3 +684,4 @@ export default function AdminInternshipsPage() {
     </div>
   );
 }
+
