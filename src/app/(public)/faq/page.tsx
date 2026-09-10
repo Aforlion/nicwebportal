@@ -105,6 +105,95 @@ const FALLBACK_ARTICLES: KBArticle[] = [
   }
 ];
 
+function FormattedMarkdown({ content }: { content: string }) {
+  if (!content) return null;
+
+  const lines = content.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+  const renderTextWithFormatting = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*|https?:\/\/[^\s]+)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={i} className="font-bold text-slate-900">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.startsWith("http://") || part.startsWith("https://")) {
+        return (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noreferrer"
+            className="text-emerald-700 underline font-semibold hover:text-emerald-800 break-all"
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
+  const elements: React.ReactNode[] = [];
+  let currentList: { text: string; isOrdered: boolean }[] = [];
+
+  const flushList = () => {
+    if (currentList.length === 0) return;
+    elements.push(
+      <ul
+        key={`list-${elements.length}`}
+        className="space-y-2 my-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-xs sm:text-sm text-slate-800 shadow-inner"
+      >
+        {currentList.map((item, idx) => (
+          <li key={idx} className="flex items-start gap-2.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 flex-shrink-0 mt-2" />
+            <span className="flex-1 leading-relaxed">{renderTextWithFormatting(item.text)}</span>
+          </li>
+        ))}
+      </ul>
+    );
+    currentList = [];
+  };
+
+  lines.forEach((line, index) => {
+    if (line.startsWith("#")) {
+      flushList();
+      const headingText = line.replace(/^#+\s*/, "");
+      elements.push(
+        <h4
+          key={index}
+          className="text-sm font-bold text-slate-900 tracking-tight pt-3 pb-1 border-b border-slate-200/60 flex items-center gap-2"
+        >
+          <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+          {headingText}
+        </h4>
+      );
+      return;
+    }
+
+    const listMatch = line.match(/^([*\-\+]|\d+\.)\s+(.*)/);
+    if (listMatch) {
+      const isOrdered = /^\d+\./.test(listMatch[1]);
+      currentList.push({ text: listMatch[2], isOrdered });
+      return;
+    }
+
+    flushList();
+    elements.push(
+      <p key={index} className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+        {renderTextWithFormatting(line)}
+      </p>
+    );
+  });
+
+  flushList();
+
+  return <div className="space-y-3">{elements}</div>;
+}
+
 export default function PublicFAQPage() {
   const [articles, setArticles] = useState<KBArticle[]>(FALLBACK_ARTICLES);
   const [searchQuery, setSearchQuery] = useState("");
@@ -155,7 +244,6 @@ export default function PublicFAQPage() {
       return articles.filter((art) => art.category === selectedCategory);
     }
 
-    // Tokenize search query and normalize common synonyms/words
     const normalizedQuery = rawQuery
       .replace(/enrolment|enrollment|enrolling|enrolled|registration|register/g, "enrol enroll register join apply")
       .replace(/certificates|certificate|certification|transcripts|transcript/g, "certificate cert transcript credential")
@@ -181,7 +269,6 @@ export default function PublicFAQPage() {
         if (content.includes(token)) score += 1;
       });
 
-      // Bonus if explicitly selected category matches
       if (selectedCategory !== "all" && art.category === selectedCategory) {
         score += 2;
       }
@@ -273,7 +360,7 @@ export default function PublicFAQPage() {
                 key={cat.id}
                 onClick={() => {
                   setSelectedCategory(cat.id);
-                  setSearchQuery(""); // Reset search query when picking a topic tab
+                  setSearchQuery("");
                 }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
                   isSelected
@@ -361,12 +448,8 @@ export default function PublicFAQPage() {
                             <strong>Quick Summary:</strong> {art.short_answer}
                           </div>
 
-                          {/* Full Markdown Body */}
-                          <div className="prose prose-slate prose-sm max-w-none text-slate-700 leading-relaxed space-y-2">
-                            {art.content_markdown.split("\n\n").map((paragraph, idx) => (
-                              <p key={idx}>{paragraph}</p>
-                            ))}
-                          </div>
+                          {/* Full Formatted Markdown Body */}
+                          <FormattedMarkdown content={art.content_markdown} />
 
                           {/* Prohibited Claim Notice if any */}
                           {art.prohibited_claims_guard && art.prohibited_claims_guard.length > 0 && (
