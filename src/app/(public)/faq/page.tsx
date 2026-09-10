@@ -113,6 +113,12 @@ export default function PublicFAQPage() {
   const [feedbackGiven, setFeedbackGiven] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
 
+  // Fee Calculator State
+  const [includeLevel1, setIncludeLevel1] = useState(true);
+  const [includeLevel2, setIncludeLevel2] = useState(true);
+  const [includeInternship, setIncludeInternship] = useState(true);
+  const [includeMembership, setIncludeMembership] = useState(true);
+
   useEffect(() => {
     fetchArticlesFromDatabase();
   }, []);
