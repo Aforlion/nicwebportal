@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Calendar, Upload, FileText, CheckCircle2, AlertCircle, Loader2, Clock, MapPin } from "lucide-react"
+import { Calendar, Upload, FileText, CheckCircle2, AlertCircle, Loader2, Clock, MapPin, Users, Sparkles, Building2 } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { createClient } from "@/lib/supabase"
@@ -22,20 +22,74 @@ interface Internship {
     created_at: string
 }
 
+interface LocationItem {
+    id: string
+    city_name: string
+    state: string
+    address: string
+    status: string
+    default_fee_amount: number | null
+}
+
+interface CohortItem {
+    id: string
+    location_id: string
+    cohort_name: string
+    start_date: string
+    end_date: string
+    late_join_deadline: string
+    max_capacity: number
+    current_enrolled: number
+    fee_amount: number
+    status: string
+    location?: LocationItem
+}
+
 interface InternshipClientProps {
     initialInternships: Internship[]
 }
 
 export default function InternshipClient({ initialInternships }: InternshipClientProps) {
     const [internships, setInternships] = useState<Internship[]>(initialInternships)
+    const [locations, setLocations] = useState<LocationItem[]>([])
+    const [cohorts, setCohorts] = useState<CohortItem[]>([])
+    const [loadingData, setLoadingData] = useState(true)
+
+    // Form state
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
     const [facilityName, setFacilityName] = useState("")
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [uploading, setUploading] = useState(false)
+    const [bookingCohortId, setBookingCohortId] = useState<string | null>(null)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
     const supabase = createClient()
+
+    useEffect(() => {
+        async function fetchCohortsAndLocations() {
+            try {
+                const { data: locs } = await supabase
+                    .from('internship_locations')
+                    .select('*')
+                    .order('city_name', { ascending: true })
+
+                setLocations(locs || [])
+
+                const { data: chs } = await supabase
+                    .from('internship_cohorts')
+                    .select('*, location:internship_locations(*)')
+                    .order('start_date', { ascending: true })
+
+                setCohorts(chs || [])
+            } catch (err) {
+                console.error("Error loading cohort data:", err)
+            } finally {
+                setLoadingData(false)
+            }
+        }
+        fetchCohortsAndLocations()
+    }, [])
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -54,7 +108,6 @@ export default function InternshipClient({ initialInternships }: InternshipClien
             return
         }
 
-        // Validate duration is at least 3 months (90 days roughly)
         const start = new Date(startDate)
         const end = new Date(endDate)
         const durationMs = end.getTime() - start.getTime()
@@ -76,19 +129,16 @@ export default function InternshipClient({ initialInternships }: InternshipClien
             const ext = selectedFile.name.split('.').pop()
             const storagePath = `internships/${user.id}/${Date.now()}_certificate.${ext}`
 
-            // 1. Upload to Supabase Storage
             const { error: uploadError } = await supabase.storage
                 .from('member-documents')
                 .upload(storagePath, selectedFile, { upsert: false })
 
             if (uploadError) throw uploadError
 
-            // 2. Get Public URL
             const { data: { publicUrl } } = supabase.storage
                 .from('member-documents')
                 .getPublicUrl(storagePath)
 
-            // 3. Save to database
             const res = await saveInternshipRecord({
                 startDate,
                 endDate,
@@ -98,7 +148,6 @@ export default function InternshipClient({ initialInternships }: InternshipClien
 
             if (res.success) {
                 toast.success("Internship certificate uploaded successfully! Awaiting admin review.")
-                // Add to list locally
                 const newRecord: Internship = {
                     id: Math.random().toString(),
                     start_date: startDate,
@@ -109,7 +158,6 @@ export default function InternshipClient({ initialInternships }: InternshipClien
                     created_at: new Date().toISOString()
                 }
                 setInternships(prev => [newRecord, ...prev])
-                // Reset form
                 setStartDate("")
                 setEndDate("")
                 setFacilityName("")
@@ -122,6 +170,48 @@ export default function InternshipClient({ initialInternships }: InternshipClien
             toast.error(err.message || "Failed to complete upload")
         } finally {
             setUploading(false)
+        }
+    }
+
+    const handleBookCohort = async (cohort: CohortItem) => {
+        setBookingCohortId(cohort.id)
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                toast.error("Please log in to book your internship seat.")
+                return
+            }
+
+            // Record enrollment in internship_enrollments
+            const { error } = await supabase.from('internship_enrollments').insert({
+                student_id: user.id,
+                cohort_id: cohort.id,
+                location_id: cohort.location_id,
+                fee_paid: cohort.fee_amount,
+                status: 'enrolled'
+            })
+
+            if (error) {
+                if (error.code === '23505') {
+                    toast.error("You are already enrolled in this cohort!")
+                } else {
+                    throw error
+                }
+            } else {
+                // Increment current enrolled count
+                await supabase.from('internship_cohorts')
+                    .update({ current_enrolled: cohort.current_enrolled + 1 })
+                    .eq('id', cohort.id)
+
+                toast.success(`Seat reserved for ${cohort.cohort_name}! Proceeding to placement onboarding.`)
+                
+                // Update local state
+                setCohorts(prev => prev.map(c => c.id === cohort.id ? { ...c, current_enrolled: c.current_enrolled + 1 } : c))
+            }
+        } catch (err: any) {
+            toast.error("Booking error: " + err.message)
+        } finally {
+            setBookingCohortId(null)
         }
     }
 
@@ -139,16 +229,139 @@ export default function InternshipClient({ initialInternships }: InternshipClien
     return (
         <div className="space-y-8 animate-in fade-in duration-300">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-secondary">Internship Placement</h1>
-                <p className="text-muted-foreground">Submit and track your mandatory 3-month clinical internship certificate for NCNA licensing.</p>
+                <h1 className="text-3xl font-bold tracking-tight text-secondary">Clinical Internship & Placement Schedules</h1>
+                <p className="text-muted-foreground">Select a 3-month clinical cohort (capped at 20 students) or submit your verified external placement certificate.</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
-                {/* Upload Form */}
+            {/* LOCATION PRICING & SELECTION GRID */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-secondary flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-primary" />
+                        Available Internship Locations & Fees
+                    </h2>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {locations.map((loc) => {
+                        const isActive = loc.status === 'active'
+                        return (
+                            <div 
+                                key={loc.id}
+                                className={`border rounded-2xl p-5 bg-white transition-all shadow-sm ${
+                                    isActive ? 'border-primary/40 ring-1 ring-primary/20' : 'border-slate-200 opacity-90'
+                                }`}
+                            >
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-bold text-slate-400 uppercase">{loc.state}</span>
+                                    {isActive ? (
+                                        <Badge className="bg-emerald-500 hover:bg-emerald-600">● Active & Ready</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50">⏳ Coming Soon</Badge>
+                                    )}
+                                </div>
+                                <h3 className="text-lg font-bold text-secondary">{loc.city_name}</h3>
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{loc.address || "Placement facility network."}</p>
+                                
+                                <div className="mt-4 pt-3 border-t flex items-center justify-between text-xs">
+                                    <span className="text-muted-foreground font-medium">Placement Fee:</span>
+                                    <span className="font-extrabold text-secondary text-sm">
+                                        {loc.default_fee_amount ? `₦${Number(loc.default_fee_amount).toLocaleString()}` : "TBD"}
+                                    </span>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+
+            {/* UPCOMING 3-MONTH COHORTS GRID */}
+            <div className="space-y-4">
+                <h2 className="text-xl font-bold text-secondary flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    Scheduled 3-Month Cohorts (Max 20 Capacity)
+                </h2>
+
+                {loadingData ? (
+                    <div className="text-center py-8 text-muted-foreground">Loading available internship cohorts...</div>
+                ) : cohorts.length === 0 ? (
+                    <Card className="border p-8 text-center text-muted-foreground">
+                        No upcoming cohorts scheduled at this moment.
+                    </Card>
+                ) : (
+                    <div className="grid gap-4">
+                        {cohorts.map((ch) => {
+                            const isFull = ch.current_enrolled >= ch.max_capacity
+                            const startDateObj = new Date(ch.start_date)
+                            const endDateObj = new Date(ch.end_date)
+                            const lateDeadlineObj = new Date(ch.late_join_deadline)
+                            const now = new Date()
+                            const isLateJoinAvailable = now >= startDateObj && now <= lateDeadlineObj && !isFull
+
+                            return (
+                                <Card key={ch.id} className="border shadow-sm hover:shadow-md transition-shadow">
+                                    <CardContent className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                        <div className="space-y-2 flex-1">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-bold uppercase">
+                                                    <MapPin className="h-3 w-3 mr-1" />
+                                                    {ch.location?.city_name || "Abuja"}
+                                                </Badge>
+                                                <span className="text-sm font-extrabold text-secondary">
+                                                    ₦{Number(ch.fee_amount).toLocaleString()}
+                                                </span>
+                                                {isFull ? (
+                                                    <Badge className="bg-red-500">Full (20/20)</Badge>
+                                                ) : isLateJoinAvailable ? (
+                                                    <Badge className="bg-amber-500 text-white flex items-center gap-1">
+                                                        <Sparkles className="h-3 w-3" /> Late Join Open until {format(lateDeadlineObj, "MMM d")}
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge className="bg-emerald-500">Open for Enrolment</Badge>
+                                                )}
+                                            </div>
+
+                                            <h3 className="text-lg font-bold text-secondary">{ch.cohort_name}</h3>
+                                            
+                                            <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                                                <span className="flex items-center gap-1 font-medium">
+                                                    <Calendar className="h-3.5 w-3.5 text-primary" />
+                                                    <strong>Duration (3 Mos):</strong> {format(startDateObj, "MMM d, yyyy")} - {format(endDateObj, "MMM d, yyyy")}
+                                                </span>
+                                                <span className="flex items-center gap-1 font-medium">
+                                                    <Users className="h-3.5 w-3.5 text-primary" />
+                                                    <strong>Capacity:</strong> {ch.current_enrolled} / {ch.max_capacity} Seats
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            onClick={() => handleBookCohort(ch)}
+                                            disabled={isFull || bookingCohortId === ch.id}
+                                            className="bg-primary hover:bg-primary/90 min-w-[140px]"
+                                        >
+                                            {bookingCohortId === ch.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : isFull ? (
+                                                "Cohort Full"
+                                            ) : (
+                                                "Reserve Seat"
+                                            )}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            )
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* EXTERNAL CERTIFICATE UPLOAD SECTION */}
+            <div className="grid md:grid-cols-3 gap-8 pt-4">
                 <Card className="md:col-span-2 border shadow-sm">
                     <CardHeader>
-                        <CardTitle className="text-lg">Submit Internship Certificate</CardTitle>
-                        <CardDescription>Enter placement dates and upload your verified completion certificate.</CardDescription>
+                        <CardTitle className="text-lg">Already Completed External Internship?</CardTitle>
+                        <CardDescription>If you completed a 3-month clinical placement at an approved hospital independently, upload your certificate here.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleUploadInternship} className="space-y-4">
@@ -179,7 +392,7 @@ export default function InternshipClient({ initialInternships }: InternshipClien
                                 <Label htmlFor="facilityName">Clinical Training Facility *</Label>
                                 <Input 
                                     id="facilityName"
-                                    placeholder="e.g. St. Nicholas Hospital, Lagos"
+                                    placeholder="e.g. National Hospital Abuja, or St. Nicholas Hospital Lagos"
                                     required
                                     value={facilityName}
                                     onChange={(e) => setFacilityName(e.target.value)}
@@ -225,7 +438,7 @@ export default function InternshipClient({ initialInternships }: InternshipClien
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Uploading Certificate...
                                     </>
-                                ) : "Submit for Verification"}
+                                ) : "Submit External Certificate"}
                             </Button>
                         </form>
                     </CardContent>
@@ -235,28 +448,28 @@ export default function InternshipClient({ initialInternships }: InternshipClien
                 <div className="space-y-6">
                     <Card className="bg-primary/5 border border-primary/10 rounded-2xl">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-bold text-primary uppercase tracking-wider">NCNA Pathway Checklist</CardTitle>
+                            <CardTitle className="text-sm font-bold text-primary uppercase tracking-wider">NCNA Pathway Requirements</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 text-xs text-secondary">
                             <div className="flex gap-2.5 items-start">
                                 <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                                 <div>
-                                    <p className="font-bold">Fundamental Course</p>
-                                    <p className="text-muted-foreground">Complete level 1 or 2 caregiver modules.</p>
+                                    <p className="font-bold">3-Month Internship Duration</p>
+                                    <p className="text-muted-foreground">Practical training takes exactly 3 months per cohort.</p>
                                 </div>
                             </div>
                             <div className="flex gap-2.5 items-start">
                                 <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                                 <div>
-                                    <p className="font-bold">Advanced Course</p>
-                                    <p className="text-muted-foreground">Complete one level 3 or 4 specialty track.</p>
+                                    <p className="font-bold">Location Pricing</p>
+                                    <p className="text-muted-foreground">Abuja (₦200k), Lagos (₦150k), Uyo (₦200k), others TBD.</p>
                                 </div>
                             </div>
                             <div className="flex gap-2.5 items-start">
                                 <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                                 <div>
-                                    <p className="font-bold">3-Month Internship</p>
-                                    <p className="text-muted-foreground">Upload your completion certificate from a clinical care partner.</p>
+                                    <p className="font-bold">Late Join Grace Period</p>
+                                    <p className="text-muted-foreground">Join active classes up to 1 month after start if space permits.</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -267,7 +480,7 @@ export default function InternshipClient({ initialInternships }: InternshipClien
             {/* History Table */}
             <Card className="border shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-lg">Placement History</CardTitle>
+                    <CardTitle className="text-lg">Placement Verification History</CardTitle>
                     <CardDescription>Monitor approvals and review statuses of your submitted internships.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">

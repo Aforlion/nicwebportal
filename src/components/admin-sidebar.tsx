@@ -19,7 +19,8 @@ import {
     BookOpen,
     Newspaper,
     ImageIcon,
-    HelpCircle
+    HelpCircle,
+    Calendar
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -38,6 +39,7 @@ export const adminNavItems = [
     { title: "Assessments", href: "/admin/assessments", icon: FileText },
     // { title: "Payments", href: "/admin/payments", icon: CreditCard }, // Disabled until route exists
     { title: "Inspections", href: "/admin/inspections", icon: FileCheck },
+    { title: "Internships", href: "/admin/internships", icon: Calendar },
     { title: "News & Events", href: "/admin/news", icon: Newspaper },
     { title: "Resources", href: "/admin/resources", icon: BookOpen },
     { title: "Advocacy/Docs", href: "/admin/advocacy", icon: FileText },
