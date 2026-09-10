@@ -3,6 +3,11 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 
+export const metadata = {
+  title: "About NIC | National Institute of Caregivers Nigeria",
+  description: "Learn about the National Institute of Caregivers (NIC Nigeria), our mission, vision, mandate, leadership, and governing council.",
+}
+
 export default function AboutPage() {
     return (
         <div className="pb-20">

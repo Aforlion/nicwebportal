@@ -8,6 +8,11 @@ import {
 import { CheckCircle2, UserPlus, Award, BookOpen, Briefcase, Zap } from "lucide-react"
 import Link from "next/link"
 
+export const metadata = {
+  title: "Membership & Designation | National Institute of Caregivers Nigeria",
+  description: "Join Nigeria's national professional body of caregivers. Access accredited credentials, LMS, job board, and membership categories.",
+}
+
 const categories = [
     {
         id: "student",

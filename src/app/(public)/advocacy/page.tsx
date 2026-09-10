@@ -5,6 +5,11 @@ import { FileText, Download, Shield, GraduationCap, Gavel, Search } from "lucide
 import { getPublications } from "@/actions/news-publications"
 import { format } from "date-fns"
 
+export const metadata = {
+  title: "Advocacy & Research | National Institute of Caregivers Nigeria",
+  description: "Policy briefs, caregiving standards, research publications, and legislative advocacy from NIC Nigeria.",
+}
+
 export default async function AdvocacyPage() {
     const publications = await getPublications()
 

@@ -6,6 +6,11 @@ import Link from "next/link"
 import { getPublishedCourses } from "@/actions/get-courses"
 import { SpecializationTracks } from "@/components/specialization-tracks"
 
+export const metadata = {
+  title: "Caregiver Training Programs & Certifications | NIC Nigeria",
+  description: "Browse accredited caregiver certification courses, HCA training, specialty care tracks, and 15+ CPD micro-credentials.",
+}
+
 export default async function ProgramsPage() {
     const programs = await getPublishedCourses()
 

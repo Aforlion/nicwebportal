@@ -3,6 +3,11 @@ import { Image as ImageIcon, Film, LayoutGrid, Camera, GraduationCap } from "luc
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getGalleryItems } from "@/actions/gallery"
 
+export const metadata = {
+  title: "Media Gallery | National Institute of Caregivers Nigeria",
+  description: "Browse photos, training sessions, conferences, and event coverage from NIC Nigeria.",
+}
+
 export default async function GalleryPage() {
     const galleryItems = await getGalleryItems()
     return (

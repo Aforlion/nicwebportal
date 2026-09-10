@@ -3,6 +3,11 @@ import { MandateSection } from "@/components/mandate-section"
 import Link from "next/link"
 import { Users, Building2, ClipboardCheck, ArrowRight, CheckCircle2, Search, GraduationCap } from "lucide-react"
 
+export const metadata = {
+  title: "National Institute of Caregivers (NIC Nigeria) | Official Portal",
+  description: "Nigeria's premier professional body for caregiver training, accreditation, verification, and healthcare facility regulation.",
+}
+
 export default function Home() {
   return (
     <>

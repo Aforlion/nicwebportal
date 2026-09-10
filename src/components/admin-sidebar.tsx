@@ -18,7 +18,8 @@ import {
     BarChart3,
     BookOpen,
     Newspaper,
-    Image as ImageIcon
+    ImageIcon,
+    HelpCircle
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -40,6 +41,7 @@ export const adminNavItems = [
     { title: "News & Events", href: "/admin/news", icon: Newspaper },
     { title: "Resources", href: "/admin/resources", icon: BookOpen },
     { title: "Advocacy/Docs", href: "/admin/advocacy", icon: FileText },
+    { title: "Knowledge Base", href: "/admin/knowledge-base", icon: HelpCircle },
     { title: "Gallery", href: "/admin/gallery", icon: ImageIcon },
     { title: "Reports", href: "/admin/reports", icon: BarChart3 },
 ]

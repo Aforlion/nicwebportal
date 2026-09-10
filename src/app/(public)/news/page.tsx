@@ -6,6 +6,11 @@ import Link from "next/link"
 import { getNewsEvents } from "@/actions/news-publications"
 import { format } from "date-fns"
 
+export const metadata = {
+  title: "News & Events | National Institute of Caregivers Nigeria",
+  description: "Stay updated with official news, announcements, press releases, and events from NIC Nigeria.",
+}
+
 export default async function NewsPage() {
     const newsItems = await getNewsEvents()
 

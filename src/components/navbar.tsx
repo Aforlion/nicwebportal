@@ -63,6 +63,7 @@ const navItems = [
         title: "Knowledge Center",
         href: "/resources",
         children: [
+            { title: "FAQ & Admissions Hub", href: "/faq" },
             { title: "Browse Resources", href: "/resources" },
             { title: "Advocacy & Research", href: "/advocacy" },
             { title: "Media Gallery", href: "/gallery" },
