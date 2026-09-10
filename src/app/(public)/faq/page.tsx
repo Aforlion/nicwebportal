@@ -19,7 +19,8 @@ import {
   DollarSign,
   Globe,
   Award,
-  FileCheck
+  FileCheck,
+  RotateCcw
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -31,7 +32,7 @@ interface KBArticle {
   title: string;
   short_answer: string;
   content_markdown: string;
-  prohibited_claims_guard: string[];
+  prohibited_claims_guard?: string[];
 }
 
 const CATEGORIES = [
@@ -44,26 +45,79 @@ const CATEGORIES = [
   { id: "international", name: "International Recognition", icon: Globe }
 ];
 
+// Fallback seed articles ensuring 100% reliability even if database network is slow
+const FALLBACK_ARTICLES: KBArticle[] = [
+  {
+    id: "f-1",
+    slug: "how-to-enrol-and-register",
+    category: "getting-started",
+    title: "How do I enrol or register for an NIC programme?",
+    short_answer: "You can enrol directly online on our Programs page by selecting your desired course, creating an account, and completing payment via Paystack.",
+    content_markdown: "### How to Enrol in an NIC Programme\n\n1. **Browse Programmes:** Visit https://www.nicnigeria.org/programs to view available courses.\n2. **Select Your Pathway:** Choose Level 1 Fundamentals or a Level 2 Specialisation (e.g. Geriatrics & Gerontology).\n3. **Create Account:** Click 'Enroll Now' and create your student portal profile.\n4. **Complete Payment:** Pay securely online via debit card, USSD, or bank transfer using Paystack.\n5. **Instant Access:** Start your self-paced online modules immediately after payment confirmation."
+  },
+  {
+    id: "f-2",
+    slug: "certificates-and-transcripts-awarded",
+    category: "certification",
+    title: "What certificate and transcript will I receive upon completion?",
+    short_answer: "You receive an official NIC Nursing Assistant Certificate and Academic Transcript featuring a digital QR code for instant global verification.",
+    content_markdown: "### Official Credentials Issued\n\nUpon successful completion of training and clinical internship:\n1. **NIC Certificate:** Official Nursing Assistant / Caregiver Certificate issued by National Institute of Caregivers Nigeria.\n2. **Academic Transcript:** Documenting completed modules, learning hours, and practical competencies.\n3. **Digital Verification QR Code:** Embedded on every certificate, allowing third-party employers globally to verify your credential on our public registry at https://www.nicnigeria.org/verify."
+  },
+  {
+    id: "f-3",
+    slug: "total-fee-breakdown",
+    category: "fees",
+    title: "What is the total cost for the full Nursing Assistant Pathway?",
+    short_answer: "Estimated total cost is ₦505,000 – ₦555,000, including Level 1 (₦200k), Level 2 (₦150k), Clinical Internship (₦150k-₦200k), and ₦5,000 Membership.",
+    content_markdown: "### Complete Pathway Fee Breakdown\n\n- **Level 1 Fundamentals:** ₦200,000\n- **Level 2 Specialisation (Geriatrics):** ₦150,000\n- **Clinical Internship:** ₦150,000 – ₦200,000 (Abuja: ₦200k, Lagos: ₦150k, Uyo: ₦200k)\n- **NIC Professional Membership:** ₦5,000\n- **Total Estimated Cost:** ₦505,000 – ₦555,000\n\n**Transparency Guarantee:** Zero hidden fees for practical assessments or certificate issuance."
+  },
+  {
+    id: "f-4",
+    slug: "clinical-internship-details",
+    category: "internship",
+    title: "How does the Clinical Internship work and where is it conducted?",
+    short_answer: "Supervised 3-month clinical placement in accredited healthcare facilities (capped at 20 students per cohort). Abuja (₦200k) is active; Lagos (₦150k), Uyo (₦200k) coming soon.",
+    content_markdown: "### Clinical Internship Component & Scheduling\n\n- **Duration:** Exactly 3 Months per cohort.\n- **Cohort Capacity:** Maximum 20 students per cohort.\n- **Location Pricing:** Abuja (₦200,000 Active), Lagos (₦150,000), Uyo (₦200,000), Osun/Enugu/Kaduna TBD.\n- **Late-Join Window:** Students may join up to 30 days after start if space permits.\n- **Documentation:** Official Internship Completion Letter stating facility name, dates, total hours, and supervisor signature."
+  },
+  {
+    id: "f-5",
+    slug: "international-recognition-eb3-qqi",
+    category: "international",
+    title: "Is NIC certification recognised in the US, Ireland (QQI), or Australia?",
+    short_answer: "NIC credentials are verifiable globally on our public registry. However, foreign employers/regulators determine equivalency; NIC is not automatically equivalent to US CNA or QQI Level 5.",
+    content_markdown: "### Credential Verification vs. International Recognition\n\n- **Digital Verification:** Foreign employers, immigration agencies, and institutions can independently verify your certificate and transcript on NIC's public digital registry at https://www.nicnigeria.org/verify.\n- **US EB-3 Visa / CNA:** NIC training builds a verifiable professional profile. However, NIC does NOT guarantee EB-3 visa sponsorship or state CNA licensing.\n- **Ireland QQI Level 5:** NIC qualifications should NOT be presented as automatically equivalent to QQI Level 5. Acceptance depends on the specific Irish employer or evaluation authority."
+  },
+  {
+    id: "f-6",
+    slug: "admission-entry-requirements",
+    category: "getting-started",
+    title: "What are the entry and admission requirements?",
+    short_answer: "No prior healthcare experience is required for Level 1. Open to O-Level (SSCE), ND, HND, BSc holders, and career changers.",
+    content_markdown: "### Admission Requirements\n\n- **Foundational Caregiver (Level 1):** Open to all interested applicants. No prior medical or caregiving experience is required.\n- **Educational Background:** Minimum SSCE / O-Level, ND, HND, or Degree holders are welcome.\n- **Technical Requirements:** A smartphone, tablet, or laptop with internet access for self-paced online modules.\n- **International Applicants:** Eligible to study remotely from any country."
+  },
+  {
+    id: "f-7",
+    slug: "sample-certificates-and-transcripts-policy",
+    category: "certification",
+    title: "Can I get a sample/specimen certificate or transcript before enrolling?",
+    short_answer: "NIC does not issue specimen or sample copies of certificates/transcripts to prospective applicants to safeguard document security.",
+    content_markdown: "### Sample Certificate & Transcript Policy\n\nNIC **does not provide specimen or sample copies** of certificates, transcripts, or internship verification letters to prospective applicants.\n\n**Security & Assurance:** Official credentials featuring digital QR verification codes are issued upon course completion."
+  }
+];
+
 export default function PublicFAQPage() {
-  const [articles, setArticles] = useState<KBArticle[]>([]);
+  const [articles, setArticles] = useState<KBArticle[]>(FALLBACK_ARTICLES);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [feedbackGiven, setFeedbackGiven] = useState<Record<string, boolean>>({});
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fee Calculator State
-  const [includeLevel1, setIncludeLevel1] = useState(true);
-  const [includeLevel2, setIncludeLevel2] = useState(true);
-  const [includeInternship, setIncludeInternship] = useState(true);
-  const [includeMembership, setIncludeMembership] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    fetchArticles();
+    fetchArticlesFromDatabase();
   }, []);
 
-  async function fetchArticles() {
-    setIsLoading(true);
+  async function fetchArticlesFromDatabase() {
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -72,31 +126,37 @@ export default function PublicFAQPage() {
         .eq("is_published", true)
         .order("created_at", { ascending: true });
 
-      if (error) throw error;
-      setArticles(data || []);
-    } catch (err: any) {
-      console.error("Error loading FAQs:", err);
-    } finally {
-      setIsLoading(false);
+      if (!error && data && data.length > 0) {
+        setArticles(data);
+      }
+    } catch (err) {
+      console.warn("Using fallback articles due to fetch error:", err);
     }
   }
 
-  // Tokenized & Synonym-Aware Search Logic
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("all");
+    setExpandedId(null);
+  };
+
+  // Advanced Tokenized Search & Synonym Matching
   const getFilteredArticles = () => {
     const rawQuery = searchQuery.trim().toLowerCase();
 
     if (!rawQuery) {
-      return articles.filter(
-        (art) => selectedCategory === "all" || art.category === selectedCategory
-      );
+      if (selectedCategory === "all") return articles;
+      return articles.filter((art) => art.category === selectedCategory);
     }
 
-    // Tokenize search query & handle spelling variants (enrol/enroll, etc.)
-    const queryTokens = rawQuery
-      .replace(/enrolment|enrollment|enrolling|enrolled/g, "enrol enroll register")
-      .replace(/programmes|programs/g, "programme program course")
-      .split(/\s+/)
-      .filter((t) => t.length > 1);
+    // Tokenize search query and normalize common synonyms/words
+    const normalizedQuery = rawQuery
+      .replace(/enrolment|enrollment|enrolling|enrolled|registration|register/g, "enrol enroll register join apply")
+      .replace(/certificates|certificate|certification|transcripts|transcript/g, "certificate cert transcript credential")
+      .replace(/programmes|programs|courses|course|training/g, "programme program course training level")
+      .replace(/cost|price|pricing|fees|fee|pay/g, "cost fee price tuition payment");
+
+    const queryTokens = normalizedQuery.split(/\s+/).filter((t) => t.length > 1);
 
     const scored = articles.map((art) => {
       const title = art.title.toLowerCase();
@@ -108,14 +168,14 @@ export default function PublicFAQPage() {
       let score = 0;
 
       queryTokens.forEach((token) => {
-        if (title.includes(token)) score += 5;
-        if (shortAns.includes(token)) score += 3;
+        if (title.includes(token)) score += 6;
+        if (shortAns.includes(token)) score += 4;
         if (slug.includes(token)) score += 3;
         if (category.includes(token)) score += 2;
         if (content.includes(token)) score += 1;
       });
 
-      // Bonus if category filter matches
+      // Bonus if explicitly selected category matches
       if (selectedCategory !== "all" && art.category === selectedCategory) {
         score += 2;
       }
@@ -180,17 +240,17 @@ export default function PublicFAQPage() {
               <Search className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search queries (e.g. how to enrol, fees, clinical internship, US EB-3, QQI Ireland)..."
+                placeholder="Search queries (e.g. Certificate, enrol, fees, internship, Abuja, EB-3)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border-0 bg-white/95 text-slate-900 pl-12 pr-4 py-3.5 text-base shadow-lg focus:ring-2 focus:ring-emerald-400 outline-none placeholder:text-slate-400"
+                className="w-full rounded-2xl border-0 bg-white/95 text-slate-900 pl-12 pr-10 py-3.5 text-base shadow-lg focus:ring-2 focus:ring-emerald-400 outline-none placeholder:text-slate-400"
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-3.5 text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded-full"
+                  onClick={handleResetFilters}
+                  className="absolute right-4 top-3.5 text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded-full font-bold"
                 >
-                  Clear Search
+                  Clear
                 </button>
               )}
             </div>
@@ -201,21 +261,21 @@ export default function PublicFAQPage() {
         <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
-            const isSelected = selectedCategory === cat.id;
+            const isSelected = selectedCategory === cat.id && !searchQuery;
             return (
               <button
                 key={cat.id}
                 onClick={() => {
                   setSelectedCategory(cat.id);
-                  setSearchQuery(""); // Clear search query when changing explicit topic tab
+                  setSearchQuery(""); // Reset search query when picking a topic tab
                 }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-                  isSelected && !searchQuery
+                  isSelected
                     ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 scale-105"
                     : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
                 }`}
               >
-                <Icon className={`h-4 w-4 ${isSelected && !searchQuery ? "text-white" : "text-emerald-600"}`} />
+                <Icon className={`h-4 w-4 ${isSelected ? "text-white" : "text-emerald-600"}`} />
                 {cat.name}
               </button>
             );
@@ -228,28 +288,36 @@ export default function PublicFAQPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                 <HelpCircle className="h-5 w-5 text-emerald-600" />
-                {searchQuery ? `Search Results for "${searchQuery}"` : "Frequently Asked Questions"}{" "}
+                {searchQuery
+                  ? `Search Results for "${searchQuery}"`
+                  : selectedCategory !== "all"
+                  ? `${CATEGORIES.find((c) => c.id === selectedCategory)?.name}`
+                  : "Frequently Asked Questions"}{" "}
                 <span className="text-sm text-slate-500 font-normal">({filteredArticles.length})</span>
               </h2>
+
+              {(searchQuery || selectedCategory !== "all") && (
+                <button
+                  onClick={handleResetFilters}
+                  className="text-xs text-emerald-700 font-bold hover:underline flex items-center gap-1"
+                >
+                  <RotateCcw className="h-3 w-3" /> Reset Filters
+                </button>
+              )}
             </div>
 
-            {isLoading ? (
-              <div className="text-center py-12 text-slate-500">Loading verified answers...</div>
-            ) : filteredArticles.length === 0 ? (
-              <div className="bg-white rounded-2xl border p-8 text-center text-slate-500 space-y-3 shadow-sm">
+            {filteredArticles.length === 0 ? (
+              <div className="bg-white rounded-2xl border p-8 text-center text-slate-500 space-y-4 shadow-sm">
                 <HelpCircle className="h-10 w-10 text-slate-300 mx-auto" />
                 <p className="font-semibold text-slate-700">No matching questions found for "{searchQuery}".</p>
                 <p className="text-xs text-slate-500 max-w-md mx-auto">
-                  Try searching with keywords like <strong>"enrol"</strong>, <strong>"fees"</strong>, <strong>"internship"</strong>, <strong>"Abuja"</strong>, or <strong>"certificate"</strong>.
+                  Try searching with keywords like <strong>"enrol"</strong>, <strong>"certificate"</strong>, <strong>"fees"</strong>, <strong>"internship"</strong>, or <strong>"Abuja"</strong>.
                 </p>
                 <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedCategory("all");
-                  }}
-                  className="px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors inline-block"
+                  onClick={handleResetFilters}
+                  className="px-5 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition-colors inline-flex items-center gap-2 shadow-sm"
                 >
-                  View All Questions
+                  <RotateCcw className="h-3.5 w-3.5" /> View All Questions
                 </button>
               </div>
             ) : (
