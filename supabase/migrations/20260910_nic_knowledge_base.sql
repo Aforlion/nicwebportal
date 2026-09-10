@@ -74,17 +74,25 @@ ALTER TABLE public.kb_embeddings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kb_escalations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kb_feedback ENABLE ROW LEVEL SECURITY;
 
+-- Explicit Grants for REST API Schema Cache & Queries
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT SELECT ON public.kb_articles TO anon, authenticated;
+GRANT SELECT ON public.kb_versions TO anon, authenticated;
+GRANT SELECT ON public.kb_embeddings TO anon, authenticated;
+GRANT SELECT, INSERT ON public.kb_feedback TO anon, authenticated;
+GRANT INSERT ON public.kb_escalations TO anon, authenticated;
+
 DROP POLICY IF EXISTS "Public articles read" ON public.kb_articles;
 CREATE POLICY "Public articles read" ON public.kb_articles FOR SELECT USING (is_published = true);
 
 DROP POLICY IF EXISTS "Full access to kb_articles" ON public.kb_articles;
-CREATE POLICY "Full access to kb_articles" ON public.kb_articles FOR ALL USING (auth.role() IN ('authenticated', 'service_role'));
+CREATE POLICY "Full access to kb_articles" ON public.kb_articles FOR ALL USING (true);
 
 DROP POLICY IF EXISTS "Full access to kb_versions" ON public.kb_versions;
-CREATE POLICY "Full access to kb_versions" ON public.kb_versions FOR ALL USING (auth.role() IN ('authenticated', 'service_role'));
+CREATE POLICY "Full access to kb_versions" ON public.kb_versions FOR ALL USING (true);
 
 DROP POLICY IF EXISTS "Full access to kb_embeddings" ON public.kb_embeddings;
-CREATE POLICY "Full access to kb_embeddings" ON public.kb_embeddings FOR ALL USING (auth.role() IN ('authenticated', 'service_role'));
+CREATE POLICY "Full access to kb_embeddings" ON public.kb_embeddings FOR ALL USING (true);
 
 DROP POLICY IF EXISTS "Full access to kb_escalations" ON public.kb_escalations;
 CREATE POLICY "Full access to kb_escalations" ON public.kb_escalations FOR ALL USING (true);
@@ -93,4 +101,5 @@ DROP POLICY IF EXISTS "Public insert feedback" ON public.kb_feedback;
 CREATE POLICY "Public insert feedback" ON public.kb_feedback FOR INSERT WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Full access feedback" ON public.kb_feedback;
-CREATE POLICY "Full access feedback" ON public.kb_feedback FOR ALL USING (auth.role() IN ('authenticated', 'service_role'));
+CREATE POLICY "Full access feedback" ON public.kb_feedback FOR ALL USING (true);
+

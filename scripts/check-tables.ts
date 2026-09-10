@@ -1,51 +1,42 @@
 import { createClient } from '@supabase/supabase-js'
-import * as dotenv from 'dotenv'
 
-dotenv.config({ path: '.env.local' })
+const url = 'https://fyaeabdaxqrdosdksqwx.supabase.co'
+const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5YWVhYmRheHFyZG9zZGtzcXd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNzk5ODIsImV4cCI6MjA4Mzk1NTk4Mn0.POxoRZGE_07yqi4VSUBHksd-iybSx3ZClwYFv2WMRbg'
+const serviceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5YWVhYmRheHFyZG9zZGtzcXd4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODM3OTk4MiwiZXhwIjoyMDgzOTU1OTgyfQ.6Zcb4njTJ26Z3pcfywlHJonbESQd0MmKA0EUxAH6TkU'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const anonClient = createClient(url, anonKey)
+const serviceClient = createClient(url, serviceKey)
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing env vars')
-  process.exit(1)
-}
+async function testAll() {
+  console.log('--- TESTING WITH SERVICE ROLE KEY ---')
+  const tables = [
+    'internship_locations',
+    'internship_cohorts',
+    'internship_enrollments',
+    'kb_articles',
+    'kb_versions',
+    'kb_escalations',
+    'kb_feedback'
+  ]
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  for (const t of tables) {
+    const { data, error, count } = await serviceClient.from(t).select('*', { count: 'exact' })
+    if (error) {
+      console.log(`ServiceRole ❌ Table '${t}': ${error.message} (${error.code})`)
+    } else {
+      console.log(`ServiceRole ✅ Table '${t}': ${data?.length} rows found`)
+    }
+  }
 
-async function checkTables() {
-  console.log('Replacing protect_profile_roles trigger function...')
-
-  const sql = `
-CREATE OR REPLACE FUNCTION protect_profile_roles()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Allow service_role to change roles
-    IF auth.role() = 'service_role' THEN
-        RETURN NEW;
-    END IF;
-
-    IF (OLD.role IS DISTINCT FROM NEW.role) AND 
-       NOT EXISTS (
-           SELECT 1 FROM profiles 
-           WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
-       ) THEN
-        RAISE EXCEPTION 'Only admins can change user roles';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-  `
-
-  const { data, error } = await supabase.rpc('exec_sql', {
-    sql_query: sql
-  })
-
-  if (error) {
-    console.error('Error running exec_sql RPC:', error.message)
-  } else {
-    console.log('Successfully updated protect_profile_roles function!', data)
+  console.log('\n--- TESTING WITH ANON KEY (BROWSER SIMULATION) ---')
+  for (const t of tables) {
+    const { data, error } = await anonClient.from(t).select('*')
+    if (error) {
+      console.log(`Anon ❌ Table '${t}': ${error.message} (${error.code})`)
+    } else {
+      console.log(`Anon ✅ Table '${t}': ${data?.length} rows retrieved`)
+    }
   }
 }
 
-checkTables()
+testAll()

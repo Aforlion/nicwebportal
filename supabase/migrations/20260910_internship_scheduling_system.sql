@@ -52,6 +52,12 @@ ALTER TABLE public.internship_locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.internship_cohorts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.internship_enrollments ENABLE ROW LEVEL SECURITY;
 
+-- Explicit Grants for REST API Schema Cache & Queries
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT SELECT ON public.internship_locations TO anon, authenticated;
+GRANT SELECT ON public.internship_cohorts TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.internship_enrollments TO anon, authenticated;
+
 -- Policies
 DROP POLICY IF EXISTS "Public read internship locations" ON public.internship_locations;
 CREATE POLICY "Public read internship locations" ON public.internship_locations FOR SELECT USING (true);
@@ -60,10 +66,11 @@ DROP POLICY IF EXISTS "Public read internship cohorts" ON public.internship_coho
 CREATE POLICY "Public read internship cohorts" ON public.internship_cohorts FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Full access to internship_locations" ON public.internship_locations;
-CREATE POLICY "Full access to internship_locations" ON public.internship_locations FOR ALL USING (auth.role() IN ('authenticated', 'service_role'));
+CREATE POLICY "Full access to internship_locations" ON public.internship_locations FOR ALL USING (true);
 
 DROP POLICY IF EXISTS "Full access to internship_cohorts" ON public.internship_cohorts;
-CREATE POLICY "Full access to internship_cohorts" ON public.internship_cohorts FOR ALL USING (auth.role() IN ('authenticated', 'service_role'));
+CREATE POLICY "Full access to internship_cohorts" ON public.internship_cohorts FOR ALL USING (true);
 
 DROP POLICY IF EXISTS "Full access to internship_enrollments" ON public.internship_enrollments;
 CREATE POLICY "Full access to internship_enrollments" ON public.internship_enrollments FOR ALL USING (true);
+
