@@ -99,11 +99,11 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
         setUpdating(true)
         const result = await assignNicIdAction(membershipId!)
         if (result.success) {
-            toast.success("NIC ID assigned successfully!")
+            toast.success(`Welcome email sent & NIC ID assigned (${result.nic_id})!`)
             await loadDetails()
             if (onStatusUpdate) onStatusUpdate()
         } else {
-            toast.error(result.error || "Failed to assign NIC ID")
+            toast.error(result.error || "Failed to send welcome email & assign NIC ID")
         }
         setUpdating(false)
     }
@@ -458,8 +458,8 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                                         onClick={handleAssignNicId}
                                         disabled={updating}
                                     >
-                                        {updating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Award className="h-4 w-4 mr-2" />}
-                                        Assign NIC ID
+                                        {updating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
+                                        Send Welcome Email
                                     </Button>
                                 )}
                                 <Button variant="outline" className="flex-1" onClick={onClose}>Close</Button>
