@@ -110,6 +110,25 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
             return { error: "Failed to create enrollment record. Please contact support." }
         }
 
+        // Record completed payment in payments table for admin revenue dashboard
+        try {
+            const paidAmount = verifyData.data?.amount ? verifyData.data.amount / 100 : (course?.price || 0);
+            await supabase
+                .from('payments')
+                .upsert({
+                    membership_id: member?.id || null,
+                    amount: paidAmount,
+                    payment_type: 'course_enrollment',
+                    payment_method: 'paystack',
+                    transaction_reference: reference,
+                    status: 'completed',
+                    payment_date: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'transaction_reference' })
+        } catch (payRecordErr) {
+            console.error("[verifyPaymentAndEnroll] Non-fatal error logging payment record:", payRecordErr)
+        }
+
         // 4. Send Confirmation Email
         const { data: courseData } = await supabase
             .from('courses')
@@ -301,6 +320,32 @@ export async function enrollFromWebhookAction(
     if (enrollError) {
         console.error("[enrollFromWebhookAction] Enrollment insert failed", { enrollError, userId, courseId, reference })
         return { success: false, message: "Failed to create enrollment." }
+    }
+
+    // Record completed payment in payments table for admin revenue dashboard
+    try {
+        const paidAmount = verifyData.data?.amount ? verifyData.data.amount / 100 : 0;
+        
+        const { data: membership } = await adminClient
+            .from('memberships')
+            .select('id')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        await adminClient
+            .from('payments')
+            .upsert({
+                membership_id: membership?.id || null,
+                amount: paidAmount,
+                payment_type: 'course_enrollment',
+                payment_method: 'paystack',
+                transaction_reference: reference,
+                status: 'completed',
+                payment_date: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'transaction_reference' });
+    } catch (payRecordErr) {
+        console.error("[enrollFromWebhookAction] Non-fatal error logging payment record:", payRecordErr)
     }
 
     // 5. Send confirmation email (non-fatal if it fails)
