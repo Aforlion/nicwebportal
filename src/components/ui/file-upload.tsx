@@ -34,10 +34,17 @@ export function FileUpload({
         try {
             if (!e.target.files || e.target.files.length === 0) return
 
-            setUploading(true)
             const file = e.target.files[0]
-            const fileExt = file.name.split('.').pop()
-            const fileName = `${Math.random().toString(36).substring(2)}_${file.name.replace(/\s+/g, '_')}` // Append original name for clarity
+
+            // 1. File size check (10MB max)
+            if (file.size > 10 * 1024 * 1024) {
+                toast.error("File size exceeds maximum limit of 10MB.")
+                return
+            }
+
+            setUploading(true)
+            const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${safeName}`
             const filePath = `uploads/${fileName}`
 
             // Upload to Supabase Storage

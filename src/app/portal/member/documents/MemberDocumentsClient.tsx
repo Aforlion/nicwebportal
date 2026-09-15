@@ -81,8 +81,9 @@ export default function MemberDocumentsClient({ initialDocuments }: MemberDocume
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) { toast.error("You must be logged in"); return }
 
-            const ext = selectedFile.name.split(".").pop()
-            const storagePath = `${user.id}/${Date.now()}_${docName.replace(/\s+/g, "_")}.${ext}`
+            const ext = (selectedFile.name.split(".").pop() || "pdf").replace(/[^a-zA-Z0-9]/g, "")
+            const safeDocName = docName.replace(/[^a-zA-Z0-9._-]/g, "_")
+            const storagePath = `${user.id}/${Date.now()}_${safeDocName}.${ext}`
 
             // 1 — Upload file to Supabase Storage
             const { error: uploadError } = await supabase.storage

@@ -436,14 +436,14 @@ export default async function LessonPlayerPage({
                     )}
 
                     {/* Navigation Bar at the bottom */}
-                    <div className="mt-20 pt-10 border-t-2 border-muted/20 flex items-center justify-between pb-10">
+                    <div className="mt-20 pt-10 border-t-2 border-muted/20 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pb-28 sm:pb-10">
                         {prevItem ? (
-                            <Button variant="ghost" asChild className="group text-secondary font-bold h-auto py-3">
+                            <Button variant="ghost" asChild className="group text-secondary font-bold h-auto py-3 px-4 sm:px-6 rounded-xl sm:rounded-2xl">
                                 <Link href={getHref(prevItem)} className="flex items-center">
-                                    <ChevronLeft className="h-5 w-5 mr-3 group-hover:-translate-x-1 transition-transform" />
-                                    <div className="text-left">
+                                    <ChevronLeft className="h-5 w-5 mr-2 shrink-0 group-hover:-translate-x-1 transition-transform" />
+                                    <div className="text-left min-w-0">
                                         <div className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none mb-1">Previous</div>
-                                        <div className="line-clamp-1 max-w-[200px]">
+                                        <div className="line-clamp-1 max-w-[180px] sm:max-w-[220px]">
                                             {prevItem.type === 'lesson' 
                                                 ? sortedModules.flatMap((m: any) => m.lessons).find((l: any) => l.id === prevItem.id)?.title 
                                                 : prevItem.type === 'module' 
@@ -457,11 +457,11 @@ export default async function LessonPlayerPage({
 
                         {nextItem ? (
                             isNextItemLocked ? (
-                                <Button disabled className="group bg-muted text-muted-foreground font-bold h-16 px-8 rounded-2xl shadow-none cursor-not-allowed">
-                                    <div className="flex items-center">
-                                        <div className="text-right mr-4">
+                                <Button disabled className="group bg-muted text-muted-foreground font-bold h-auto py-3.5 px-4 sm:px-6 rounded-xl sm:rounded-2xl shadow-none cursor-not-allowed justify-end">
+                                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto">
+                                        <div className="text-left sm:text-right mr-3 min-w-0">
                                             <div className="text-[10px] uppercase tracking-widest leading-none mb-1">Next Up (Locked)</div>
-                                            <div className="line-clamp-1 max-w-[250px]">
+                                            <div className="line-clamp-1 max-w-[180px] sm:max-w-[220px]">
                                                 {nextItem.type === 'lesson' 
                                                     ? sortedModules.flatMap((m: any) => m.lessons).find((l: any) => l.id === nextItem.id)?.title 
                                                     : nextItem.type === 'module'
@@ -469,7 +469,7 @@ export default async function LessonPlayerPage({
                                                         : 'Complete Current Lesson'}
                                             </div>
                                         </div>
-                                        <div className="h-8 w-8 rounded-full bg-muted-foreground/10 flex items-center justify-center">
+                                        <div className="h-8 w-8 rounded-full bg-muted-foreground/10 flex items-center justify-center shrink-0">
                                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                             </svg>
@@ -477,11 +477,11 @@ export default async function LessonPlayerPage({
                                     </div>
                                 </Button>
                             ) : (
-                                <Button asChild className="group bg-secondary hover:bg-secondary/90 text-white font-bold h-16 px-8 rounded-2xl shadow-lg transition-all active:scale-95">
-                                    <Link href={getHref(nextItem)} className="flex items-center">
-                                        <div className="text-right mr-4">
+                                <Button asChild className="group bg-secondary hover:bg-secondary/90 text-white font-bold h-auto py-3.5 px-4 sm:px-6 rounded-xl sm:rounded-2xl shadow-lg transition-all active:scale-95">
+                                    <Link href={getHref(nextItem)} className="flex items-center justify-between sm:justify-end w-full sm:w-auto">
+                                        <div className="text-left sm:text-right mr-3 min-w-0">
                                             <div className="text-[10px] text-white/60 uppercase tracking-widest leading-none mb-1">Next Up</div>
-                                            <div className="line-clamp-1 max-w-[250px]">
+                                            <div className="line-clamp-1 max-w-[180px] sm:max-w-[220px]">
                                                 {nextItem.type === 'lesson' 
                                                     ? sortedModules.flatMap((m: any) => m.lessons).find((l: any) => l.id === nextItem.id)?.title 
                                                     : nextItem.type === 'module'
@@ -489,7 +489,7 @@ export default async function LessonPlayerPage({
                                                         : 'Continue Learning'}
                                             </div>
                                         </div>
-                                        <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                                        <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors shrink-0">
                                             <svg className="h-5 w-5 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                             </svg>

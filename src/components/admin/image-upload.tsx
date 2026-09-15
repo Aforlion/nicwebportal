@@ -30,10 +30,25 @@ export function ImageUpload({
         try {
             if (!e.target.files || e.target.files.length === 0) return
 
-            setUploading(true)
             const file = e.target.files[0]
-            const fileExt = file.name.split('.').pop()
-            const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+
+            // 1. MIME validation
+            if (!file.type.startsWith("image/")) {
+                toast.error("Please select a valid image file (PNG, JPG, WEBP, SVG).")
+                return
+            }
+
+            // 2. File size check (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error("Image size must be less than 5MB.")
+                return
+            }
+
+            setUploading(true)
+            const rawExt = file.name.split('.').pop() || 'png'
+            const fileExt = rawExt.replace(/[^a-zA-Z0-9]/g, '')
+            const safeBaseName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9._-]/g, "_")
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${safeBaseName}.${fileExt}`
             const filePath = `uploads/${fileName}`
 
             const { error: uploadError } = await supabase.storage
