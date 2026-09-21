@@ -7,6 +7,8 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai"
 import { revalidatePath } from "next/cache"
 import { Resend } from "resend"
 import { env } from "@/env"
+// @ts-ignore
+import { PDFParse } from "pdf-parse"
 
 export interface PillarScore {
     pillarName: string
@@ -109,34 +111,89 @@ export async function evaluateFacilityCurriculumAction(facilityId: string) {
             }
         })
 
-        // 2. Determine document access and extract contents
-        let documentPart: any = null
-        let textFallback = ""
+        // 2. Fetch and extract content from all uploaded curriculum files in storage
+        const extractedCurriculumTexts: string[] = []
+        let parsedDocCount = 0
 
-        try {
-            // Attempt to fetch file from URL (e.g. Supabase storage public URL)
-            const fileResp = await fetch(facility.curriculum_url, {
-                headers: { 'User-Agent': 'Mozilla/5.0' },
-                signal: AbortSignal.timeout(15000)
-            })
+        // 2a. Query documents table belonging to facility owner
+        if (facility.owner_id) {
+            const { data: mems } = await supabase
+                .from('memberships')
+                .select('id')
+                .eq('user_id', facility.owner_id)
 
-            const contentType = fileResp.headers.get('content-type') || ''
-            if (contentType.includes('pdf') || facility.curriculum_url.endsWith('.pdf')) {
-                const arrayBuf = await fileResp.arrayBuffer()
-                const base64Data = Buffer.from(arrayBuf).toString('base64')
-                documentPart = {
-                    inlineData: {
-                        data: base64Data,
-                        mimeType: 'application/pdf'
+            if (mems && mems.length > 0) {
+                const memIds = mems.map(m => m.id)
+                const { data: docs } = await supabase
+                    .from('documents')
+                    .select('*')
+                    .in('membership_id', memIds)
+
+                if (docs && docs.length > 0) {
+                    // Prioritize curriculum/syllabus documents, or process all if relevant
+                    const curriculumDocs = docs.filter(d =>
+                        (d.document_name && d.document_name.toLowerCase().includes('curriculum')) ||
+                        (d.document_type && d.document_type.toLowerCase().includes('curriculum')) ||
+                        (d.document_name && d.document_name.toLowerCase().includes('syllabus'))
+                    )
+                    const targetDocs = curriculumDocs.length > 0 ? curriculumDocs : docs
+
+                    for (const d of targetDocs) {
+                        if (!d.file_url) continue
+                        try {
+                            const fileResp = await fetch(d.file_url, { signal: AbortSignal.timeout(15000) })
+                            if (fileResp.ok) {
+                                const arrBuf = await fileResp.arrayBuffer()
+                                const parser = new PDFParse(new Uint8Array(arrBuf))
+                                const parsed = await parser.getText()
+                                if (parsed && parsed.text && parsed.text.trim()) {
+                                    extractedCurriculumTexts.push(
+                                        `=== UPLOADED CURRICULUM FILE: "${d.document_name}" (Pages: ${parsed.total || 'N/A'}) ===\n${parsed.text}`
+                                    )
+                                    parsedDocCount++
+                                }
+                            }
+                        } catch (err: any) {
+                            console.warn(`[AI Evaluator] Failed to parse document ${d.document_name}:`, err.message)
+                        }
                     }
                 }
-            } else {
-                textFallback = await fileResp.text()
             }
-        } catch (fetchErr: any) {
-            console.warn("Could not directly stream document buffer:", fetchErr.message)
-            textFallback = `Document URL: ${facility.curriculum_url}. (Direct stream timed out or link is restricted).`
         }
+
+        // 2b. If a direct file URL was also provided in curriculum_url, parse it if not already fetched
+        if (facility.curriculum_url && !facility.curriculum_url.includes('drive.google.com')) {
+            try {
+                const urlResp = await fetch(facility.curriculum_url, {
+                    headers: { 'User-Agent': 'Mozilla/5.0' },
+                    signal: AbortSignal.timeout(15000)
+                })
+                if (urlResp.ok) {
+                    const cType = urlResp.headers.get('content-type') || ''
+                    if (cType.includes('pdf') || facility.curriculum_url.endsWith('.pdf')) {
+                        const arrBuf = await urlResp.arrayBuffer()
+                        const parser = new PDFParse(new Uint8Array(arrBuf))
+                        const parsed = await parser.getText()
+                        if (parsed && parsed.text && parsed.text.trim()) {
+                            extractedCurriculumTexts.push(
+                                `=== SUBMITTED DIRECT URL CURRICULUM FILE ===\n${parsed.text}`
+                            )
+                            parsedDocCount++
+                        }
+                    }
+                }
+            } catch (urlErr: any) {
+                console.warn("[AI Evaluator] Direct URL parse error:", urlErr.message)
+            }
+        }
+
+        if (extractedCurriculumTexts.length === 0 && !facility.curriculum_url) {
+            return { error: 'No readable curriculum files or documents found for this facility.' }
+        }
+
+        const combinedCurriculumContent = extractedCurriculumTexts.length > 0
+            ? extractedCurriculumTexts.join('\n\n')
+            : `Facility provided document link: ${facility.curriculum_url} (Direct file stream was restricted or inaccessible).`
 
         // 3. Build Prompt aligning with SOP-EDU-002
         const systemPrompt = `
@@ -167,12 +224,10 @@ Facility Name: "${facility.name}"
 Curriculum URL: "${facility.curriculum_url}"
         `
 
-        const contents: any[] = [systemPrompt]
-        if (documentPart) {
-            contents.push(documentPart)
-        } else {
-            contents.push(`Provided document syllabus information / text:\n${textFallback.slice(0, 5000)}`)
-        }
+        const contents: any[] = [
+            systemPrompt,
+            `\n\n### SUBMITTED CURRICULUM SYLLABUS AND COURSE MATERIALS (${parsedDocCount} full document files evaluated):\n\n${combinedCurriculumContent}`
+        ]
 
         const result = await model.generateContent(contents)
         const responseText = result.response.text()
