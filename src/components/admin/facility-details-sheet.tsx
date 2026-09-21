@@ -28,10 +28,18 @@ import {
     Calendar,
     ExternalLink,
     Loader2,
-    Clock
+    Clock,
+    BookOpen,
+    Check,
+    X,
+    Sparkles
 } from "lucide-react"
 import { format } from "date-fns"
 import { getFacilityDetails } from "@/actions/admin/get-facility-details"
+import { updateFacilityCurriculumStatus } from "@/actions/admin/manage-facility-curriculum"
+import { verifyDocumentAction } from "@/actions/admin/verify-document"
+import { evaluateFacilityCurriculumAction, CurriculumEvaluationResult } from "@/actions/admin/ai-curriculum-evaluator"
+import { AICurriculumEvaluationDialog } from "@/components/admin/ai-curriculum-evaluation-dialog"
 import { toast } from "sonner"
 
 interface FacilityDetailsSheetProps {
@@ -67,6 +75,61 @@ export function FacilityDetailsSheet({ facilityId, isOpen, onClose }: FacilityDe
         } finally {
             setLoading(false)
         }
+    }
+
+    const [curriculumUpdating, setCurriculumUpdating] = useState(false)
+    const [evaluatingAI, setEvaluatingAI] = useState(false)
+    const [aiEvaluation, setAiEvaluation] = useState<CurriculumEvaluationResult | null>(null)
+    const [isAIDialogOpen, setIsAIDialogOpen] = useState(false)
+
+    async function handleRunAIEvaluation() {
+        if (!facilityId) return
+        setEvaluatingAI(true)
+        try {
+            const res = await evaluateFacilityCurriculumAction(facilityId)
+            if (res.success && res.evaluation) {
+                setAiEvaluation(res.evaluation)
+                setIsAIDialogOpen(true)
+                toast.success("AI standardization evaluation generated!")
+            } else {
+                toast.error(res.error || "AI evaluation failed")
+            }
+        } catch (err: any) {
+            toast.error(err.message || "Failed to trigger AI audit")
+        } finally {
+            setEvaluatingAI(false)
+        }
+    }
+
+    async function handleCurriculumStatusUpdate(status: 'approved' | 'rejected') {
+        if (!facilityId) return
+        setCurriculumUpdating(true)
+        try {
+            const result = await updateFacilityCurriculumStatus(facilityId, status)
+            if (result.success) {
+                toast.success(`Curriculum ${status === 'approved' ? 'approved' : 'rejected'} successfully`)
+                await loadDetails()
+            } else {
+                toast.error(result.error || "Failed to update curriculum status")
+            }
+        } catch (err: any) {
+            toast.error(err.message || "Failed to update curriculum")
+        } finally {
+            setCurriculumUpdating(false)
+        }
+    }
+
+    const [verifyingDocId, setVerifyingDocId] = useState<string | null>(null)
+    async function handleVerifyFacilityDocument(docId: string, status: 'verified' | 'rejected') {
+        setVerifyingDocId(docId)
+        const result = await verifyDocumentAction(docId, status)
+        if (result.success) {
+            toast.success(`Document marked as ${status}`)
+            await loadDetails()
+        } else {
+            toast.error(result.error || "Failed to update document")
+        }
+        setVerifyingDocId(null)
     }
 
     if (!isOpen) return null
@@ -208,6 +271,81 @@ export function FacilityDetailsSheet({ facilityId, isOpen, onClose }: FacilityDe
                                                 </div>
                                             </div>
                                         </section>
+
+                                        {/* Institutional Curriculum Review Section */}
+                                        {(facility.curriculum_url || facility.facility_type === 'training_agency') && (
+                                            <section className="border border-indigo-100 rounded-xl p-4 bg-indigo-50/40 space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="text-xs font-bold text-indigo-900 uppercase tracking-widest flex items-center gap-2">
+                                                        <BookOpen className="h-4 w-4 text-indigo-600" /> Institutional Curriculum
+                                                    </h3>
+                                                    {facility.curriculum_status === 'approved' ? (
+                                                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none uppercase text-[10px] tracking-wider">
+                                                            <CheckCircle2 className="mr-1 h-3 w-3" /> Approved
+                                                        </Badge>
+                                                    ) : facility.curriculum_status === 'rejected' ? (
+                                                        <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-none uppercase text-[10px] tracking-wider">
+                                                            <XCircle className="mr-1 h-3 w-3" /> Rejected
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none uppercase text-[10px] tracking-wider">
+                                                            <Clock className="mr-1 h-3 w-3" /> Under Review
+                                                        </Badge>
+                                                    )}
+                                                </div>
+
+                                                {facility.curriculum_url ? (
+                                                    <div className="space-y-3 pt-1">
+                                                        <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-indigo-100">
+                                                            <div className="truncate mr-2">
+                                                                <p className="text-xs font-semibold text-slate-800">Submitted Curriculum Document</p>
+                                                                <p className="text-[11px] text-indigo-600 truncate underline font-mono">
+                                                                    {facility.curriculum_url}
+                                                                </p>
+                                                            </div>
+                                                            <Button size="sm" variant="outline" className="shrink-0 text-indigo-600 border-indigo-200 hover:bg-indigo-50" asChild>
+                                                                <a href={facility.curriculum_url} target="_blank" rel="noopener noreferrer">
+                                                                    <ExternalLink className="h-3.5 w-3.5 mr-1" /> View Link
+                                                                </a>
+                                                            </Button>
+                                                        </div>
+
+                                                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                                                            <Button
+                                                                size="sm"
+                                                                disabled={evaluatingAI}
+                                                                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8 font-semibold shadow-sm"
+                                                                onClick={handleRunAIEvaluation}
+                                                            >
+                                                                <Sparkles className={`h-3.5 w-3.5 mr-1 text-indigo-200 ${evaluatingAI ? 'animate-spin' : 'animate-pulse'}`} />
+                                                                {evaluatingAI ? "Auditing with AI..." : "Run AI Standardization Audit"}
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                disabled={curriculumUpdating || evaluatingAI || facility.curriculum_status === 'approved'}
+                                                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8"
+                                                                onClick={() => handleCurriculumStatusUpdate('approved')}
+                                                            >
+                                                                <Check className="h-3.5 w-3.5 mr-1" />
+                                                                {curriculumUpdating ? "Updating..." : "Approve Curriculum"}
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                disabled={curriculumUpdating || evaluatingAI || facility.curriculum_status === 'rejected'}
+                                                                className="text-rose-600 border-rose-200 hover:bg-rose-50 text-xs h-8"
+                                                                onClick={() => handleCurriculumStatusUpdate('rejected')}
+                                                            >
+                                                                <X className="h-3.5 w-3.5 mr-1" />
+                                                                Reject
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-xs text-slate-500 italic">No curriculum document submitted yet.</p>
+                                                )}
+                                            </section>
+                                        )}
                                     </div>
                                 </TabsContent>
 
@@ -253,21 +391,51 @@ export function FacilityDetailsSheet({ facilityId, isOpen, onClose }: FacilityDe
                                     <div className="grid gap-3">
                                         {documents.length > 0 ? (
                                             documents.map((doc: any) => (
-                                                <div key={doc.id} className="group p-4 rounded-xl border border-slate-100 bg-white hover:border-primary/20 hover:shadow-sm transition-all flex items-center justify-between">
+                                                <div key={doc.id} className="group p-4 rounded-xl border border-slate-100 bg-white hover:border-primary/20 hover:shadow-sm transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                                                        <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 transition-colors shrink-0">
                                                             <FileText className="h-5 w-5" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-bold text-slate-800">{doc.name}</p>
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-sm font-bold text-slate-800">{doc.name}</p>
+                                                                <Badge className={
+                                                                    doc.status === 'verified' 
+                                                                        ? 'bg-emerald-100 text-emerald-800 border-none text-[10px]' 
+                                                                        : doc.status === 'rejected'
+                                                                        ? 'bg-rose-100 text-rose-800 border-none text-[10px]'
+                                                                        : 'bg-amber-100 text-amber-800 border-none text-[10px]'
+                                                                }>
+                                                                    {doc.status || 'pending'}
+                                                                </Badge>
+                                                            </div>
                                                             <p className="text-[10px] text-slate-400 uppercase font-medium">{doc.type || 'Institutional Document'}</p>
                                                         </div>
                                                     </div>
-                                                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-primary transition-colors" asChild>
-                                                        <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                                                            <ExternalLink className="h-4 w-4" />
-                                                        </a>
-                                                    </Button>
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <Button variant="outline" size="sm" className="text-xs h-8" asChild>
+                                                            <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                                                                <ExternalLink className="h-3.5 w-3.5 mr-1" /> View
+                                                            </a>
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            disabled={verifyingDocId === doc.id || doc.status === 'verified'}
+                                                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8"
+                                                            onClick={() => handleVerifyFacilityDocument(doc.id, 'verified')}
+                                                        >
+                                                            <Check className="h-3 w-3 mr-1" /> Verify
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            disabled={verifyingDocId === doc.id || doc.status === 'rejected'}
+                                                            className="text-rose-600 border-rose-200 hover:bg-rose-50 text-xs h-8"
+                                                            onClick={() => handleVerifyFacilityDocument(doc.id, 'rejected')}
+                                                        >
+                                                            <X className="h-3 w-3 mr-1" /> Reject
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             ))
                                         ) : (
@@ -302,6 +470,17 @@ export function FacilityDetailsSheet({ facilityId, isOpen, onClose }: FacilityDe
                     </div>
                 )}
             </SheetContent>
+
+            {/* AI Curriculum Standardization Evaluation Dialog */}
+            <AICurriculumEvaluationDialog
+                facility={facility}
+                evaluation={aiEvaluation}
+                open={isAIDialogOpen}
+                onOpenChange={setIsAIDialogOpen}
+                onDecisionApplied={async () => {
+                    await loadDetails()
+                }}
+            />
         </Sheet>
     )
 }

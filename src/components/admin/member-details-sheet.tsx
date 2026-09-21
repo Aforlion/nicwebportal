@@ -27,7 +27,9 @@ import {
     CreditCard,
     History,
     Shield,
-    Loader2
+    Loader2,
+    Check,
+    X
 } from "lucide-react"
 import { format } from "date-fns"
 import { getMemberDetails } from "@/actions/admin/get-member-details"
@@ -37,6 +39,7 @@ import { sendProfileUpdateRequestAction } from "@/actions/admin/send-update-requ
 import { inviteMemberAction } from "@/actions/admin/invite-member"
 import { assignNicIdAction } from "@/actions/admin/assign-nic-id"
 import { auditInternshipAction } from "@/actions/member/internships"
+import { verifyDocumentAction } from "@/actions/admin/verify-document"
 import { toast } from "sonner"
 
 interface MemberDetailsSheetProps {
@@ -142,6 +145,20 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
             toast.error(result.error || `Failed to update internship status`)
         }
         setAuditingInternship(false)
+    }
+
+    const [verifyingDocId, setVerifyingDocId] = useState<string | null>(null)
+    async function handleVerifyDocument(docId: string, status: 'verified' | 'rejected') {
+        setVerifyingDocId(docId)
+        const result = await verifyDocumentAction(docId, status)
+        if (result.success) {
+            toast.success(`Document marked as ${status}`)
+            await loadDetails()
+            if (onStatusUpdate) onStatusUpdate()
+        } else {
+            toast.error(result.error || "Failed to verify document")
+        }
+        setVerifyingDocId(null)
     }
 
     const getStatusBadge = (status: string) => {
@@ -328,17 +345,49 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
                                                 </div>
                                             ) : (
                                                 data.documents.map((doc: any) => (
-                                                    <div key={doc.id} className="border rounded-lg p-4 flex items-center justify-between">
+                                                    <div key={doc.id} className="border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                                         <div className="flex items-center gap-3">
-                                                            <FileText className="h-5 w-5 text-slate-400" />
+                                                            <FileText className="h-5 w-5 text-slate-400 shrink-0" />
                                                             <div>
-                                                                <p className="text-sm font-medium">{doc.document_name}</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-sm font-medium">{doc.document_name}</p>
+                                                                    <Badge className={
+                                                                        doc.status === 'verified' 
+                                                                            ? 'bg-emerald-100 text-emerald-800 border-none text-[10px]' 
+                                                                            : doc.status === 'rejected'
+                                                                            ? 'bg-rose-100 text-rose-800 border-none text-[10px]'
+                                                                            : 'bg-amber-100 text-amber-800 border-none text-[10px]'
+                                                                    }>
+                                                                        {doc.status || 'pending'}
+                                                                    </Badge>
+                                                                </div>
                                                                 <p className="text-xs text-slate-500">{doc.document_type}</p>
                                                             </div>
                                                         </div>
-                                                        <Button variant="ghost" size="sm" asChild>
-                                                            <a href={doc.file_url} target="_blank" rel="noopener noreferrer">View</a>
-                                                        </Button>
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            <Button variant="outline" size="sm" className="text-xs h-8" asChild>
+                                                                <a href={doc.file_url} target="_blank" rel="noopener noreferrer">View</a>
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                disabled={verifyingDocId === doc.id || doc.status === 'verified'}
+                                                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8"
+                                                                onClick={() => handleVerifyDocument(doc.id, 'verified')}
+                                                            >
+                                                                <Check className="h-3 w-3 mr-1" />
+                                                                Verify
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                disabled={verifyingDocId === doc.id || doc.status === 'rejected'}
+                                                                className="text-rose-600 border-rose-200 hover:bg-rose-50 text-xs h-8"
+                                                                onClick={() => handleVerifyDocument(doc.id, 'rejected')}
+                                                            >
+                                                                <X className="h-3 w-3 mr-1" />
+                                                                Reject
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 ))
                                             )}

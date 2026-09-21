@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -43,8 +43,42 @@ export function TrainingAgencyDashboard({ facility, staffCount, courses }: Train
     const [searchQuery, setSearchQuery] = useState("")
     const [curriculumUrl, setCurriculumUrl] = useState(facility.curriculum_url || "")
     const [isUpdatingCurriculum, setIsUpdatingCurriculum] = useState(false)
+    const [isUploadingFile, setIsUploadingFile] = useState(false)
     const [curriculumStatus, setCurriculumStatus] = useState(facility.curriculum_status || "under_review")
+    const fileInputRef = useRef<HTMLInputElement>(null)
     const supabase = createClient()
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        if (file.size > 25 * 1024 * 1024) {
+            toast.error("File size must be under 25MB")
+            return
+        }
+
+        setIsUploadingFile(true)
+        try {
+            const ext = file.name.split('.').pop()
+            const path = `${facility.id}/${Date.now()}_curriculum.${ext}`
+            const { error: uploadError } = await supabase.storage
+                .from('curriculum-documents')
+                .upload(path, file, { upsert: true })
+
+            if (uploadError) throw uploadError
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('curriculum-documents')
+                .getPublicUrl(path)
+
+            setCurriculumUrl(publicUrl)
+            toast.success("Curriculum document uploaded directly to NIC secure storage! Click 'Submit Curriculum' below to finalize.")
+        } catch (err: any) {
+            console.error("Upload error:", err)
+            toast.error(err.message || "Failed to upload file")
+        } finally {
+            setIsUploadingFile(false)
+        }
+    }
 
     useEffect(() => {
         loadAgencyData()
@@ -272,32 +306,67 @@ export function TrainingAgencyDashboard({ facility, staffCount, courses }: Train
                         </div>
 
                         {/* Curriculum Submission Form */}
-                        <div className="space-y-4 pt-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-secondary flex items-center gap-1.5">
-                                <FileText className="h-4 w-4 text-primary" />
-                                Curriculum / Syllabus Document URL (PDF / Cloud Link)
-                            </label>
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <Input 
-                                    placeholder="https://drive.google.com/file/d/... or http://..."
-                                    value={curriculumUrl}
-                                    onChange={(e) => setCurriculumUrl(e.target.value)}
-                                    className="flex-1 text-sm"
+                        <div className="space-y-4 pt-2 border rounded-xl p-5 bg-white shadow-sm">
+                            <div>
+                                <label className="text-xs font-bold uppercase tracking-wider text-secondary flex items-center gap-1.5 mb-1">
+                                    <Upload className="h-4 w-4 text-primary" />
+                                    1. Primary: Upload Curriculum Document to NIC Cloud (PDF / DOCX up to 25MB)
+                                </label>
+                                <p className="text-xs text-muted-foreground mb-3">
+                                    Upload the complete syllabus and instructional framework directly into NIC secure storage.
+                                </p>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileUpload}
+                                    accept=".pdf,.doc,.docx"
+                                    className="hidden"
                                 />
-                                <Button 
-                                    onClick={handleSaveCurriculum}
-                                    disabled={isUpdatingCurriculum}
-                                    className="bg-primary hover:bg-primary/90 font-semibold"
-                                >
-                                    {isUpdatingCurriculum ? "Saving..." : "Submit Syllabus"}
-                                    <Upload className="ml-2 h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={isUploadingFile || isUpdatingCurriculum}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="border-primary/30 text-primary hover:bg-primary/5 font-semibold text-xs h-9"
+                                    >
+                                        <Upload className="mr-2 h-3.5 w-3.5" />
+                                        {isUploadingFile ? "Uploading to NIC Cloud..." : "Choose PDF/DOCX File"}
+                                    </Button>
+                                    {isUploadingFile && (
+                                        <span className="text-xs text-amber-600 animate-pulse font-medium">Encrypting & uploading document...</span>
+                                    )}
+                                </div>
                             </div>
-                            {facility.curriculum_url && (
-                                <div className="text-xs flex items-center gap-1 text-primary">
-                                    <ExternalLink className="h-3.5 w-3.5" />
-                                    <a href={facility.curriculum_url} target="_blank" rel="noreferrer" className="underline font-medium">
-                                        View Current Submitted Curriculum Document
+
+                            <div className="border-t pt-3 space-y-2">
+                                <label className="text-xs font-bold uppercase tracking-wider text-secondary flex items-center gap-1.5">
+                                    <FileText className="h-4 w-4 text-primary" />
+                                    2. Curriculum Document URL (NIC Storage or External Cloud Link)
+                                </label>
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    <Input 
+                                        placeholder="NIC document URL will appear here or paste external link..."
+                                        value={curriculumUrl}
+                                        onChange={(e) => setCurriculumUrl(e.target.value)}
+                                        className="flex-1 text-xs font-mono"
+                                    />
+                                    <Button 
+                                        onClick={handleSaveCurriculum}
+                                        disabled={isUpdatingCurriculum || isUploadingFile || !curriculumUrl.trim()}
+                                        className="bg-primary hover:bg-primary/90 font-semibold text-xs h-9 shrink-0"
+                                    >
+                                        {isUpdatingCurriculum ? "Submitting..." : "Submit Curriculum for Review"}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {curriculumUrl && (
+                                <div className="text-xs flex items-center gap-1.5 text-primary bg-primary/5 p-2.5 rounded-lg border border-primary/10">
+                                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="truncate">Attached document:</span>
+                                    <a href={curriculumUrl} target="_blank" rel="noreferrer" className="underline font-bold truncate">
+                                        Open Document Preview
                                     </a>
                                 </div>
                             )}

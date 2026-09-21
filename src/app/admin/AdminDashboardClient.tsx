@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Users, GraduationCap, FileText, CreditCard, ArrowUpRight, ArrowDownRight, ShieldCheck, Search, Activity, MoreHorizontal, Calendar, TrendingUp } from "lucide-react"
+import { Users, GraduationCap, FileText, CreditCard, ArrowUpRight, ArrowDownRight, ShieldCheck, Search, Activity, MoreHorizontal, Calendar, TrendingUp, Bell, ArrowRight } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { toast } from "sonner"
 import { useEffect, useState } from "react"
@@ -98,6 +98,29 @@ export function AdminDashboardClient({ initialData }: AdminDashboardClientProps)
                         Download Report
                     </Button>
                 </div>
+            </div>
+
+            {/* Action Center Attention Banner */}
+            <div className="bg-gradient-to-r from-rose-500/10 via-amber-500/10 to-transparent border border-rose-200/70 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <Bell className="h-5 w-5 animate-pulse" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            Administrative Action Center
+                            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold">Live Review Queue</span>
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Unified inbox for facility accreditation applications, training curricula, member compliance documents, and clinical internships.
+                        </p>
+                    </div>
+                </div>
+                <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shrink-0 shadow-sm" asChild>
+                    <Link href="/admin/action-center">
+                        Open Action Center <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                    </Link>
+                </Button>
             </div>
 
             {/* Stats Grid */}

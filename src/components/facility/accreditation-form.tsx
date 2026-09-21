@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,8 +19,11 @@ import {
   ChevronLeft,
   AlertCircle,
   Construction,
-  FileBox
+  FileBox,
+  Upload,
+  ExternalLink
 } from "lucide-react"
+import { toast } from "sonner"
 
 const STEPS = [
   { id: 1, title: "Governance", icon: Building2 },
@@ -216,6 +219,167 @@ function FieldErrorMessage({ error }: { error?: string }) {
       <AlertCircle className="h-3 w-3 shrink-0" />
       {error}
     </p>
+  )
+}
+
+// --- Direct Document Uploader with Self-Hosted Storage & External Fallback ---
+function DirectDocumentUploader({
+  facilityId,
+  label,
+  value,
+  onChange,
+  error,
+  hardcopyChecked,
+  onHardcopyChange,
+  noteValue,
+  onNoteChange,
+  noteError,
+  id
+}: {
+  facilityId: string
+  label: string
+  value: string
+  onChange: (val: string) => void
+  error?: string
+  hardcopyChecked: boolean
+  onHardcopyChange: (checked: boolean) => void
+  noteValue: string
+  onNoteChange: (val: string) => void
+  noteError?: string
+  id: string
+}) {
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showUrlInput, setShowUrlInput] = useState(false)
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("File size must be under 25MB")
+      return
+    }
+
+    setUploading(true)
+    try {
+      const supabase = createClient()
+      const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+      const path = `accreditation/${facilityId}/${Date.now()}_${cleanName}`
+      const { error: uploadErr } = await supabase.storage
+        .from('member-documents')
+        .upload(path, file, { upsert: true })
+
+      if (uploadErr) throw uploadErr
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('member-documents')
+        .getPublicUrl(path)
+
+      onChange(publicUrl)
+      toast.success("Document uploaded directly to NIC Cloud Storage!")
+    } catch (err: any) {
+      console.error("Upload error:", err)
+      toast.error(err.message || "Failed to upload document")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-sm font-medium text-slate-800">
+        {label} {!hardcopyChecked && <span className="text-destructive">*</span>}
+      </Label>
+
+      {!hardcopyChecked && (
+        <div className="space-y-3 bg-slate-50/70 p-4 rounded-xl border border-slate-200">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleUpload}
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            className="hidden"
+          />
+
+          {value ? (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg">
+              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 truncate">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span className="truncate">Uploaded to NIC Cloud Storage</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={value}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1"
+                >
+                  <ExternalLink className="h-3 w-3" /> Preview Document
+                </a>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs h-7 text-slate-600 hover:text-slate-900"
+                >
+                  Replace File
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full sm:w-auto border-primary text-primary hover:bg-primary/5 font-semibold text-xs h-10 shadow-sm"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {uploading ? "Uploading to NIC Cloud..." : "Upload Document (PDF / DOCX up to 25MB)"}
+              </Button>
+              <span className="text-xs text-muted-foreground">or</span>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setShowUrlInput(!showUrlInput)}
+                className="text-xs text-slate-600 hover:text-primary h-8"
+              >
+                {showUrlInput ? "Hide External Link" : "Paste External Cloud Link"}
+              </Button>
+            </div>
+          )}
+
+          {showUrlInput && (
+            <div className="pt-2 border-t space-y-1">
+              <Input
+                name={id}
+                placeholder="https://drive.google.com/... or https://..."
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className={`text-xs font-mono ${error ? "border-destructive" : ""}`}
+              />
+            </div>
+          )}
+
+          <FieldErrorMessage error={error} />
+        </div>
+      )}
+
+      <HardCopyToggle
+        id={id}
+        checked={hardcopyChecked}
+        onChange={(checked) => {
+          onHardcopyChange(checked)
+          if (checked) onChange("")
+        }}
+        noteValue={noteValue}
+        onNoteChange={onNoteChange}
+        noteError={noteError}
+      />
+    </div>
   )
 }
 
@@ -417,23 +581,19 @@ export function AccreditationForm({ facilityId }: { facilityId: string }) {
                 <Input name="legal_status" placeholder="e.g. Private Limited Company" value={formData.legal_status} onChange={handleChange} className={errors.legal_status ? "border-destructive" : ""} />
                 <FieldErrorMessage error={errors.legal_status} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="org_structure_link">Organizational Structure {!formData.org_structure_hardcopy && <span className="text-destructive">*</span>}</Label>
-                {!formData.org_structure_hardcopy && (
-                  <>
-                    <Input name="org_structure_link" placeholder="https://... (Link to PDF/Cloud)" value={formData.org_structure_link} onChange={handleChange} className={errors.org_structure_link ? "border-destructive" : ""} />
-                    <FieldErrorMessage error={errors.org_structure_link} />
-                  </>
-                )}
-                <HardCopyToggle
-                  id="org_structure"
-                  checked={formData.org_structure_hardcopy}
-                  onChange={(checked) => { updateField('org_structure_hardcopy', checked); if (checked) updateField('org_structure_link', '') }}
-                  noteValue={formData.org_structure_note}
-                  onNoteChange={(v) => updateField('org_structure_note', v)}
-                  noteError={errors.org_structure_note}
-                />
-              </div>
+              <DirectDocumentUploader
+                facilityId={facilityId}
+                id="org_structure"
+                label="Organizational Structure Document"
+                value={formData.org_structure_link}
+                onChange={(url) => updateField('org_structure_link', url)}
+                error={errors.org_structure_link}
+                hardcopyChecked={formData.org_structure_hardcopy}
+                onHardcopyChange={(c) => updateField('org_structure_hardcopy', c)}
+                noteValue={formData.org_structure_note}
+                onNoteChange={(v) => updateField('org_structure_note', v)}
+                noteError={errors.org_structure_note}
+              />
               <div className="space-y-1">
                 <div className="flex items-center space-x-2 pt-2">
                   <input type="checkbox" id="governance_policy" name="governance_policy" checked={formData.governance_policy} onChange={handleChange} className={`h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary ${errors.governance_policy ? 'ring-2 ring-destructive' : ''}`} />
@@ -451,23 +611,19 @@ export function AccreditationForm({ facilityId }: { facilityId: string }) {
                 <Input name="staff_ratio" placeholder="e.g. 1:5" value={formData.staff_ratio} onChange={handleChange} className={errors.staff_ratio ? "border-destructive" : ""} />
                 <FieldErrorMessage error={errors.staff_ratio} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="training_records_link">Staff Training Matrix {!formData.training_records_hardcopy && <span className="text-destructive">*</span>}</Label>
-                {!formData.training_records_hardcopy && (
-                  <>
-                    <Input name="training_records_link" placeholder="https://... (Link to training records)" value={formData.training_records_link} onChange={handleChange} className={errors.training_records_link ? "border-destructive" : ""} />
-                    <FieldErrorMessage error={errors.training_records_link} />
-                  </>
-                )}
-                <HardCopyToggle
-                  id="training_records"
-                  checked={formData.training_records_hardcopy}
-                  onChange={(checked) => { updateField('training_records_hardcopy', checked); if (checked) updateField('training_records_link', '') }}
-                  noteValue={formData.training_records_note}
-                  onNoteChange={(v) => updateField('training_records_note', v)}
-                  noteError={errors.training_records_note}
-                />
-              </div>
+              <DirectDocumentUploader
+                facilityId={facilityId}
+                id="training_records"
+                label="Staff Training Matrix & Records"
+                value={formData.training_records_link}
+                onChange={(url) => updateField('training_records_link', url)}
+                error={errors.training_records_link}
+                hardcopyChecked={formData.training_records_hardcopy}
+                onHardcopyChange={(c) => updateField('training_records_hardcopy', c)}
+                noteValue={formData.training_records_note}
+                onNoteChange={(v) => updateField('training_records_note', v)}
+                noteError={errors.training_records_note}
+              />
               <div className="space-y-1">
                 <div className="flex items-center space-x-2 pt-2">
                   <input type="checkbox" id="staff_background_check" name="staff_background_check" checked={formData.staff_background_check} onChange={handleChange} className={`h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary ${errors.staff_background_check ? 'ring-2 ring-destructive' : ''}`} />
@@ -497,23 +653,19 @@ export function AccreditationForm({ facilityId }: { facilityId: string }) {
 
           {step === 4 && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="risk_assessment_link">Facility Risk Assessment Registry {!formData.risk_assessment_hardcopy && <span className="text-destructive">*</span>}</Label>
-                {!formData.risk_assessment_hardcopy && (
-                  <>
-                    <Input name="risk_assessment_link" placeholder="https://... (Link to risk assessment)" value={formData.risk_assessment_link} onChange={handleChange} className={errors.risk_assessment_link ? "border-destructive" : ""} />
-                    <FieldErrorMessage error={errors.risk_assessment_link} />
-                  </>
-                )}
-                <HardCopyToggle
-                  id="risk_assessment"
-                  checked={formData.risk_assessment_hardcopy}
-                  onChange={(checked) => { updateField('risk_assessment_hardcopy', checked); if (checked) updateField('risk_assessment_link', '') }}
-                  noteValue={formData.risk_assessment_note}
-                  onNoteChange={(v) => updateField('risk_assessment_note', v)}
-                  noteError={errors.risk_assessment_note}
-                />
-              </div>
+              <DirectDocumentUploader
+                facilityId={facilityId}
+                id="risk_assessment"
+                label="Facility Risk Assessment Registry"
+                value={formData.risk_assessment_link}
+                onChange={(url) => updateField('risk_assessment_link', url)}
+                error={errors.risk_assessment_link}
+                hardcopyChecked={formData.risk_assessment_hardcopy}
+                onHardcopyChange={(c) => updateField('risk_assessment_hardcopy', c)}
+                noteValue={formData.risk_assessment_note}
+                onNoteChange={(v) => updateField('risk_assessment_note', v)}
+                noteError={errors.risk_assessment_note}
+              />
               <div className="space-y-2">
                 <Label htmlFor="fire_safety_date">Last Fire Safety Equipment Inspection Date <span className="text-destructive">*</span></Label>
                 <Input name="fire_safety_date" type="date" value={formData.fire_safety_date} onChange={handleChange} className={errors.fire_safety_date ? "border-destructive" : ""} />
@@ -553,23 +705,19 @@ export function AccreditationForm({ facilityId }: { facilityId: string }) {
                 <Input name="audit_frequency" placeholder="e.g. Quarterly" value={formData.audit_frequency} onChange={handleChange} className={errors.audit_frequency ? "border-destructive" : ""} />
                 <FieldErrorMessage error={errors.audit_frequency} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="quality_assurance_link">Latest Internal Quality Report {!formData.quality_assurance_hardcopy && <span className="text-destructive">*</span>}</Label>
-                {!formData.quality_assurance_hardcopy && (
-                  <>
-                    <Input name="quality_assurance_link" placeholder="https://... (Link to quality report)" value={formData.quality_assurance_link} onChange={handleChange} className={errors.quality_assurance_link ? "border-destructive" : ""} />
-                    <FieldErrorMessage error={errors.quality_assurance_link} />
-                  </>
-                )}
-                <HardCopyToggle
-                  id="quality_assurance"
-                  checked={formData.quality_assurance_hardcopy}
-                  onChange={(checked) => { updateField('quality_assurance_hardcopy', checked); if (checked) updateField('quality_assurance_link', '') }}
-                  noteValue={formData.quality_assurance_note}
-                  onNoteChange={(v) => updateField('quality_assurance_note', v)}
-                  noteError={errors.quality_assurance_note}
-                />
-              </div>
+              <DirectDocumentUploader
+                facilityId={facilityId}
+                id="quality_assurance"
+                label="Latest Internal Quality & Compliance Report"
+                value={formData.quality_assurance_link}
+                onChange={(url) => updateField('quality_assurance_link', url)}
+                error={errors.quality_assurance_link}
+                hardcopyChecked={formData.quality_assurance_hardcopy}
+                onHardcopyChange={(c) => updateField('quality_assurance_hardcopy', c)}
+                noteValue={formData.quality_assurance_note}
+                onNoteChange={(v) => updateField('quality_assurance_note', v)}
+                noteError={errors.quality_assurance_note}
+              />
               <p className="text-xs text-muted-foreground mt-4 italic">
                 By submitting this final step, you authorize NIC to verify all uploaded documents and conduct an unannounced site inspection.
               </p>

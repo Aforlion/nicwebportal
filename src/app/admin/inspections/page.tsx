@@ -1,10 +1,14 @@
 import { getFacilitiesData } from "@/actions/admin/inspection-management"
+import { getAccreditationApplications } from "@/actions/admin/manage-accreditation-applications"
 import InspectionsClient from "./InspectionsClient"
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminInspectionsPage() {
-    const { facilities, stats, error } = await getFacilitiesData()
+    const [{ facilities, stats, error }, appsRes] = await Promise.all([
+        getFacilitiesData(),
+        getAccreditationApplications()
+    ])
 
     if (error) {
         return (
@@ -19,6 +23,8 @@ export default async function AdminInspectionsPage() {
         <InspectionsClient
             initialFacilities={facilities || []}
             stats={stats || { total: 0, compliant: 0, pending: 0, critical: 0 }}
+            initialApplications={appsRes.applications || []}
         />
     )
 }
+

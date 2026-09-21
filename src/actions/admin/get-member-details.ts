@@ -41,7 +41,7 @@ export async function getMemberDetails(profileId: string) {
 
         if (internshipsError) console.error('Error fetching internships:', internshipsError)
 
-        // 3. Fetch Membership by user_id (profile ID)
+        // 3. Fetch Membership by user_id (profile ID) - safely order and limit 1 to prevent PGRST116 if duplicates exist
         const { data: membership, error: membershipError } = await supabase
             .from('memberships')
             .select(`
@@ -49,6 +49,8 @@ export async function getMemberDetails(profileId: string) {
                 profiles (*)
             `)
             .eq('user_id', profileId)
+            .order('created_at', { ascending: false })
+            .limit(1)
             .maybeSingle()
 
         // If no membership row exists yet build a minimal stub so the sheet still renders
@@ -59,8 +61,9 @@ export async function getMemberDetails(profileId: string) {
                 .from('profiles')
                 .select('*')
                 .eq('id', profileId)
-                .single()
+                .maybeSingle()
             if (profileError) throw profileError
+            if (!profile) throw new Error("Profile not found")
             return {
                 success: true,
                 data: {

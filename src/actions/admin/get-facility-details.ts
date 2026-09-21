@@ -39,15 +39,33 @@ export async function getFacilityDetails(facilityId: string) {
             console.error('Error fetching registry actions:', actionsError)
         }
 
-        // Fetch related documents (assuming a naming convention or linking table)
-        // For now, we'll try to find documents tagged with this facility ID
-        const { data: documents, error: docsError } = await supabase
-            .from('documents')
-            .select('*')
-            .eq('entity_id', facilityId) // Assuming entity_id links to either member or facility
+        // Fetch related documents belonging to the facility owner/admin
+        let documents: any[] = []
+        if (facility.owner_id) {
+            const { data: membership } = await supabase
+                .from('memberships')
+                .select('id')
+                .eq('user_id', facility.owner_id)
+                .maybeSingle()
 
-        if (docsError) {
-            console.error('Error fetching documents:', docsError)
+            if (membership) {
+                const { data: docs, error: docsError } = await supabase
+                    .from('documents')
+                    .select('*')
+                    .eq('membership_id', membership.id)
+                    .order('uploaded_at', { ascending: false })
+
+                if (!docsError && docs) {
+                    documents = docs.map(d => ({
+                        id: d.id,
+                        name: d.document_name,
+                        type: d.document_type,
+                        url: d.file_url,
+                        status: d.status,
+                        uploaded_at: d.uploaded_at
+                    }))
+                }
+            }
         }
 
         return {

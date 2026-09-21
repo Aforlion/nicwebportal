@@ -38,7 +38,10 @@ export async function getMembers() {
 
         // Flatten data for easier use in the UI
         const members = data.map((profile: any) => {
-            const membership = profile.memberships?.[0] || null
+            // Find active or identified membership first if user has multiple records
+            const membership = (profile.memberships && Array.isArray(profile.memberships))
+                ? (profile.memberships.find((m: any) => m.nic_id) || profile.memberships[0] || null)
+                : null
             
             // Map category based on profile role if no membership exists, or use the membership category
             let category = 'Student'

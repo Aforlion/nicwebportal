@@ -20,7 +20,8 @@ import {
     Newspaper,
     ImageIcon,
     HelpCircle,
-    Calendar
+    Calendar,
+    Bell
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -29,6 +30,7 @@ import { createClient } from "@/lib/supabase"
 
 export const adminNavItems = [
     { title: "Overview", href: "/admin", icon: LayoutDashboard },
+    { title: "Action Center", href: "/admin/action-center", icon: Bell },
     { title: "Students", href: "/admin/members?category=student", icon: GraduationCap },
     { title: "Members", href: "/admin/members?category=professional", icon: Users },
     { title: "Facility Admins", href: "/admin/members?category=facility_admin", icon: ShieldCheck },
