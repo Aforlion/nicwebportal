@@ -7,7 +7,6 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai"
 import { revalidatePath } from "next/cache"
 import { Resend } from "resend"
 import { env } from "@/env"
-export const maxDuration = 60
 
 export interface PillarScore {
     pillarName: string
