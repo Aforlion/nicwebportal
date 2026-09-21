@@ -2,6 +2,7 @@ import { getActionCenterItems } from "@/actions/admin/get-action-center-items"
 import ActionCenterClient from "./ActionCenterClient"
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 export default async function ActionCenterPage() {
     const { data, error } = await getActionCenterItems()

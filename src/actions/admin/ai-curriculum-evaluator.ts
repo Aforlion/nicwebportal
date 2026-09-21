@@ -7,8 +7,7 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai"
 import { revalidatePath } from "next/cache"
 import { Resend } from "resend"
 import { env } from "@/env"
-// @ts-ignore
-import { PDFParse } from "pdf-parse"
+export const maxDuration = 60
 
 export interface PillarScore {
     pillarName: string
@@ -65,8 +64,8 @@ const curriculumEvaluationSchema = {
 }
 
 export async function evaluateFacilityCurriculumAction(facilityId: string) {
-    await requireAdmin()
     try {
+        await requireAdmin()
         const cookieStore = await cookies()
         const supabase = createClient(cookieStore)
         const { data: { user } } = await supabase.auth.getUser()
@@ -111,9 +110,9 @@ export async function evaluateFacilityCurriculumAction(facilityId: string) {
             }
         })
 
-        // 2. Fetch and extract content from all uploaded curriculum files in storage
-        const extractedCurriculumTexts: string[] = []
-        let parsedDocCount = 0
+        // 2. Locate uploaded curriculum PDF files
+        const inlineDocParts: Array<{ inlineData: { data: string, mimeType: string } }> = []
+        const analyzedDocNames: string[] = []
 
         // 2a. Query documents table belonging to facility owner
         if (facility.owner_id) {
@@ -130,7 +129,7 @@ export async function evaluateFacilityCurriculumAction(facilityId: string) {
                     .in('membership_id', memIds)
 
                 if (docs && docs.length > 0) {
-                    // Prioritize curriculum/syllabus documents, or process all if relevant
+                    // Prioritize documents with 'curriculum' or 'syllabus' in their name/type
                     const curriculumDocs = docs.filter(d =>
                         (d.document_name && d.document_name.toLowerCase().includes('curriculum')) ||
                         (d.document_type && d.document_type.toLowerCase().includes('curriculum')) ||
@@ -138,31 +137,34 @@ export async function evaluateFacilityCurriculumAction(facilityId: string) {
                     )
                     const targetDocs = curriculumDocs.length > 0 ? curriculumDocs : docs
 
-                    for (const d of targetDocs) {
+                    // Download up to 2 primary documents (cap per doc at 8MB)
+                    for (const d of targetDocs.slice(0, 2)) {
                         if (!d.file_url) continue
                         try {
                             const fileResp = await fetch(d.file_url, { signal: AbortSignal.timeout(15000) })
                             if (fileResp.ok) {
                                 const arrBuf = await fileResp.arrayBuffer()
-                                const parser = new PDFParse(new Uint8Array(arrBuf))
-                                const parsed = await parser.getText()
-                                if (parsed && parsed.text && parsed.text.trim()) {
-                                    extractedCurriculumTexts.push(
-                                        `=== UPLOADED CURRICULUM FILE: "${d.document_name}" (Pages: ${parsed.total || 'N/A'}) ===\n${parsed.text}`
-                                    )
-                                    parsedDocCount++
+                                if (arrBuf.byteLength > 0 && arrBuf.byteLength < 10 * 1024 * 1024) {
+                                    const base64 = Buffer.from(arrBuf).toString('base64')
+                                    inlineDocParts.push({
+                                        inlineData: {
+                                            data: base64,
+                                            mimeType: 'application/pdf'
+                                        }
+                                    })
+                                    analyzedDocNames.push(`"${d.document_name || 'Uploaded Curriculum'}" (${Math.round(arrBuf.byteLength / 1024)} KB)`)
                                 }
                             }
                         } catch (err: any) {
-                            console.warn(`[AI Evaluator] Failed to parse document ${d.document_name}:`, err.message)
+                            console.warn(`[AI Evaluator] Failed to fetch document ${d.document_name}:`, err.message)
                         }
                     }
                 }
             }
         }
 
-        // 2b. If a direct file URL was also provided in curriculum_url, parse it if not already fetched
-        if (facility.curriculum_url && !facility.curriculum_url.includes('drive.google.com')) {
+        // 2b. If no docs found in storage, check direct curriculum_url
+        if (inlineDocParts.length === 0 && facility.curriculum_url && !facility.curriculum_url.includes('drive.google.com')) {
             try {
                 const urlResp = await fetch(facility.curriculum_url, {
                     headers: { 'User-Agent': 'Mozilla/5.0' },
@@ -172,28 +174,22 @@ export async function evaluateFacilityCurriculumAction(facilityId: string) {
                     const cType = urlResp.headers.get('content-type') || ''
                     if (cType.includes('pdf') || facility.curriculum_url.endsWith('.pdf')) {
                         const arrBuf = await urlResp.arrayBuffer()
-                        const parser = new PDFParse(new Uint8Array(arrBuf))
-                        const parsed = await parser.getText()
-                        if (parsed && parsed.text && parsed.text.trim()) {
-                            extractedCurriculumTexts.push(
-                                `=== SUBMITTED DIRECT URL CURRICULUM FILE ===\n${parsed.text}`
-                            )
-                            parsedDocCount++
+                        if (arrBuf.byteLength > 0 && arrBuf.byteLength < 10 * 1024 * 1024) {
+                            const base64 = Buffer.from(arrBuf).toString('base64')
+                            inlineDocParts.push({
+                                inlineData: {
+                                    data: base64,
+                                    mimeType: 'application/pdf'
+                                }
+                            })
+                            analyzedDocNames.push(`"Direct URL Document" (${Math.round(arrBuf.byteLength / 1024)} KB)`)
                         }
                     }
                 }
             } catch (urlErr: any) {
-                console.warn("[AI Evaluator] Direct URL parse error:", urlErr.message)
+                console.warn("[AI Evaluator] Direct URL download warning:", urlErr.message)
             }
         }
-
-        if (extractedCurriculumTexts.length === 0 && !facility.curriculum_url) {
-            return { error: 'No readable curriculum files or documents found for this facility.' }
-        }
-
-        const combinedCurriculumContent = extractedCurriculumTexts.length > 0
-            ? extractedCurriculumTexts.join('\n\n')
-            : `Facility provided document link: ${facility.curriculum_url} (Direct file stream was restricted or inaccessible).`
 
         // 3. Build Prompt aligning with SOP-EDU-002
         const systemPrompt = `
@@ -221,18 +217,28 @@ Total possible: 18 points.
 - Under 8 (or inaccessible): rejected
 
 Facility Name: "${facility.name}"
-Curriculum URL: "${facility.curriculum_url}"
-        `
+Curriculum URL / Link: "${facility.curriculum_url}"
+${analyzedDocNames.length > 0 ? `Evaluated Attached File(s): ${analyzedDocNames.join(', ')}` : ''}
+${inlineDocParts.length === 0 ? 'Note: Uploaded binary files could not be accessed directly (e.g. external link). Audit the submitted curriculum syllabus based on available program structure.' : 'Please thoroughly inspect the attached primary curriculum PDF document(s) against the 6 pillars and practical ratio.'}
+`
 
         const contents: any[] = [
             systemPrompt,
-            `\n\n### SUBMITTED CURRICULUM SYLLABUS AND COURSE MATERIALS (${parsedDocCount} full document files evaluated):\n\n${combinedCurriculumContent}`
+            ...inlineDocParts
         ]
 
         const result = await model.generateContent(contents)
         const responseText = result.response.text()
+        let parsedJson: any = null
+        try {
+            parsedJson = JSON.parse(responseText)
+        } catch (pErr) {
+            console.error("Failed to parse Gemini response as JSON:", responseText)
+            return { error: 'Failed to process AI evaluation response format' }
+        }
+
         const evaluationData: CurriculumEvaluationResult = {
-            ...JSON.parse(responseText),
+            ...parsedJson,
             maxScore: 18,
             evaluatedAt: new Date().toISOString()
         }
