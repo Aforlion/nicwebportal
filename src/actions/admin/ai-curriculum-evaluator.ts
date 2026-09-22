@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from "@/lib/supabase/server"
+import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { requireAdmin } from "@/lib/auth"
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai"
@@ -69,8 +70,13 @@ export async function evaluateFacilityCurriculumAction(facilityId: string) {
         const supabase = createClient(cookieStore)
         const { data: { user } } = await supabase.auth.getUser()
 
+        const supabaseAdmin = createAdminClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+        )
+
         // 1. Fetch facility record
-        const { data: facility, error: facErr } = await supabase
+        const { data: facility, error: facErr } = await supabaseAdmin
             .from('facilities')
             .select(`
                 id,
@@ -113,16 +119,16 @@ export async function evaluateFacilityCurriculumAction(facilityId: string) {
         const inlineDocParts: Array<{ inlineData: { data: string, mimeType: string } }> = []
         const analyzedDocNames: string[] = []
 
-        // 2a. Query documents table belonging to facility owner
+        // 2a. Query documents table belonging to facility owner using supabaseAdmin to bypass RLS
         if (facility.owner_id) {
-            const { data: mems } = await supabase
+            const { data: mems } = await supabaseAdmin
                 .from('memberships')
                 .select('id')
                 .eq('user_id', facility.owner_id)
 
             if (mems && mems.length > 0) {
                 const memIds = mems.map(m => m.id)
-                const { data: docs } = await supabase
+                const { data: docs } = await supabaseAdmin
                     .from('documents')
                     .select('*')
                     .in('membership_id', memIds)
@@ -136,26 +142,37 @@ export async function evaluateFacilityCurriculumAction(facilityId: string) {
                     )
                     const targetDocs = curriculumDocs.length > 0 ? curriculumDocs : docs
 
-                    // Download up to 2 primary documents (cap per doc at 8MB)
-                    for (const d of targetDocs.slice(0, 2)) {
-                        if (!d.file_url) continue
+                    // Download up to 3 documents in parallel
+                    const downloadPromises = targetDocs.slice(0, 3).map(async (d) => {
+                        if (!d.file_url) return null
                         try {
                             const fileResp = await fetch(d.file_url, { signal: AbortSignal.timeout(15000) })
                             if (fileResp.ok) {
                                 const arrBuf = await fileResp.arrayBuffer()
                                 if (arrBuf.byteLength > 0 && arrBuf.byteLength < 10 * 1024 * 1024) {
                                     const base64 = Buffer.from(arrBuf).toString('base64')
-                                    inlineDocParts.push({
-                                        inlineData: {
-                                            data: base64,
-                                            mimeType: 'application/pdf'
-                                        }
-                                    })
-                                    analyzedDocNames.push(`"${d.document_name || 'Uploaded Curriculum'}" (${Math.round(arrBuf.byteLength / 1024)} KB)`)
+                                    return {
+                                        part: {
+                                            inlineData: {
+                                                data: base64,
+                                                mimeType: 'application/pdf'
+                                            }
+                                        },
+                                        name: `"${d.document_name || 'Uploaded Curriculum'}" (${Math.round(arrBuf.byteLength / 1024)} KB)`
+                                    }
                                 }
                             }
                         } catch (err: any) {
                             console.warn(`[AI Evaluator] Failed to fetch document ${d.document_name}:`, err.message)
+                        }
+                        return null
+                    })
+
+                    const downloaded = await Promise.all(downloadPromises)
+                    for (const item of downloaded) {
+                        if (item) {
+                            inlineDocParts.push(item.part)
+                            analyzedDocNames.push(item.name)
                         }
                     }
                 }
@@ -195,7 +212,7 @@ export async function evaluateFacilityCurriculumAction(facilityId: string) {
 You are the Chief Academic Evaluator for the National Institute of Caregivers (NIC Nigeria).
 Your role is to strictly evaluate this caregiver training curriculum against NIC's statutory standard (SOP-EDU-002).
 
-Every approved training partner curriculum must satisfy the Six Core Competency Pillars:
+When multiple curriculum documents or qualification levels are submitted (e.g. Level 1, Level 3, Level 4), evaluate the collective institutional curriculum framework against the Six Core Competency Pillars:
 1. Person-Centred Care & Ethics (Dignity, privacy, patient advocacy, confidentiality, effective communication)
 2. Basic Nursing & Daily Living Assistance Skills (Vital signs: BP, pulse, temp, respiration; ADLs: bathing, hygiene, feeding, safe transfer)
 3. Infection Prevention & Control - IPC (Hand hygiene 5 moments, PPE protocols, biomedical waste disposal, sanitization)
@@ -244,7 +261,7 @@ ${inlineDocParts.length === 0 ? 'Note: Uploaded binary files could not be access
 
         // 4. Save evaluation audit log into registry_actions
         try {
-            await supabase
+            await supabaseAdmin
                 .from('registry_actions')
                 .insert({
                     target_id: facilityId,
@@ -282,8 +299,13 @@ export async function sendCurriculumReviewDecisionAction(
         const supabase = createClient(cookieStore)
         const { data: { user } } = await supabase.auth.getUser()
 
+        const supabaseAdmin = createAdminClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+        )
+
         // 1. Fetch facility & owner
-        const { data: facility, error: fetchErr } = await supabase
+        const { data: facility, error: fetchErr } = await supabaseAdmin
             .from('facilities')
             .select(`
                 id,
@@ -309,7 +331,7 @@ export async function sendCurriculumReviewDecisionAction(
 
         // 2. Update facility curriculum_status
         const dbStatus = verdict === 'approved' ? 'approved' : 'rejected'
-        const { error: updateErr } = await supabase
+        const { error: updateErr } = await supabaseAdmin
             .from('facilities')
             .update({
                 curriculum_status: dbStatus,
@@ -323,7 +345,7 @@ export async function sendCurriculumReviewDecisionAction(
 
         // 3. Log in registry_actions audit trail
         try {
-            await supabase
+            await supabaseAdmin
                 .from('registry_actions')
                 .insert({
                     target_id: facilityId,
