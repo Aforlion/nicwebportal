@@ -70,7 +70,18 @@ async function collectEvidence() {
         auth: { persistSession: false },
       });
 
-      const tables = ["users", "assessments", "certificates", "facilities", "internships"];
+      const tables = [
+        "accreditation_applications", "admin_audit_logs", "assessment_submissions", "assessments",
+        "caregiver_career_pathways", "caregiver_certifications", "certificates", "course_modules",
+        "course_recommendations", "courses", "cpd_activities", "cpd_records", "disciplinary_records",
+        "documents", "enrollments", "facilities", "facility_admins", "facility_staff", "gallery",
+        "inspection_scores", "inspections", "internship_cohorts", "internship_enrollments",
+        "internship_locations", "internships", "kb_articles", "kb_embeddings", "kb_escalations",
+        "kb_feedback", "kb_versions", "lesson_progress", "lessons", "membership_applications",
+        "membership_invitations", "memberships", "modules", "news_events", "nic_api_logs",
+        "payments", "pending_registrations", "profiles", "programs", "publications",
+        "registry_actions", "resources", "signup_errors", "verification_logs"
+      ];
       let allPass = true;
 
       for (const table of tables) {

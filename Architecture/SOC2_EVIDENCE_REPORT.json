@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-24T12:16:17.886Z",
+  "timestamp": "2026-09-24T12:40:22.652Z",
   "system": "NIC Portal Production Stack",
   "environment": {
     "nodeEnv": "development",
@@ -12,8 +12,18 @@
     "reachable": true,
     "verifiedTables": [
       {
-        "table": "users",
-        "recordCount": 0,
+        "table": "accreditation_applications",
+        "recordCount": 3,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "admin_audit_logs",
+        "recordCount": 1,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "assessment_submissions",
+        "recordCount": 263,
         "status": "RLS & Schema Active"
       },
       {
@@ -22,8 +32,58 @@
         "status": "RLS & Schema Active"
       },
       {
+        "table": "caregiver_career_pathways",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "caregiver_certifications",
+        "recordCount": 1,
+        "status": "RLS & Schema Active"
+      },
+      {
         "table": "certificates",
         "recordCount": 7,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "course_modules",
+        "recordCount": 52,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "course_recommendations",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "courses",
+        "recordCount": 25,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "cpd_activities",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "cpd_records",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "disciplinary_records",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "documents",
+        "recordCount": 11,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "enrollments",
+        "recordCount": 36,
         "status": "RLS & Schema Active"
       },
       {
@@ -32,8 +92,158 @@
         "status": "RLS & Schema Active"
       },
       {
+        "table": "facility_admins",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "facility_staff",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "gallery",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "inspection_scores",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "inspections",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "internship_cohorts",
+        "recordCount": 2,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "internship_enrollments",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "internship_locations",
+        "recordCount": 1,
+        "status": "RLS & Schema Active"
+      },
+      {
         "table": "internships",
         "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "kb_articles",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "kb_embeddings",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "kb_escalations",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "kb_feedback",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "kb_versions",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "lesson_progress",
+        "recordCount": 360,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "lessons",
+        "recordCount": 351,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "membership_applications",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "membership_invitations",
+        "recordCount": 4,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "memberships",
+        "recordCount": 144,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "modules",
+        "recordCount": 66,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "news_events",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "nic_api_logs",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "payments",
+        "recordCount": 116,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "pending_registrations",
+        "recordCount": 140,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "profiles",
+        "recordCount": 136,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "programs",
+        "recordCount": 1,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "publications",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "registry_actions",
+        "recordCount": 6,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "resources",
+        "recordCount": 0,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "signup_errors",
+        "recordCount": 2,
+        "status": "RLS & Schema Active"
+      },
+      {
+        "table": "verification_logs",
+        "recordCount": 2,
         "status": "RLS & Schema Active"
       }
     ]
