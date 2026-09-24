@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/monthly-onboarding-reminder",
       "schedule": "0 9 1 * *"
+    },
+    {
+      "path": "/api/cron/compliance-audit",
+      "schedule": "0 0 * * 0"
     }
   ]
 }
