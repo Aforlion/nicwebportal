@@ -37,20 +37,24 @@ export default async function ExamsPage() {
                                         <CardTitle className="text-xl text-secondary">{exam.title}</CardTitle>
                                     </div>
                                     {exam.status === 'completed' ? (
-                                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none">
-                                            <CheckCircle2 className="mr-1 h-3 w-3" /> COMPLETED
+                                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none font-bold">
+                                            <CheckCircle2 className="mr-1 h-3 w-3 text-emerald-600" /> PASSED
+                                        </Badge>
+                                    ) : exam.status === 'failed' ? (
+                                        <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-none font-bold">
+                                            <AlertCircle className="mr-1 h-3 w-3 text-red-600" /> RETAKE AVAILABLE
                                         </Badge>
                                     ) : exam.status === 'locked' ? (
-                                        <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none">
+                                        <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none font-bold">
                                             <Lock className="mr-1 h-3 w-3" /> LOCKED
                                         </Badge>
                                     ) : exam.status === 'submitted' ? (
-                                        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none">
-                                            <Clock className="mr-1 h-3 w-3" /> SUBMITTED
+                                        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none font-bold">
+                                            <Clock className="mr-1 h-3 w-3 text-amber-600" /> UNDER REVIEW
                                         </Badge>
                                     ) : (
-                                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">
-                                            <AlertCircle className="mr-1 h-3 w-3" /> AVAILABLE
+                                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none font-bold">
+                                            <AlertCircle className="mr-1 h-3 w-3 text-blue-600" /> AVAILABLE
                                         </Badge>
                                     )}
                                 </div>
@@ -67,7 +71,7 @@ export default async function ExamsPage() {
                                     )}
                                     {exam.score ? (
                                         <span className="flex items-center gap-1.5 font-bold text-secondary">
-                                            Grade: <span className="text-emerald-600">{exam.score}</span>
+                                            Latest Grade: <span className={exam.status === 'completed' ? 'text-emerald-600' : 'text-red-600'}>{exam.score}</span>
                                         </span>
                                     ) : exam.attempts ? (
                                         <span className="flex items-center gap-1.5 font-medium">
@@ -88,16 +92,20 @@ export default async function ExamsPage() {
                                 )}
                             </CardContent>
                             <CardFooter className="pt-0">
-                                {exam.status === 'available' ? (
-                                    <Button className="w-full bg-primary" asChild>
-                                        <Link href={`/portal/student/exams/${exam.id}`}>Start Assessment</Link>
+                                {exam.status === 'failed' ? (
+                                    <Button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-sm" asChild>
+                                        <Link href={`/portal/student/courses/${exam.courseId}?lessonId=${exam.lessonId}`}>Retake Assessment</Link>
+                                    </Button>
+                                ) : exam.status === 'available' ? (
+                                    <Button className="w-full bg-primary font-bold rounded-xl" asChild>
+                                        <Link href={`/portal/student/courses/${exam.courseId}?lessonId=${exam.lessonId}`}>Start Assessment</Link>
                                     </Button>
                                 ) : exam.status === 'completed' || exam.status === 'submitted' ? (
-                                    <Button variant="outline" className="w-full" asChild>
-                                        <Link href={`/portal/student/exams/${exam.id}/review`}>Review Submission</Link>
+                                    <Button variant="outline" className="w-full font-bold rounded-xl" asChild>
+                                        <Link href={`/portal/student/courses/${exam.courseId}?lessonId=${exam.lessonId}`}>View / Retake Assessment</Link>
                                     </Button>
                                 ) : (
-                                    <Button variant="secondary" className="w-full" disabled>
+                                    <Button variant="secondary" className="w-full rounded-xl" disabled>
                                         Keep Learning to Unlock
                                     </Button>
                                 )}

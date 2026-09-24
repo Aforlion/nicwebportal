@@ -131,21 +131,32 @@ export async function gradeSubmission(submissionId: string, score: number, feedb
     const supabase = supabaseAdmin
 
     try {
-        // Fetch basic info for progress update
+        // Fetch basic info for progress update and email
         const { data: submission } = await supabase
             .from('assessment_submissions')
-            .select('enrollment_id, assessment_id')
+            .select(`
+                enrollment_id,
+                assessment_id,
+                enrollment:enrollments(
+                    user_id,
+                    course_id,
+                    course:courses(title),
+                    profile:profiles(email, full_name)
+                )
+            `)
             .eq('id', submissionId)
             .single()
 
         if (submission) {
             const { data: assessment } = await supabase
                 .from('assessments')
-                .select('lesson_id, passing_score')
+                .select('title, lesson_id, passing_score')
                 .eq('id', submission.assessment_id)
                 .single()
 
-            if (assessment && score >= assessment.passing_score) {
+            const passed = assessment ? score >= assessment.passing_score : false
+
+            if (assessment && passed) {
                 // Update lesson progress
                 await supabase
                     .from('lesson_progress')
@@ -156,19 +167,12 @@ export async function gradeSubmission(submissionId: string, score: number, feedb
                         completed_at: new Date().toISOString(),
                         last_accessed_at: new Date().toISOString()
                     }, { onConflict: 'enrollment_id, lesson_id' })
-                
-                // Get user_id from enrollment
-                const { data: enrollment } = await supabase
-                    .from('enrollments')
-                    .select('user_id')
-                    .eq('id', submission.enrollment_id)
-                    .single()
-
-                await updateCourseProgress(submission.enrollment_id, enrollment?.user_id)
             }
 
-            // CRITICAL FIX: Actually update the submission record itself
-            const passed = assessment && score >= assessment.passing_score
+            const enrollment = submission.enrollment as any
+            await updateCourseProgress(submission.enrollment_id, enrollment?.user_id)
+
+            // Update the submission record itself
             const { error: updateError } = await supabase
                 .from('assessment_submissions')
                 .update({
@@ -183,6 +187,26 @@ export async function gradeSubmission(submissionId: string, score: number, feedb
             if (updateError) {
                 console.error('[gradeSubmission] Update error:', updateError)
                 return { error: 'Failed to update submission data' }
+            }
+
+            // Send Result Email Notification
+            if (enrollment?.profile?.email) {
+                try {
+                    const { sendAssessmentResultEmail } = await import("../student/../../lib/email")
+                    await sendAssessmentResultEmail(
+                        enrollment.profile.email,
+                        enrollment.profile.full_name || "Student",
+                        enrollment.course?.title || "Caregiver Training",
+                        assessment?.title || "Assessment",
+                        passed,
+                        score,
+                        assessment?.passing_score || 70,
+                        feedback || "",
+                        enrollment.course_id
+                    )
+                } catch (emailErr) {
+                    console.error("[gradeSubmission] Failed sending result email:", emailErr)
+                }
             }
         }
 

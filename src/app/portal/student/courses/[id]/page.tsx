@@ -42,11 +42,12 @@ export default async function LessonPlayerPage({
         m.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).forEach((l: any) => {
             const isCompletedStatus = !!progress[l.id];
             
-            // PROVISIONAL UNLOCK: A lesson is "complete" for unlocking the NEXT item if:
-            // 1. It is explicitly marked complete in lesson_progress
-            // 2. OR It has an assessment that is currently 'pending_review'
-            const assessmentStatus = l.assessments?.id ? submissionStatus[l.assessments.id] : null
-            const isProvisionallyCompleted = isCompletedStatus || assessmentStatus === 'pending_review' || assessmentStatus === 'passed'
+            // UNBLOCKED PROGRESSION: A lesson is unlocked if previous item completed.
+            // A lesson is considered provisionally complete to unlock the NEXT lesson if:
+            // 1. Explicitly marked complete in lesson_progress
+            // 2. OR has an assessment submission (passed, failed, or pending_review)
+            const subObj = l.assessments?.id ? submissionStatus[l.assessments.id] : null
+            const isProvisionallyCompleted = isCompletedStatus || !!subObj
             
             itemStates.set(l.id, { isLocked: !previousItemCompleted })
             
@@ -170,8 +171,11 @@ export default async function LessonPlayerPage({
                     <div className="space-y-1 ml-4 border-l-2 border-muted/30">
                         {module.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((lesson: any) => {
                             const isCompleted = progress[lesson.id]
-                            const assessmentStatus = lesson.assessments?.id ? submissionStatus[lesson.assessments.id] : null
-                            const isProvisional = !isCompleted && assessmentStatus === 'pending_review'
+                            const subObj = lesson.assessments?.id ? submissionStatus[lesson.assessments.id] : null
+                            const statusStr = subObj?.status || null
+                            const isPassed = isCompleted || statusStr === 'passed'
+                            const isPending = statusStr === 'pending_review'
+                            const isFailed = statusStr === 'failed'
                             const isActive = activeType === 'lesson' && lesson.id === activeContent?.id
                             const isLessonLocked = itemStates.get(lesson.id)?.isLocked;
 
@@ -197,11 +201,15 @@ export default async function LessonPlayerPage({
                                     `}
                                 >
                                     <div className="shrink-0">
-                                        {isCompleted ? (
-                                            <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                                        {isPassed ? (
+                                            <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center" title="Passed">
                                                 <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
                                             </div>
-                                        ) : isProvisional ? (
+                                        ) : isFailed ? (
+                                            <div className="h-5 w-5 rounded-full bg-red-100 flex items-center justify-center" title="Retake Available">
+                                                <span className="text-[10px] font-black text-red-600">!</span>
+                                            </div>
+                                        ) : isPending ? (
                                             <div className="h-5 w-5 rounded-full bg-amber-100 flex items-center justify-center" title="Awaiting Grading. You can proceed!">
                                                 <CheckCircle className="h-3.5 w-3.5 text-amber-600 opacity-70" />
                                             </div>
@@ -365,7 +373,7 @@ export default async function LessonPlayerPage({
                                 )}
 
                                 {/* Assessment / Quiz Section */}
-                                {activeContent.assessments && !progress[activeContent.id] && (
+                                {activeContent.assessments && (
                                     <div className="mt-16 pt-10 border-t-2 border-muted/30">
                                         <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4">Assessment</div>
                                         <h2 className="text-2xl font-black mb-8 text-secondary">Knowledge Check</h2>
@@ -373,14 +381,8 @@ export default async function LessonPlayerPage({
                                             courseId={course.id}
                                             lessonId={activeContent.id}
                                             assessment={activeContent.assessments}
+                                            existingSubmission={submissionStatus[activeContent.assessments.id] || null}
                                         />
-                                    </div>
-                                )}
-                                {activeContent.assessments && !!progress[activeContent.id] && (
-                                    <div className="mt-16 pt-10 border-t-2 border-muted/30 p-10 bg-slate-50 rounded-2xl text-center border">
-                                        <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
-                                        <h2 className="text-2xl font-black text-secondary">Assessment Completed</h2>
-                                        <p className="text-muted-foreground mt-2">You have successfully submitted your assessment for this module. You can now proceed to the next section.</p>
                                     </div>
                                 )}
                             </div>
@@ -498,9 +500,31 @@ export default async function LessonPlayerPage({
                                 </Button>
                             )
                         ) : (
-                            overallProgress === 100 && (
-                                <CourseCompletionCard courseId={course.id} />
-                            )
+                            (() => {
+                                const allCourseAssessments = sortedModules.flatMap((m: any) => 
+                                    m.lessons?.flatMap((l: any) => l.assessments).filter(Boolean) || []
+                                )
+                                const hasUnpassedAssessments = allCourseAssessments.some((a: any) => 
+                                    submissionStatus[a.id]?.status !== 'passed'
+                                )
+
+                                if (overallProgress === 100 && !hasUnpassedAssessments) {
+                                    return <CourseCompletionCard courseId={course.id} />
+                                } else if (overallProgress === 100 && hasUnpassedAssessments) {
+                                    return (
+                                        <div className="w-full p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-3">
+                                            <div className="inline-flex p-3 rounded-full bg-amber-100 text-amber-700">
+                                                <Circle className="h-6 w-6" />
+                                            </div>
+                                            <h3 className="text-xl font-black text-amber-950">Graduation Requirements Pending</h3>
+                                            <p className="text-sm text-amber-800 max-w-md mx-auto font-medium">
+                                                You have completed all lessons! However, 1 or more assessments require a passing grade before you can graduate and receive your certificate. Please click on any failed assessment in the curriculum sidebar to retake it.
+                                            </p>
+                                        </div>
+                                    )
+                                }
+                                return null
+                            })()
                         )}
                     </div>
                 </div>

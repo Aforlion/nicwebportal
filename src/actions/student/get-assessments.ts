@@ -61,14 +61,18 @@ export async function getStudentAssessmentsData() {
                 new Date(y.submitted_at).getTime() - new Date(x.submitted_at).getTime()
             )[0]
 
+            const subStatus = latestSubmission?.status
             return {
                 id: a.id,
+                courseId: a.lesson?.module?.course?.id,
+                lessonId: a.lesson_id,
                 course: a.lesson?.module?.course?.title || 'Unknown Course',
                 title: a.title,
-                status: latestSubmission?.status === 'graded' ? 'completed' :
-                    latestSubmission?.status === 'submitted' ? 'submitted' : 'available',
+                status: subStatus === 'passed' ? 'completed' :
+                    subStatus === 'pending_review' ? 'submitted' :
+                    subStatus === 'failed' ? 'failed' : 'available',
                 questions: Array.isArray(a.questions) ? a.questions.length : 0,
-                score: latestSubmission?.score ? `${latestSubmission.score}%` : null,
+                score: latestSubmission?.score !== null && latestSubmission?.score !== undefined ? `${latestSubmission.score}%` : null,
                 date: latestSubmission?.submitted_at ? new Date(latestSubmission.submitted_at).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',

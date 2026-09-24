@@ -109,32 +109,54 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
         }
     }
 
-    // 7. Update Lesson Progress to unlock next lesson
-    // If it requires manual review, we allow the student to progress immediately. 
-    // They will just not get the certificate until it gets graded.
-    const isPassing = passed || aiPassed
-    if (isPassing || requiresManualReview) {
-        await supabase
-            .from('lesson_progress')
-            .upsert({
-                enrollment_id: enrollment.id,
-                lesson_id: lessonId,
-                is_completed: true,
-                completed_at: new Date().toISOString(),
-                last_accessed_at: new Date().toISOString()
-            }, { onConflict: 'enrollment_id, lesson_id' })
+    // 7. Update Lesson Progress to allow unblocked progression to the next lesson
+    await supabase
+        .from('lesson_progress')
+        .upsert({
+            enrollment_id: enrollment.id,
+            lesson_id: lessonId,
+            is_completed: true,
+            completed_at: new Date().toISOString(),
+            last_accessed_at: new Date().toISOString()
+        }, { onConflict: 'enrollment_id, lesson_id' })
 
-        await updateCourseProgress(enrollment.id, user.id)
-        revalidatePath(`/portal/student/courses/${courseId}`)
+    await updateCourseProgress(enrollment.id, user.id)
+    revalidatePath(`/portal/student/courses/${courseId}`)
+
+    const isPassing = passed || aiPassed
+    const finalScore = requiresManualReview ? aiScore : percentage
+
+    // Send immediate email for autograded assessments (non-manual review or AI completed)
+    if (!requiresManualReview && user.email) {
+        try {
+            const { sendAssessmentResultEmail } = await import("@/lib/email")
+            const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
+            const { data: crs } = await supabase.from('courses').select('title').eq('id', courseId).single()
+            await sendAssessmentResultEmail(
+                user.email,
+                profile?.full_name || "Student",
+                crs?.title || "Caregiver Training",
+                assessment.title || "Assessment",
+                isPassing,
+                finalScore,
+                assessment.passing_score || 70,
+                isPassing ? "Congratulations on passing!" : "You can retake this assessment anytime to reach the passing mark.",
+                courseId
+            )
+        } catch (emailErr) {
+            console.error("[submitAssessment] Email error:", emailErr)
+        }
     }
 
     return {
         success: true,
-        score: requiresManualReview ? aiScore : percentage,
+        score: finalScore,
+        passingScore: assessment.passing_score,
         passed: isPassing,
-        pending: requiresManualReview && !aiPassed && aiScore === 0, // only pending if AI failed
+        pending: requiresManualReview && !aiPassed && aiScore === 0,
         feedback: requiresManualReview 
             ? (aiFeedback || "Assessment submitted successfully, pending review.")
-            : (isPassing ? (aiFeedback || "Great job! You passed.") : (aiFeedback || "You didn't reach the passing score. Please try again."))
+            : (isPassing ? (aiFeedback || "Great job! You passed.") : (aiFeedback || "You didn't reach the passing score. You can try again anytime."))
     }
 }
+

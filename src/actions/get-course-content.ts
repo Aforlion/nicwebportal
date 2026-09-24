@@ -84,11 +84,12 @@ export async function getCourseContent(courseId: string) {
         .select('lesson_id, is_completed')
         .eq('enrollment_id', enrollment.id)
 
-    // NEW: fetch assessment submission statuses for the current user in this course
+    // Fetch assessment submission details for the current user in this course
     const { data: submissionData } = await supabase
         .from('assessment_submissions')
-        .select('assessment_id, status')
+        .select('assessment_id, status, score, feedback, submitted_at')
         .eq('enrollment_id', enrollment.id)
+        .order('submitted_at', { ascending: false })
 
     // transform progress into a map: { lessonId: true }
     const progressMap = (progressData || []).reduce((acc: any, curr: any) => {
@@ -96,9 +97,17 @@ export async function getCourseContent(courseId: string) {
         return acc
     }, {})
 
-    // transform submissions into a map: { assessmentId: status }
+    // transform submissions into a map: { assessmentId: { status, score, feedback, submitted_at } }
     const submissionMap = (submissionData || []).reduce((acc: any, curr: any) => {
-        acc[curr.assessment_id] = curr.status
+        // Since sorted by submitted_at desc, set latest submission if not already set
+        if (!acc[curr.assessment_id]) {
+            acc[curr.assessment_id] = {
+                status: curr.status,
+                score: curr.score,
+                feedback: curr.feedback,
+                submitted_at: curr.submitted_at
+            }
+        }
         return acc
     }, {})
 

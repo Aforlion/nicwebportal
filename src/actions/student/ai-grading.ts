@@ -14,12 +14,17 @@ export async function autoGradeSubmission(submissionId: string) {
     const supabase = supabaseAdmin
 
     try {
-        // 1. Fetch submission with assessment details and rubric
+        // 1. Fetch submission with assessment details, enrollment, and profile
         const { data: submission, error: subError } = await supabase
             .from('assessment_submissions')
             .select(`
                 *,
-                enrollment:enrollments(user_id),
+                enrollment:enrollments(
+                    user_id,
+                    course_id,
+                    course:courses(title),
+                    profile:profiles(email, full_name)
+                ),
                 assessment:assessments(
                     id,
                     title,
@@ -38,6 +43,7 @@ export async function autoGradeSubmission(submissionId: string) {
 
         const assessment = submission.assessment as any
         const studentAnswers = submission.submission_data as any
+        const enrollment = submission.enrollment as any
 
         // 2. Prepare the payload for Gemini
         // We aggregate all essay/report questions into one grading session for efficiency
@@ -78,8 +84,28 @@ export async function autoGradeSubmission(submissionId: string) {
 
         if (updateError) throw updateError
 
-        // 5. Update Course Progress (Triggered for the student)
-        await updateCourseProgress(submission.enrollment_id, submission.enrollment.user_id)
+        // 5. Update Course Progress
+        await updateCourseProgress(submission.enrollment_id, enrollment?.user_id)
+
+        // 6. Send Result Email Notification
+        if (enrollment?.profile?.email) {
+            try {
+                const { sendAssessmentResultEmail } = await import("@/lib/email")
+                await sendAssessmentResultEmail(
+                    enrollment.profile.email,
+                    enrollment.profile.full_name || "Student",
+                    enrollment.course?.title || "Caregiver Training",
+                    assessment.title || "Assessment",
+                    passed,
+                    result.score,
+                    assessment.passing_score || 70,
+                    result.feedback || "",
+                    enrollment.course_id
+                )
+            } catch (emailErr) {
+                console.error("[autoGradeSubmission] Failed sending result email:", emailErr)
+            }
+        }
 
         return { 
             success: true, 

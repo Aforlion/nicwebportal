@@ -15,12 +15,28 @@ interface QuizPlayerProps {
     courseId: string
     lessonId: string
     assessment: any
+    existingSubmission?: {
+        status: string
+        score: number | null
+        feedback?: string
+        submitted_at?: string
+    } | null
 }
 
-export default function QuizPlayer({ courseId, lessonId, assessment }: QuizPlayerProps) {
+export default function QuizPlayer({ courseId, lessonId, assessment, existingSubmission }: QuizPlayerProps) {
     const router = useRouter()
     const [answers, setAnswers] = useState<any>({})
-    const [result, setResult] = useState<any>(null)
+    const [result, setResult] = useState<any>(() => {
+        if (!existingSubmission) return null
+        const isPassed = existingSubmission.status === 'passed'
+        const isPending = existingSubmission.status === 'pending_review'
+        return {
+            passed: isPassed,
+            pending: isPending,
+            score: existingSubmission.score,
+            feedback: existingSubmission.feedback || (isPassed ? "Great job! You passed." : isPending ? "Submission pending review." : "Score below passing mark. Retake available anytime.")
+        }
+    })
     const [isLoading, setIsLoading] = useState(false)
 
     if (!assessment || !assessment.questions || assessment.questions.length === 0) {
@@ -36,8 +52,6 @@ export default function QuizPlayer({ courseId, lessonId, assessment }: QuizPlaye
     }
 
     const handleSubmit = async () => {
-        // Validation: Check if all questions answered?
-        // For now, let's allow partial submission or just check length
         if (Object.keys(answers).length < assessment.questions.length) {
             toast.warning("Please answer all questions before submitting.")
             return
@@ -56,7 +70,7 @@ export default function QuizPlayer({ courseId, lessonId, assessment }: QuizPlaye
                     }
                     router.refresh() // To update progress sidebar
                 } else {
-                    toast.error("You didn't pass. Try again.")
+                    toast.error("You didn't reach the passing score. You can retake anytime!")
                 }
             } else {
                 toast.error(res.error || "Submission failed")
@@ -71,43 +85,61 @@ export default function QuizPlayer({ courseId, lessonId, assessment }: QuizPlaye
     const handleRetry = () => {
         setResult(null)
         setAnswers({})
-        // Optional: shuffle questions
     }
 
     if (result) {
+        const isFail = !result.passed && !result.pending;
         return (
-            <div className="bg-card border rounded-lg p-8 text-center space-y-6 animate-in zoom-in-95">
-                <div className={`mx-auto h-20 w-20 rounded-full flex items-center justify-center ${result.passed ? 'bg-green-100 text-green-600' : result.pending ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
-                    {result.passed ? <CheckCircle className="h-10 w-10" /> : result.pending ? <CheckCircle className="h-10 w-10" /> : <XCircle className="h-10 w-10" />}
+            <div className={`border rounded-2xl p-8 text-center space-y-6 animate-in zoom-in-95 shadow-sm ${isFail ? 'bg-red-50/50 border-red-200' : result.passed ? 'bg-emerald-50/50 border-emerald-200' : 'bg-amber-50/50 border-amber-200'}`}>
+                <div className={`mx-auto h-20 w-20 rounded-full flex items-center justify-center ${result.passed ? 'bg-emerald-100 text-emerald-600' : result.pending ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
+                    {result.passed ? <CheckCircle className="h-10 w-10" /> : result.pending ? <Loader2 className="h-10 w-10 animate-spin" /> : <XCircle className="h-10 w-10" />}
                 </div>
 
                 <div>
-                    <h3 className="text-2xl font-bold">{result.passed ? "Quiz Passed!" : result.pending ? "Submission Pending Review" : "Quiz Failed"}</h3>
-                    <p className="text-muted-foreground mt-2">{result.feedback}</p>
+                    <h3 className={`text-2xl font-black ${result.passed ? 'text-emerald-950' : result.pending ? 'text-amber-950' : 'text-red-950'}`}>
+                        {result.passed ? "Assessment Passed!" : result.pending ? "Submission Pending Review" : "Assessment Not Passed"}
+                    </h3>
+                    <p className="text-slate-600 mt-2 max-w-lg mx-auto font-medium">{result.feedback}</p>
                 </div>
 
-                {!result.pending && (
-                    <>
-                        <div className="text-4xl font-bold">
+                {!result.pending && result.score !== null && (
+                    <div className="bg-white/80 p-4 rounded-xl max-w-xs mx-auto border shadow-xs">
+                        <div className={`text-4xl font-black ${result.passed ? 'text-emerald-600' : 'text-red-600'}`}>
                             {result.score}%
                         </div>
-                        <p className="text-sm text-muted-foreground">Passing Score: {assessment.passing_score}%</p>
-                    </>
+                        <p className="text-xs text-muted-foreground font-semibold mt-1">Passing Threshold: {assessment.passing_score}%</p>
+                    </div>
                 )}
 
-                {result.passed || result.pending ? (
+                {result.passed ? (
                     <div className="space-y-4">
-                        {result.pending && (
-                             <p className="text-sm bg-blue-50 text-blue-800 p-3 rounded-lg border border-blue-100 font-medium">
-                                Assessment submitted successfully, pending review.
-                             </p>
-                        )}
-                        <Button onClick={() => router.refresh()} size="lg" className="w-full">Continue Learning</Button>
+                        <Button onClick={() => router.refresh()} size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md">
+                            Continue Learning
+                        </Button>
+                    </div>
+                ) : result.pending ? (
+                    <div className="space-y-4">
+                        <p className="text-sm bg-amber-100/80 text-amber-900 p-4 rounded-xl border border-amber-200 font-medium">
+                            Your assessment has been submitted. Instructors or AI evaluators are reviewing your response. You may proceed with subsequent course lessons!
+                        </p>
+                        <Button onClick={() => router.refresh()} size="lg" className="w-full font-bold rounded-xl">
+                            Continue Learning
+                        </Button>
                     </div>
                 ) : (
-                    <Button onClick={handleRetry} variant="outline" size="lg">
-                        <RefreshCw className="mr-2 h-4 w-4" /> Try Again
-                    </Button>
+                    <div className="space-y-4">
+                        <p className="text-sm text-red-800 bg-red-100/80 p-3.5 rounded-xl border border-red-200 font-medium max-w-md mx-auto">
+                            Don't worry! You can retake this assessment as many times as needed to pass. Retaking does not affect your study progress.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                            <Button onClick={handleRetry} variant="default" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md px-8">
+                                <RefreshCw className="mr-2 h-4 w-4" /> Retake Assessment Now
+                            </Button>
+                            <Button onClick={() => router.refresh()} variant="outline" size="lg" className="font-bold rounded-xl">
+                                Continue Study Path
+                            </Button>
+                        </div>
+                    </div>
                 )}
             </div>
         )

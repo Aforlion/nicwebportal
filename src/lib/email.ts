@@ -16,6 +16,7 @@ import { NICFoundingInvitationEmail } from '../emails/NIC_FoundingInvitation'
 import { NICFoundingWelcomeEmail } from '../emails/NIC_FoundingWelcome'
 import { NICInspectionScheduledEmail } from '../emails/NIC_InspectionScheduled'
 import { NICFoundingPaymentReceiptEmail } from '../emails/NIC_FoundingPaymentReceipt'
+import { NICAssessmentResultEmail } from '../emails/NIC_AssessmentResult'
 import * as React from 'react'
 import { env } from '@/env'
 import logger from '@/lib/logger'
@@ -312,5 +313,36 @@ export async function sendFoundingPaymentReceiptEmail(
         })
     });
 }
+
+export async function sendAssessmentResultEmail(
+    email: string,
+    fullName: string,
+    courseTitle: string,
+    assessmentName: string,
+    passed: boolean,
+    score: number,
+    passingScore: number,
+    feedback: string,
+    courseId: string
+) {
+    const statusLabel = passed ? "Passed" : "Retake Required";
+    const subject = `Assessment Result: ${assessmentName} (${statusLabel})`;
+
+    return sendEmail({
+        to: email,
+        subject,
+        template: React.createElement(NICAssessmentResultEmail, {
+            fullName,
+            courseTitle,
+            assessmentName,
+            passed,
+            score,
+            passingScore,
+            feedback,
+            courseId
+        })
+    });
+}
+
 
 
