@@ -89,6 +89,7 @@ export function Footer() {
                         <ul className="space-y-3 text-sm text-slate-400">
                             <li><Link href="/privacy" className="hover:text-amber-400 transition-colors font-medium">Privacy Policy (NDPA)</Link></li>
                             <li><Link href="/terms" className="hover:text-amber-400 transition-colors font-medium">Terms of Use</Link></li>
+                            <li><Link href="/security" className="hover:text-amber-400 transition-colors font-medium">Security & Trust</Link></li>
                             <li><Link href="/regulatory/regulatory-framework" className="hover:text-amber-400 transition-colors">Regulatory Framework</Link></li>
                             <li><Link href="/regulatory/code-of-ethics-facility" className="hover:text-amber-400 transition-colors">Code of Ethics</Link></li>
                             <li><Link href="/regulatory" className="hover:text-amber-400 transition-colors">All Frameworks</Link></li>
