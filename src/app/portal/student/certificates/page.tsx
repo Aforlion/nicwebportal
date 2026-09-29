@@ -32,39 +32,61 @@ export default async function StudentCertificatesPage() {
 
             <div className="grid gap-8 lg:grid-cols-2">
                 {certificates && certificates.length > 0 ? (
-                    certificates.map((cert: any) => (
-                        <Card key={cert.id} className="overflow-hidden border-2 border-primary/10 group">
-                            <div className="h-2 bg-gradient-to-r from-primary via-accent to-secondary" />
-                            <CardHeader className="pb-4">
-                                <div className="flex justify-between items-start">
-                                    <div className="bg-primary/5 p-3 rounded-2xl mb-4 text-primary">
-                                        <Award className="h-10 w-10" />
+                    certificates.map((cert: any) => {
+                        const isNCNA = cert.type === 'ncna' || cert.certificate_number?.startsWith('NCNA')
+                        const isMemberCert = cert.type === 'individual_membership' || cert.certificate_number?.startsWith('NIC-MEM')
+                        const isFacilityCert = cert.type === 'facility_membership' || cert.certificate_number?.startsWith('NIC-FAC') || cert.certificate_number?.startsWith('NIC-AGY')
+
+                        let title = cert.programs?.title || cert.courses?.title || cert.course_level
+
+                        if (isNCNA) {
+                            title = "National Certified Nursing Assistant (NCNA) License"
+                        } else if (isMemberCert) {
+                            title = "NIC Individual Membership Certificate"
+                        } else if (isFacilityCert) {
+                            title = "NIC Facility Accreditation Certificate"
+                        } else if (!title) {
+                            title = "NIC Course Completion Certificate"
+                        }
+
+                        let badgeText = "Verified Credential"
+                        if (isNCNA) badgeText = "Pinnacle License"
+                        else if (isMemberCert) badgeText = "Member Credential"
+                        else if (isFacilityCert) badgeText = "Facility Accreditation"
+
+                        return (
+                            <Card key={cert.id} className="overflow-hidden border-2 border-primary/10 group hover:shadow-lg transition-all">
+                                <div className="h-2 bg-gradient-to-r from-primary via-accent to-secondary" />
+                                <CardHeader className="pb-4">
+                                    <div className="flex justify-between items-start">
+                                        <div className="bg-primary/5 p-3 rounded-2xl mb-4 text-primary">
+                                            <Award className="h-10 w-10" />
+                                        </div>
+                                        <Badge className={`uppercase font-bold text-[10px] tracking-widest ${isNCNA ? "bg-amber-100 text-amber-800 border-amber-300" : "bg-emerald-100 text-emerald-700 border-emerald-300"}`}>
+                                            <ShieldCheck className="mr-1 h-3 w-3" /> {badgeText}
+                                        </Badge>
                                     </div>
-                                    <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 uppercase font-bold text-[10px] tracking-widest">
-                                        <ShieldCheck className="mr-1 h-3 w-3" /> Verified
-                                    </Badge>
-                                </div>
-                                <CardTitle className="text-xl text-secondary">{cert.programs?.title}</CardTitle>
-                                <CardDescription className="font-mono text-xs">{cert.certificate_number}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                        <p className="text-muted-foreground font-medium uppercase text-[10px] tracking-wider mb-1">Issue Date</p>
-                                        <p className="font-bold text-secondary flex items-center gap-2">
-                                            <Calendar className="h-4 w-4 text-primary" /> {new Date(cert.issue_date).toLocaleDateString()}
-                                        </p>
+                                    <CardTitle className="text-xl text-secondary">{title}</CardTitle>
+                                    <CardDescription className="font-mono text-xs">{cert.certificate_number}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <p className="text-muted-foreground font-medium uppercase text-[10px] tracking-wider mb-1">Issue Date</p>
+                                            <p className="font-bold text-secondary flex items-center gap-2">
+                                                <Calendar className="h-4 w-4 text-primary" /> {cert.issue_date ? new Date(cert.issue_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Verified'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted-foreground font-medium uppercase text-[10px] tracking-wider mb-1">Status</p>
+                                            <p className="font-bold text-emerald-600">Active & Valid</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-muted-foreground font-medium uppercase text-[10px] tracking-wider mb-1">Status</p>
-                                        <p className="font-bold text-emerald-600">Active</p>
+                                    <div className="bg-muted/30 p-4 rounded-xl space-y-1">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Authority</p>
+                                        <p className="text-xs font-semibold text-secondary">National Institute of Caregivers (NIC Registry Board)</p>
                                     </div>
-                                </div>
-                                <div className="bg-muted/30 p-4 rounded-xl space-y-2">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Category</p>
-                                    <p className="text-sm font-medium text-secondary">Professional Certification</p>
-                                </div>
-                            </CardContent>
+                                </CardContent>
                             <CardFooter className="flex gap-3 pt-0">
                                 <Button className="flex-grow bg-primary" asChild>
                                     <Link href={`/certificates/${cert.certificate_number}`} target="_blank">
@@ -78,7 +100,8 @@ export default async function StudentCertificatesPage() {
                                 </Button>
                             </CardFooter>
                         </Card>
-                    ))
+                    )
+                })
                 ) : (
                     <div className="lg:col-span-2 py-20 text-center">
                         <Award className="h-16 w-16 mx-auto mb-4 opacity-10" />

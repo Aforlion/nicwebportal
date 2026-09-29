@@ -176,13 +176,19 @@ export async function getStudentCertificates() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: "Unauthenticated" }
 
+    // Auto-evaluate NCNA eligibility
+    const { evaluateNCNAEligibilityAction } = await import("@/lib/actions/certification-engine")
+    await evaluateNCNAEligibilityAction(user.id)
+
     const { data, error } = await supabase
         .from('certificates')
         .select(`
             *,
-            programs (title)
+            programs (title),
+            courses (title)
         `)
         .eq('user_id', user.id)
+        .order('issue_date', { ascending: false })
 
     if (error) {
         console.error("Error fetching certificates:", error)

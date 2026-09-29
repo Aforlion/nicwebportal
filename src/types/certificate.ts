@@ -9,6 +9,13 @@ export type FacilityTypeKey =
   | 'clinical_facility' 
   | 'general';
 
+export type MemberTierKey =
+  | 'student'
+  | 'associate'
+  | 'certified_caregiver'
+  | 'professional'
+  | 'fellow';
+
 export type CertificateCategory = 
   | 'facility_membership' 
   | 'ncna_license' 
@@ -39,6 +46,7 @@ export interface PremiumCertificateData {
   recipientSubtitle?: string;
   facilityType?: string;
   facilityTypeKey?: FacilityTypeKey;
+  memberTierKey?: MemberTierKey;
   category: CertificateCategory;
   titleOverride?: string;
   courseOrProgramName?: string;

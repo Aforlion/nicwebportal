@@ -4,7 +4,7 @@ import { headers as getHeaders } from "next/headers"
 import CertificateActions from "@/components/certificate/certificate-actions"
 import PremiumCertificateView from "@/components/certificate/premium-certificate-view"
 import Link from "next/link"
-import { PremiumCertificateData, FacilityTypeKey } from "@/types/certificate"
+import { PremiumCertificateData, FacilityTypeKey, MemberTierKey } from "@/types/certificate"
 
 export default async function CertificatePage({ params }: { params: Promise<{ code: string }> }) {
     const { code } = await params
@@ -15,7 +15,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
     }
 
     const isNCNA = cert.type === 'ncna' || (cert.certificate_number && cert.certificate_number.startsWith('NCNA'))
-    const isFacility = cert.type === 'facility_membership' || cert.facility_id
+    const isFacility = cert.type === 'facility_membership' || cert.facility_id || (cert.certificate_number && cert.certificate_number.startsWith('NIC-FAC')) || (cert.certificate_number && cert.certificate_number.startsWith('NIC-AGY'))
+    const isIndividualMembership = cert.type === 'individual_membership' || (cert.certificate_number && cert.certificate_number.startsWith('NIC-MEM'))
 
     const recipientName = (cert.profiles as any)?.full_name?.trim() || (cert.profiles as any)?.email || (cert.facilities as any)?.name || "Recipient"
     const courseTitle = (cert.programs as any)?.title || (cert.courses as any)?.title || (isNCNA ? "National Certified Nursing Assistant (NCNA)" : cert.course_level || "NIC Certification Program")
@@ -38,18 +39,36 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
         else if (ft.includes('hospital') || ft.includes('clinical')) typeKey = 'hospital'
     }
 
+    let memberTier: MemberTierKey = 'student'
+    if (cert.member_tier || cert.plan_name) {
+        const p = (cert.member_tier || cert.plan_name || '').toLowerCase()
+        if (p.includes('fellow') || p.includes('fnic')) memberTier = 'fellow'
+        else if (p.includes('professional')) memberTier = 'professional'
+        else if (p.includes('associate') || p.includes('caregiver') || p.includes('certified')) memberTier = 'certified_caregiver'
+    }
+
     const issueDateStr = cert.issue_date || cert.created_at || new Date().toISOString()
     const issueYear = new Date(issueDateStr).getFullYear()
+
+    const category = isFacility 
+        ? 'facility_membership' 
+        : isNCNA 
+        ? 'ncna_license' 
+        : isIndividualMembership 
+        ? 'individual_membership' 
+        : 'course_completion'
 
     const certData: PremiumCertificateData = {
         certificateNumber: cert.certificate_number,
         recipientName: isFacility ? (cert.facilities?.name || recipientName) : recipientName,
         facilityTypeKey: typeKey,
         facilityType: cert.facility_type ? cert.facility_type.replace('_', ' ').toUpperCase() : undefined,
-        category: isFacility ? 'facility_membership' : isNCNA ? 'ncna_license' : 'course_completion',
+        memberTierKey: isIndividualMembership ? memberTier : undefined,
+        category,
         courseOrProgramName: courseTitle,
+        resultOrLevel: cert.course_level || undefined,
         issueDate: issueDateStr,
-        duration: isFacility ? `12 Months (${issueYear} - ${issueYear + 1})` : `Lifetime Credential (Issued ${issueYear})`,
+        duration: (isFacility || isIndividualMembership) ? `12 Months (${issueYear} - ${issueYear + 1})` : `Lifetime Credential (Issued ${issueYear})`,
         verificationUrl,
         studentIdOrRegNumber: cert.student_id || (cert.user_id ? `NIC-STU-${cert.user_id.substring(0, 5).toUpperCase()}` : `LIC-${code}`),
         signatoryName: "Olatunji Joel",

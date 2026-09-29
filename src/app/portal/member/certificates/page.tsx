@@ -6,6 +6,8 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import { getIndividualMemberCertificateDetails } from "@/actions/member/certificate"
+import { evaluateNCNAEligibilityAction } from "@/lib/actions/certification-engine"
 
 export const dynamic = 'force-dynamic'
 
@@ -16,8 +18,12 @@ export default async function MemberCertificatesPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect("/login")
 
-    // Fetch all certificates associated with the member
-    const { data: certificates, error } = await supabase
+    // 1. Auto-trigger NCNA & Individual Membership Certificate evaluation
+    await evaluateNCNAEligibilityAction(user.id)
+    await getIndividualMemberCertificateDetails(user.id)
+
+    // 2. Fetch all certificates associated with the member
+    const { data: certificates } = await supabase
         .from('certificates')
         .select(`
             *,
@@ -25,20 +31,14 @@ export default async function MemberCertificatesPage() {
             courses (title)
         `)
         .eq('user_id', user.id)
-
-    // Also fetch membership to construct membership certificate if active
-    const { data: membership } = await supabase
-        .from('memberships')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle()
+        .order('issue_date', { ascending: false })
 
     return (
         <div className="space-y-8 pb-20">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-secondary">My Official Certificates</h1>
-                    <p className="text-muted-foreground">Access, view, and download your official NIC licenses & credentials.</p>
+                    <h1 className="text-3xl font-bold text-secondary">My Official Certificates Portfolio</h1>
+                    <p className="text-muted-foreground">Access, view, and download all your official NIC course completions, membership credentials & NCNA licenses.</p>
                 </div>
                 <Button variant="outline" asChild>
                     <Link href="/portal/member/id-card">
@@ -51,7 +51,25 @@ export default async function MemberCertificatesPage() {
                 {certificates && certificates.length > 0 ? (
                     certificates.map((cert: any) => {
                         const isNCNA = cert.type === 'ncna' || cert.certificate_number?.startsWith('NCNA')
-                        const title = (cert.programs as any)?.title || (cert.courses as any)?.title || cert.course_level || (isNCNA ? "National Certified Nursing Assistant (NCNA)" : "NIC Certification")
+                        const isMemberCert = cert.type === 'individual_membership' || cert.certificate_number?.startsWith('NIC-MEM')
+                        const isFacilityCert = cert.type === 'facility_membership' || cert.certificate_number?.startsWith('NIC-FAC') || cert.certificate_number?.startsWith('NIC-AGY')
+
+                        let title = (cert.programs as any)?.title || (cert.courses as any)?.title || cert.course_level
+
+                        if (isNCNA) {
+                            title = "National Certified Nursing Assistant (NCNA) License"
+                        } else if (isMemberCert) {
+                            title = "NIC Individual Membership Certificate"
+                        } else if (isFacilityCert) {
+                            title = "NIC Facility Accreditation & Membership Certificate"
+                        } else if (!title) {
+                            title = "NIC Official Certification"
+                        }
+
+                        let badgeText = "Verified Credential"
+                        if (isNCNA) badgeText = "Pinnacle License"
+                        else if (isMemberCert) badgeText = "Member Credential"
+                        else if (isFacilityCert) badgeText = "Facility Accreditation"
 
                         return (
                             <Card key={cert.id} className="overflow-hidden border-2 border-primary/10 group hover:shadow-lg transition-all">

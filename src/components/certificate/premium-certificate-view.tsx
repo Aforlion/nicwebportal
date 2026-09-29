@@ -24,9 +24,16 @@ interface PremiumCertificateViewProps {
   className?: string
 }
 
-function getCertificateTheme(typeKey?: FacilityTypeKey, category?: string): CertificateTheme {
+function getCertificateTheme(
+  typeKey?: FacilityTypeKey, 
+  category?: string, 
+  memberTierKey?: MemberTierKey,
+  courseLevel?: string
+): CertificateTheme {
   const k = (typeKey || '').toLowerCase()
   const cat = (category || '').toLowerCase()
+  const tier = (memberTierKey || '').toLowerCase()
+  const lvl = (courseLevel || '').toLowerCase()
 
   if (k === 'agency' || k === 'care_agency') {
     return {
@@ -128,12 +135,99 @@ function getCertificateTheme(typeKey?: FacilityTypeKey, category?: string): Cert
     }
   }
 
+  if (cat === 'individual_membership' || tier.length > 0) {
+    if (tier.includes('fellow')) {
+      return {
+        id: 'fellow',
+        name: 'Fellow of NIC',
+        badgeLabel: 'FELLOW OF THE INSTITUTE (FNIC)',
+        titleHeader: 'FELLOWSHIP MEMBERSHIP CERTIFICATE',
+        subtitleHeader: 'HIGHEST DISTINCTION & INSTITUTIONAL GOVERNANCE FELLOWSHIP',
+        primaryColor: '#581c87',
+        secondaryColor: '#6b21a8',
+        accentGold: '#d97706',
+        bgGradient: 'from-purple-950 via-slate-900 to-amber-950',
+        borderOuter: 'border-[#d97706]',
+        borderInner: 'border-[#f59e0b]/60',
+        sealText: 'FELLOWSHIP GOVERNANCE SEAL',
+        watermarkIcon: 'award',
+        emblemBadgeBg: 'bg-purple-950 text-amber-400 border-amber-500/60',
+        emblemTextColor: 'text-amber-500',
+      }
+    }
+    if (tier.includes('professional')) {
+      return {
+        id: 'professional_member',
+        name: 'Professional Member',
+        badgeLabel: 'CERTIFIED PROFESSIONAL MEMBER',
+        titleHeader: 'PROFESSIONAL MEMBERSHIP CERTIFICATE',
+        subtitleHeader: 'OFFICIAL SENIOR PRACTICE & CLINICAL COMPETENCE CREDENTIAL',
+        primaryColor: '#1e3a8a',
+        secondaryColor: '#1d4ed8',
+        accentGold: '#d97706',
+        bgGradient: 'from-blue-950 via-slate-900 to-slate-800',
+        borderOuter: 'border-[#1d4ed8]',
+        borderInner: 'border-[#3b82f6]/50',
+        sealText: 'PROFESSIONAL REGISTRY SEAL',
+        watermarkIcon: 'award',
+        emblemBadgeBg: 'bg-blue-950 text-blue-300 border-blue-400/50',
+        emblemTextColor: 'text-blue-400',
+      }
+    }
+    if (tier.includes('associate') || tier.includes('certified')) {
+      return {
+        id: 'associate_member',
+        name: 'Associate Member',
+        badgeLabel: 'CERTIFIED CAREGIVER MEMBER',
+        titleHeader: 'CERTIFIED CAREGIVER MEMBERSHIP',
+        subtitleHeader: 'OFFICIAL PROFESSIONAL PRACTICE & REGISTRY CREDENTIAL',
+        primaryColor: '#0f172a',
+        secondaryColor: '#334155',
+        accentGold: '#d97706',
+        bgGradient: 'from-slate-900 to-slate-800',
+        borderOuter: 'border-[#d97706]',
+        borderInner: 'border-[#f59e0b]/50',
+        sealText: 'CAREGIVER PRACTICE SEAL',
+        watermarkIcon: 'award',
+        emblemBadgeBg: 'bg-slate-900 text-amber-400 border-amber-500/40',
+        emblemTextColor: 'text-amber-500',
+      }
+    }
+    return {
+      id: 'student_member',
+      name: 'Student Member',
+      badgeLabel: 'REGISTERED STUDENT MEMBER',
+      titleHeader: 'STUDENT MEMBERSHIP CERTIFICATE',
+      subtitleHeader: 'NATIONAL INSTITUTE OF CAREGIVERS LEARNER CREDENTIAL',
+      primaryColor: '#0f766e',
+      secondaryColor: '#0d9488',
+      accentGold: '#d97706',
+      bgGradient: 'from-teal-950 via-slate-900 to-teal-900',
+      borderOuter: 'border-[#0d9488]',
+      borderInner: 'border-[#14b8a6]/50',
+      sealText: 'STUDENT REGISTRY SEAL',
+      watermarkIcon: 'graduation',
+      emblemBadgeBg: 'bg-teal-950 text-teal-300 border-teal-500/40',
+      emblemTextColor: 'text-teal-400',
+    }
+  }
+
+  // Course Completion level branding
+  let courseBadgeLabel = 'NATIONAL INSTITUTE CERTIFIED'
+  if (lvl.includes('level 1') || lvl.includes('foundation') || lvl.includes('beginner')) {
+    courseBadgeLabel = 'LEVEL 1 FOUNDATIONAL CERTIFICATE'
+  } else if (lvl.includes('level 2') || lvl.includes('specialist') || lvl.includes('geriatric')) {
+    courseBadgeLabel = 'LEVEL 2 SPECIALIST CERTIFICATE'
+  } else if (lvl.includes('advanced') || lvl.includes('level 3') || lvl.includes('level 4')) {
+    courseBadgeLabel = 'ADVANCED PROFESSIONAL CERTIFICATE'
+  }
+
   return {
     id: 'general',
     name: 'Official Certificate',
-    badgeLabel: 'NATIONAL INSTITUTE CERTIFIED',
-    titleHeader: 'MEMBERSHIP CERTIFICATE',
-    subtitleHeader: 'OFFICIAL INSTITUTIONAL CREDENTIAL',
+    badgeLabel: courseBadgeLabel,
+    titleHeader: 'CERTIFICATE OF COMPLETION',
+    subtitleHeader: 'OFFICIAL ACADEMIC & PRACTICAL QUALIFICATION',
     primaryColor: '#0f172a',
     secondaryColor: '#334155',
     accentGold: '#d97706',
@@ -148,7 +242,7 @@ function getCertificateTheme(typeKey?: FacilityTypeKey, category?: string): Cert
 }
 
 export default function PremiumCertificateView({ data, className = '' }: PremiumCertificateViewProps) {
-  const theme = getCertificateTheme(data.facilityTypeKey, data.category)
+  const theme = getCertificateTheme(data.facilityTypeKey, data.category, data.memberTierKey, data.resultOrLevel)
 
   const displayTitle = data.titleOverride || theme.titleHeader
   const displaySubtitle = theme.subtitleHeader
@@ -173,6 +267,8 @@ export default function PremiumCertificateView({ data, className = '' }: Premium
     ? "having completed all mandatory institutional registrations, satisfied NIC regulatory compliance, and fulfilled facility standards, is hereby admitted as an official certified member institution."
     : data.category === 'ncna_license'
     ? "having fulfilled all academic requirements, completed supervised clinical internship, and passed state licensing assessments, is hereby granted the official license of National Certified Nursing Assistant."
+    : data.category === 'individual_membership'
+    ? "having satisfied all professional membership qualifications, fulfilled institutional governance standards, and maintained good standing, is hereby recognized as an official member in good standing of the Institute."
     : "having successfully completed the prescribed curriculum and satisfied all academic standards, is hereby awarded this official Certificate of Completion."
 
   return (
