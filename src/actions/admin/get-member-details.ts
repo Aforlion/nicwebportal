@@ -83,14 +83,41 @@ export async function getMemberDetails(profileId: string) {
             }
         }
 
-        // 4. Fetch Payments
-        const { data: payments, error: paymentsError } = await supabase
+        // 4. Fetch Payments across all user's membership records and transaction references
+        const { data: userMemberships } = await supabase
+            .from('memberships')
+            .select('id')
+            .eq('user_id', profileId)
+
+        const memIds = (userMemberships || []).map((m: any) => m.id)
+        if (membership.id && !memIds.includes(membership.id)) memIds.push(membership.id)
+
+        const { data: directPayments } = await supabase
             .from('payments')
             .select('*')
-            .eq('membership_id', membership.id)
-            .order('created_at', { ascending: false })
+            .in('membership_id', memIds)
 
-        if (paymentsError) console.error('Error fetching payments:', paymentsError)
+        const references = [
+            membership.last_payment_reference,
+            ...(enrollments || []).map((e: any) => e.payment_reference)
+        ].filter((ref): ref is string => Boolean(ref))
+
+        let fallbackPayments: any[] = []
+        if (references.length > 0) {
+            const { data: refPayments } = await supabase
+                .from('payments')
+                .select('*')
+                .in('transaction_reference', references)
+            fallbackPayments = refPayments || []
+        }
+
+        const allPaymentsMap = new Map()
+        for (const p of [...(directPayments || []), ...fallbackPayments]) {
+            allPaymentsMap.set(p.id, p)
+        }
+        const payments = Array.from(allPaymentsMap.values()).sort((a: any, b: any) => 
+            new Date(b.created_at || b.payment_date || 0).getTime() - new Date(a.created_at || a.payment_date || 0).getTime()
+        )
 
         // 5. Fetch Documents
         const { data: documents, error: documentsError } = await supabase

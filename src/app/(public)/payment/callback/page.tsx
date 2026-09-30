@@ -36,7 +36,7 @@ function CallbackContent() {
                 } else {
                     // Default behavior
                     setTimeout(() => {
-                        router.push(`/payment/success?reference=${reference}${redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ''}`)
+                        router.push(`/payment/success?reference=${reference}&type=${result.type || 'individual'}${redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ''}`)
                     }, 2000)
                 }
             } else {

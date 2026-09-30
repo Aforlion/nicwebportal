@@ -32,20 +32,34 @@ export async function assignNicIdAction(targetId: string) {
 
     const targetUserId = profile.id
 
+    // Fetch full profile details to accurately check role
+    const { data: fullProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', targetUserId)
+      .maybeSingle()
+
     // 2. Fetch or create membership
     const { data: existingMembership } = await supabaseAdmin
       .from('memberships')
       .select('id, nic_id, category')
       .eq('user_id', targetUserId)
+      .order('created_at', { ascending: true })
+      .limit(1)
       .maybeSingle()
 
     let nic_id = existingMembership?.nic_id
 
-    // Generate NIC ID if missing
+    const userRole = fullProfile?.role || 'member'
+    const category = existingMembership?.category || (userRole === 'student' ? 'student' : 'full')
+    const isStudent = userRole === 'student' || category === 'student'
+
+    // Generate NIC ID if missing with accurate STU vs MEM prefix
     if (!nic_id) {
       const year = new Date().getFullYear()
       const random = Math.random().toString(36).substring(2, 7).toUpperCase()
-      nic_id = `NIC/MEM/${year}/${random}`
+      const prefix = isStudent ? 'STU' : 'MEM'
+      nic_id = `NIC/${prefix}/${year}/${random}`
     }
 
     if (existingMembership) {
@@ -64,23 +78,20 @@ export async function assignNicIdAction(targetId: string) {
         .insert({
           user_id: targetUserId,
           nic_id,
-          category: 'student',
+          category: isStudent ? 'student' : 'full',
           status: 'active',
           is_active: true,
           created_at: new Date().toISOString()
         })
     }
 
-    // 3. Generate auth password setup link
-    const tempPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-2).toUpperCase()
-    
+    // Confirm email without wiping out user's existing chosen password
     try {
       await supabaseAdmin.auth.admin.updateUserById(targetUserId, { 
-        password: tempPassword,
         email_confirm: true 
       })
     } catch (authErr) {
-      console.warn('Auth password update warning:', authErr)
+      console.warn('Auth confirm warning:', authErr)
     }
 
     const baseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://nicnigeria.org')
@@ -91,7 +102,7 @@ export async function assignNicIdAction(targetId: string) {
         type: 'recovery',
         email: profile.email,
         options: {
-          redirectTo: `${baseUrl}/reset-password`
+          redirectTo: `${baseUrl}/auth/callback?next=/reset-password`
         }
       })
       if (linkData?.properties?.action_link) {
@@ -109,7 +120,6 @@ export async function assignNicIdAction(targetId: string) {
         template: React.createElement(NICWelcomeEmail, {
           fullName: profile.full_name || 'Caregiver',
           loginUrl: actionLink,
-          temporaryPassword: tempPassword,
           mode: 'welcome'
         })
       })

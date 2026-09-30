@@ -48,7 +48,7 @@ export async function inviteMemberAction(profileId: string) {
             type: 'recovery',
             email: profile.email,
             options: {
-                redirectTo: `${baseUrl}/reset-password`
+                redirectTo: `${baseUrl}/auth/callback?next=/reset-password`
             }
         })
 

@@ -54,9 +54,11 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
 
         const { data: member } = await supabase
             .from('memberships')
-            .select('category')
+            .select('id, category')
             .eq('user_id', user.id)
-            .single()
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .maybeSingle()
 
         const academicLevel = await getStudentLevel(supabase, user.id)
         const eligibility = isEligibleForCourse({

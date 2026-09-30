@@ -46,8 +46,8 @@ function SuccessContent() {
 
                 <div className="flex flex-col gap-3">
                     <Button asChild className="bg-primary h-12 text-lg">
-                        <Link href={redirectUrl ? redirectUrl : (type === 'founding' ? '/onboard/founding' : (type === 'individual' ? '/courses' : '/login'))}>
-                            {redirectUrl ? 'Continue to Course' : (type === 'individual' ? 'Start Orientation Course' : 'Continue Registration')} <ArrowRight className="ml-2 h-5 w-5" />
+                        <Link href={redirectUrl ? redirectUrl : (type === 'founding' ? '/onboard/founding' : '/portal/student')}>
+                            {redirectUrl ? 'Continue to Course' : 'Access Student Dashboard'} <ArrowRight className="ml-2 h-5 w-5" />
                         </Link>
                     </Button>
                     <Button variant="ghost" asChild>

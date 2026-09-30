@@ -13,6 +13,8 @@ async function ensureUserMembership(userId: string) {
         .from('memberships')
         .select('id')
         .eq('user_id', userId)
+        .order('created_at', { ascending: true })
+        .limit(1)
         .maybeSingle()
 
     if (membership?.id) return membership.id

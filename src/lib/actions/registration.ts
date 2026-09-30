@@ -244,33 +244,55 @@ export async function finalizeRegistrationAction(reference: string) {
             }
 
             // 3.5 Create Membership Record
-            const { data: memData, error: membershipError } = await adminClient
+            const year = new Date().getFullYear()
+            const rand = Math.random().toString(36).substring(2, 7).toUpperCase()
+            const isStudentRole = assignedRole === 'student' || fd.category === 'student'
+            const nicId = `NIC/${isStudentRole ? 'STU' : 'MEM'}/${year}/${rand}`
+
+            let membershipId: string | undefined
+
+            // Check existing membership first to prevent duplicate creation
+            const { data: existingMem } = await adminClient
                 .from('memberships')
-                .insert({
-                    user_id: userId,
-                    category: fd.category, // Matches DB enum now
-                    status: 'active',
-                    is_active: true,
-                    last_payment_date: new Date().toISOString(),
-                    last_payment_reference: reference,
-                    expiry_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
-                })
-                .select('id')
-                .maybeSingle();
+                .select('id, nic_id')
+                .eq('user_id', userId)
+                .maybeSingle()
 
-            if (membershipError) {
-                logger.error("Membership Creation Error", { error: membershipError, email, pendingId });
-                // We'll continue anyway as auth is created, but log it
-            }
-
-            let membershipId = memData?.id
-            if (!membershipId) {
-                const { data: existingMem } = await adminClient
+            if (existingMem) {
+                membershipId = existingMem.id
+                // Update NIC ID if missing or mismatched category
+                await adminClient
                     .from('memberships')
+                    .update({
+                        category: fd.category,
+                        nic_id: existingMem.nic_id || nicId,
+                        status: 'active',
+                        is_active: true,
+                        last_payment_date: new Date().toISOString(),
+                        last_payment_reference: reference,
+                        expiry_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
+                    })
+                    .eq('id', existingMem.id)
+            } else {
+                const { data: memData, error: membershipError } = await adminClient
+                    .from('memberships')
+                    .insert({
+                        user_id: userId,
+                        nic_id: nicId,
+                        category: fd.category,
+                        status: 'active',
+                        is_active: true,
+                        last_payment_date: new Date().toISOString(),
+                        last_payment_reference: reference,
+                        expiry_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
+                    })
                     .select('id')
-                    .eq('user_id', userId)
-                    .maybeSingle()
-                membershipId = existingMem?.id
+                    .maybeSingle();
+
+                if (membershipError) {
+                    logger.error("Membership Creation Error", { error: membershipError, email, pendingId });
+                }
+                membershipId = memData?.id
             }
 
             // 3.6 Record Payment in payments table
