@@ -166,13 +166,18 @@ export default function QuizPlayer({ courseId, lessonId, assessment, existingSub
 
                         {q.type === 'essay' ? (
                             <div className="space-y-2">
-                                <Label htmlFor={`text-${q.id}`} className="text-sm text-muted-foreground uppercase tracking-wider block">
-                                    Your Essay Response
-                                </Label>
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor={`text-${q.id}`} className="text-sm text-muted-foreground uppercase tracking-wider block">
+                                        Your Essay Response
+                                    </Label>
+                                    <span className={`text-xs font-mono ${((answers[q.id] || "").length > 45000) ? 'text-amber-600 font-semibold' : 'text-slate-400'}`}>
+                                        {(answers[q.id] || "").length.toLocaleString()} / 50,000 characters
+                                    </span>
+                                </div>
                                 <Textarea
                                     id={`text-${q.id}`}
                                     placeholder="Write your detailed essay here..."
-                                    className="min-h-[150px]"
+                                    className="min-h-[180px] font-sans leading-relaxed text-base"
                                     value={answers[q.id] || ""}
                                     onChange={(e) => handleTextChange(q.id, e.target.value)}
                                 />

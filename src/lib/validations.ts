@@ -55,7 +55,7 @@ export const AssessmentSchema = z.object({
  */
 export const AnswersSchema = z.record(
     z.string().uuid({ message: "Answer key must be a valid question UUID" }),
-    z.string().max(5000, { message: "Answer exceeds maximum allowed length" })
+    z.string().max(50000, { message: "Answer exceeds maximum allowed length of 50,000 characters" })
 )
 
 export type Answers = z.infer<typeof AnswersSchema>
