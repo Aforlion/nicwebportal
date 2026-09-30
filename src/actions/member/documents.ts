@@ -36,7 +36,7 @@ async function getOrCreateUserMembershipId(userId: string): Promise<string | nul
         const userRole = profile?.role || 'member'
         const year = new Date().getFullYear()
         const rand = Math.random().toString(36).substring(2, 7).toUpperCase()
-        const nicId = userRole === 'student' ? `NIC/STU/${year}/${rand}` : `NIC/MEM/${year}/${rand}`
+        const nicId = `NIC/MEM/${year}/${rand}`
         let category = 'full'
         if (userRole === 'student') category = 'student'
         else if (userRole === 'facility_admin') category = 'corporate'

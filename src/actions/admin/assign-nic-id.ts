@@ -50,16 +50,11 @@ export async function assignNicIdAction(targetId: string) {
 
     let nic_id = existingMembership?.nic_id
 
-    const userRole = fullProfile?.role || 'member'
-    const category = existingMembership?.category || (userRole === 'student' ? 'student' : 'full')
-    const isStudent = userRole === 'student' || category === 'student'
-
-    // Generate NIC ID if missing with accurate STU vs MEM prefix
+    // Generate unified NIC ID if missing
     if (!nic_id) {
       const year = new Date().getFullYear()
       const random = Math.random().toString(36).substring(2, 7).toUpperCase()
-      const prefix = isStudent ? 'STU' : 'MEM'
-      nic_id = `NIC/${prefix}/${year}/${random}`
+      nic_id = `NIC/MEM/${year}/${random}`
     }
 
     if (existingMembership) {

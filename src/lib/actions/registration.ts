@@ -246,8 +246,7 @@ export async function finalizeRegistrationAction(reference: string) {
             // 3.5 Create Membership Record
             const year = new Date().getFullYear()
             const rand = Math.random().toString(36).substring(2, 7).toUpperCase()
-            const isStudentRole = assignedRole === 'student' || fd.category === 'student'
-            const nicId = `NIC/${isStudentRole ? 'STU' : 'MEM'}/${year}/${rand}`
+            const nicId = `NIC/MEM/${year}/${rand}`
 
             let membershipId: string | undefined
 
