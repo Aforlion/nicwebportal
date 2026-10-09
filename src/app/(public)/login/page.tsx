@@ -42,14 +42,54 @@ function LoginForm() {
         setError("")
 
         try {
-            const formData = new FormData()
-            formData.append("email", email)
-            formData.append("password", password)
+            let result: any = null
 
-            const result = await loginAction(formData)
+            try {
+                const formData = new FormData()
+                formData.append("email", email)
+                formData.append("password", password)
 
-            if (!result.success) {
-                throw new Error(result.error)
+                result = await loginAction(formData)
+            } catch (actionErr: any) {
+                const errString = String(actionErr?.message || actionErr || "")
+                if (
+                    errString.includes("Server Action") ||
+                    errString.includes("not found on the server") ||
+                    errString.includes("failed-to-find-server-action")
+                ) {
+                    console.warn("Stale deployment action hash detected. Executing browser client auth fallback...")
+                    const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+                        email: email.trim().toLowerCase(),
+                        password: password.trim(),
+                    })
+                    if (authErr) throw authErr
+
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select(`
+                            role,
+                            memberships (
+                                category
+                            )
+                        `)
+                        .eq('id', authData.user.id)
+                        .maybeSingle()
+
+                    const membershipCategory = (profile as any)?.memberships?.[0]?.category
+
+                    result = {
+                        success: true,
+                        user: authData.user,
+                        role: profile?.role,
+                        category: membershipCategory
+                    }
+                } else {
+                    throw actionErr
+                }
+            }
+
+            if (!result || !result.success) {
+                throw new Error(result?.error || "Failed to login")
             }
 
             // Redirect based on role and category

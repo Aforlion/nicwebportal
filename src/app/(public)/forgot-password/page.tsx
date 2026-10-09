@@ -23,14 +23,35 @@ export default function ForgotPasswordPage() {
         setError("")
 
         try {
-            const { success, error: resetError } = await requestPasswordResetAction(email)
-            if (!success) {
-                setError(resetError || "Failed to send reset email")
+            let res: { success: boolean; error?: string } = { success: false }
+            try {
+                res = await requestPasswordResetAction(email)
+            } catch (actionErr: any) {
+                const errString = String(actionErr?.message || actionErr || "")
+                if (
+                    errString.includes("Server Action") ||
+                    errString.includes("not found on the server") ||
+                    errString.includes("failed-to-find-server-action")
+                ) {
+                    console.warn("Stale deployment action hash detected. Executing browser client password reset fallback...")
+                    const supabase = createClient()
+                    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: `${window.location.origin}/reset-password`,
+                    })
+                    if (resetErr) throw resetErr
+                    res = { success: true }
+                } else {
+                    throw actionErr
+                }
+            }
+
+            if (!res.success) {
+                setError(res.error || "Failed to send reset email")
                 return
             }
             setSuccess(true)
         } catch (error: any) {
-            setError("An unexpected error occurred. Please try again.")
+            setError(error.message || "An unexpected error occurred. Please try again.")
         } finally {
             setLoading(false)
         }
