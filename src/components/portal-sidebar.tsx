@@ -68,6 +68,7 @@ export function PortalSidebar({ role }: PortalSidebarProps) {
         { title: "Dashboard", href: "/portal/member", icon: LayoutDashboard },
         { title: "Profile", href: "/portal/member/profile", icon: User },
         { title: "My Certificates", href: "/portal/member/certificates", icon: Award },
+        { title: "Academic Transcript", href: "/portal/student/transcript", icon: FileText },
         { title: "Documents", href: "/portal/member/documents", icon: FileText },
         { title: "CPD Records", href: "/portal/member/cpd", icon: History },
         { title: "Payments", href: "/portal/member/payments", icon: CreditCard },
@@ -229,7 +230,6 @@ export function MobilePortalDrawer({ role }: PortalSidebarProps) {
     const [open, setOpen] = useState(false)
     const pathname = usePathname()
 
-    // Close drawer on path change
     useEffect(() => {
         setOpen(false)
     }, [pathname])
@@ -261,6 +261,7 @@ export function MobilePortalDrawer({ role }: PortalSidebarProps) {
         { title: "Dashboard", href: "/portal/member", icon: LayoutDashboard },
         { title: "Profile", href: "/portal/member/profile", icon: User },
         { title: "My Certificates", href: "/portal/member/certificates", icon: Award },
+        { title: "Academic Transcript", href: "/portal/student/transcript", icon: FileText },
         { title: "Documents", href: "/portal/member/documents", icon: FileText },
         { title: "CPD Records", href: "/portal/member/cpd", icon: History },
         { title: "Payments", href: "/portal/member/payments", icon: CreditCard },

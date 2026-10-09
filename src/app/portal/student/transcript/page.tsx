@@ -3,8 +3,13 @@ import TranscriptClient from "./TranscriptClient"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
-export default async function StudentTranscriptPage() {
-    const data = await getStudentTranscript()
+export default async function StudentTranscriptPage({
+    searchParams
+}: {
+    searchParams?: Promise<{ userId?: string }>
+}) {
+    const params = searchParams ? await searchParams : {}
+    const data = await getStudentTranscript(params?.userId)
 
     if ('error' in data) {
         return (

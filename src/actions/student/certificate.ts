@@ -3,7 +3,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
 import { sendCertificateEmail } from "@/lib/email"
 
 export async function issueCertificate(courseId: string, targetUserId?: string) {
@@ -128,7 +127,6 @@ export async function issueCertificate(courseId: string, targetUserId?: string) 
 }
 
 export async function getCertificateByCode(code: string) {
-    // Fetch certificate with student and program details (using Admin client to bypass public verification RLS restrictions)
     const { data: cert, error } = await supabaseAdmin
         .from('certificates')
         .select(`
@@ -151,7 +149,6 @@ export async function getCertificateByCode(code: string) {
         return null
     }
 
-    // Fetch exact verifiable Student/Member NIC ID from database
     let studentId = null
     if (cert.user_id) {
         const { data: mem } = await supabaseAdmin
@@ -176,7 +173,6 @@ export async function getStudentCertificates() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: "Unauthenticated" }
 
-    // Auto-evaluate NCNA eligibility
     const { evaluateNCNAEligibilityAction } = await import("@/lib/actions/certification-engine")
     await evaluateNCNAEligibilityAction(user.id)
 
@@ -198,15 +194,46 @@ export async function getStudentCertificates() {
     return { certificates: data }
 }
 
-export async function getStudentTranscript() {
+export async function getStudentTranscript(targetUserId?: string) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: "Unauthenticated" }
+    let userId: string;
+    let fallbackEmail: string = "";
 
-    // Fetch enrollments with course titles and overall progress
-    const { data: enrollments, error: enrollError } = await supabase
+    if (targetUserId) {
+        userId = targetUserId;
+    } else {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return { error: "Unauthenticated" }
+        userId = user.id;
+        fallbackEmail = user.email || "";
+    }
+
+    const dbClient = targetUserId ? supabaseAdmin : supabase;
+
+    // Fetch user profile
+    const { data: profile } = await dbClient
+        .from('profiles')
+        .select('full_name, email, role')
+        .eq('id', userId)
+        .maybeSingle()
+
+    // Fetch membership student ID
+    const { data: membership } = await dbClient
+        .from('memberships')
+        .select('nic_id, member_id, membership_tier, created_at')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+    // Fetch certificates
+    const { data: certs } = await dbClient
+        .from('certificates')
+        .select('certificate_number, course_level, issue_date')
+        .eq('user_id', userId)
+
+    // Fetch enrollments with full modular hierarchy (modules & lessons)
+    const { data: enrollments, error: enrollError } = await dbClient
         .from('enrollments')
         .select(`
             id,
@@ -215,40 +242,96 @@ export async function getStudentTranscript() {
             progress,
             status,
             courses (
+                id,
                 title,
-                duration_hours
+                slug,
+                level,
+                duration_hours,
+                course_modules (
+                    sort_order,
+                    modules (
+                        id,
+                        title,
+                        description,
+                        lessons (
+                            id,
+                            title,
+                            slug,
+                            duration_minutes,
+                            sort_order
+                        )
+                    )
+                )
             )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
 
     if (enrollError) {
         console.error("Error fetching transcript enrollments:", enrollError)
         return { error: "Failed to fetch transcript data" }
     }
 
-    // Fetch all assessment submissions for these enrollments to show grades
-    const enrollmentIds = enrollments.map(e => e.id)
-    const { data: submissions, error: subError } = await supabase
-        .from('assessment_submissions')
-        .select(`
-            enrollment_id,
-            score,
-            status,
-            submitted_at,
-            assessment:assessments (title)
-        `)
-        .in('enrollment_id', enrollmentIds)
+    // Format course modules cleanly
+    const enrollmentsWithModules = (enrollments || []).map(e => {
+        const c = e.courses as any;
+        if (!c) return e;
+        const rawMods = c.course_modules || [];
+        const sortedMods = rawMods
+            .map((cm: any) => {
+                if (!cm.modules) return null;
+                return {
+                    ...cm.modules,
+                    sort_order: cm.sort_order,
+                    lessons: (cm.modules.lessons || []).sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))
+                }
+            })
+            .filter((m: any) => !!m && !!m.title)
+            .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
 
-    if (subError) {
-        console.error("Error fetching transcript submissions:", subError)
+        return {
+            ...e,
+            course: {
+                ...c,
+                modules: sortedMods
+            }
+        }
+    })
+
+    // Fetch all assessment submissions for these enrollments
+    const enrollmentIds = (enrollments || []).map(e => e.id)
+    let submissions: any[] = []
+    if (enrollmentIds.length > 0) {
+        const { data: subData, error: subError } = await dbClient
+            .from('assessment_submissions')
+            .select(`
+                enrollment_id,
+                score,
+                status,
+                submitted_at,
+                assessment:assessments (
+                    title,
+                    type,
+                    passing_score
+                )
+            `)
+            .in('enrollment_id', enrollmentIds)
+            .order('submitted_at', { ascending: false })
+
+        if (subError) console.error("Error fetching transcript submissions:", subError)
+        submissions = subData || []
     }
 
+    const studentId = membership?.nic_id || membership?.member_id || `NIC-STU-${userId.substring(0, 8).toUpperCase()}`
+
     return {
-        enrollments,
-        submissions: submissions || [],
+        enrollments: enrollmentsWithModules,
+        submissions,
+        certificates: certs || [],
         user: {
-            full_name: user.user_metadata?.full_name || "Student",
-            email: user.email
+            full_name: profile?.full_name || "Caregiver Scholar",
+            email: profile?.email || fallbackEmail,
+            student_id: studentId,
+            membership_tier: membership?.membership_tier || "Student Member"
         }
     }
 }

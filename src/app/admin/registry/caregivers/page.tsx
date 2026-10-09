@@ -20,7 +20,8 @@ import {
     AlertTriangle,
     History,
     MoreVertical,
-    Check
+    Check,
+    FileText
 } from "lucide-react"
 import { sendRegistrationStatusAction } from "@/lib/actions/registration"
 
@@ -491,6 +492,11 @@ export default function AdminRegistryPage() {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex justify-end gap-1">
+                                                <Button size="sm" variant="ghost" title="View Academic Transcript" asChild>
+                                                    <a href={`/portal/student/transcript?userId=${caregiver.user_id}`} target="_blank" rel="noopener noreferrer">
+                                                        <FileText className="h-4 w-4 text-emerald-600" />
+                                                    </a>
+                                                </Button>
                                                 <Button size="sm" variant="ghost" title="View Profile">
                                                     <Eye className="h-4 w-4 text-slate-500" />
                                                 </Button>

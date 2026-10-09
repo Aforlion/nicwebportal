@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import {
     User, Mail, Phone, MapPin, Calendar,
-    Briefcase, Edit, Save, X, Camera, Loader2
+    Briefcase, Edit, Save, X, Camera, Loader2, FileText, Award, GraduationCap
 } from "lucide-react"
 import { updateMemberProfile } from "@/actions/member/profile"
 import { toast } from "sonner"
@@ -89,7 +90,6 @@ export default function MemberProfileClient({ initialData }: MemberProfileClient
             const fileExt = file.name.split('.').pop()
             const filePath = `${user.id}/avatar.${fileExt}`
 
-            // Upload to Supabase Storage bucket: avatars
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(filePath, file, { upsert: true })
@@ -100,12 +100,10 @@ export default function MemberProfileClient({ initialData }: MemberProfileClient
                 return
             }
 
-            // Get the public URL
             const { data: { publicUrl } } = supabase.storage
                 .from('avatars')
                 .getPublicUrl(filePath)
 
-            // Update Profiles table (avatar_url)
             const { error: profileUpdateError } = await supabase
                 .from('profiles')
                 .update({ avatar_url: publicUrl })
@@ -113,10 +111,8 @@ export default function MemberProfileClient({ initialData }: MemberProfileClient
 
             if (profileUpdateError) {
                 console.error("Profile avatar_url update error:", profileUpdateError)
-                // Continue anyway as we'll try membership next
             }
 
-            // Update Memberships table (photo_url)
             const { error: membershipUpdateError } = await supabase
                 .from('memberships')
                 .update({ photo_url: publicUrl })
@@ -150,21 +146,28 @@ export default function MemberProfileClient({ initialData }: MemberProfileClient
                     <h1 className="text-3xl font-bold text-secondary">My Profile</h1>
                     <p className="text-muted-foreground">View and manage your membership information</p>
                 </div>
-                {!isEditing ? (
-                    <Button onClick={() => setIsEditing(true)} className="bg-primary">
-                        <Edit className="mr-2 h-4 w-4" />Edit Profile
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="default" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold" asChild>
+                        <Link href="/portal/student/transcript">
+                            <FileText className="mr-2 h-4 w-4" /> View Academic Transcript
+                        </Link>
                     </Button>
-                ) : (
-                    <div className="flex gap-2">
-                        <Button onClick={handleSave} className="bg-primary" disabled={isSaving}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            Save Changes
+                    {!isEditing ? (
+                        <Button onClick={() => setIsEditing(true)} className="bg-primary">
+                            <Edit className="mr-2 h-4 w-4" />Edit Profile
                         </Button>
-                        <Button onClick={handleCancel} variant="outline" disabled={isSaving}>
-                            <X className="mr-2 h-4 w-4" />Cancel
-                        </Button>
-                    </div>
-                )}
+                    ) : (
+                        <div className="flex gap-2">
+                            <Button onClick={handleSave} className="bg-primary" disabled={isSaving}>
+                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                Save Changes
+                            </Button>
+                            <Button onClick={handleCancel} variant="outline" disabled={isSaving}>
+                                <X className="mr-2 h-4 w-4" />Cancel
+                            </Button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="grid gap-8 lg:grid-cols-3">
@@ -190,7 +193,6 @@ export default function MemberProfileClient({ initialData }: MemberProfileClient
                                     </div>
                                 )}
 
-                                {/* Hidden file input */}
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -199,7 +201,6 @@ export default function MemberProfileClient({ initialData }: MemberProfileClient
                                     onChange={handlePhotoUpload}
                                 />
 
-                                {/* Camera button — always visible */}
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={isUploadingPhoto}
@@ -220,7 +221,7 @@ export default function MemberProfileClient({ initialData }: MemberProfileClient
                             <Badge className={`${profileData.status === 'Active' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-amber-500 hover:bg-amber-600'} border-none`}>
                                 {profileData.status.toUpperCase()}
                             </Badge>
-                            <div className="w-full pt-4 border-t space-y-2">
+                            <div className="w-full pt-4 border-t space-y-3">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">Category:</span>
                                     <span className="font-medium capitalize">{profileData.membershipCategory} Member</span>
@@ -232,6 +233,18 @@ export default function MemberProfileClient({ initialData }: MemberProfileClient
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">Expires:</span>
                                     <span className="font-medium">{profileData.expiryDate}</span>
+                                </div>
+                                <div className="pt-2 border-t space-y-2">
+                                    <Button variant="outline" className="w-full justify-start border-emerald-600/30 text-emerald-700 hover:bg-emerald-50 font-bold text-xs" asChild>
+                                        <Link href="/portal/student/transcript">
+                                            <FileText className="mr-2 h-4 w-4 text-emerald-600" /> Academic Transcript
+                                        </Link>
+                                    </Button>
+                                    <Button variant="outline" className="w-full justify-start border-amber-600/30 text-amber-800 hover:bg-amber-50 font-bold text-xs" asChild>
+                                        <Link href="/portal/member/certificates">
+                                            <Award className="mr-2 h-4 w-4 text-amber-600" /> Issued Certificates
+                                        </Link>
+                                    </Button>
                                 </div>
                             </div>
                         </div>

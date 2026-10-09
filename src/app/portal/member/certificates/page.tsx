@@ -40,11 +40,18 @@ export default async function MemberCertificatesPage() {
                     <h1 className="text-3xl font-bold text-secondary">My Official Certificates Portfolio</h1>
                     <p className="text-muted-foreground">Access, view, and download all your official NIC course completions, membership credentials & NCNA licenses.</p>
                 </div>
-                <Button variant="outline" asChild>
-                    <Link href="/portal/member/id-card">
-                        <Award className="mr-2 h-4 w-4 text-primary" /> View Digital Member ID
-                    </Link>
-                </Button>
+                <div className="flex flex-wrap gap-3">
+                    <Button variant="outline" asChild>
+                        <Link href="/portal/student/transcript">
+                            <FileText className="mr-2 h-4 w-4 text-primary" /> View Academic Transcript
+                        </Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                        <Link href="/portal/member/id-card">
+                            <Award className="mr-2 h-4 w-4 text-primary" /> View Digital Member ID
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             <div className="grid gap-8 lg:grid-cols-2">

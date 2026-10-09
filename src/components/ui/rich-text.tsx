@@ -36,16 +36,12 @@ const SECTION_HEADINGS = new Set([
     "Summary",
 ])
 
-// Heading patterns: lines that match known section headings OR are short ALL_CAPS lines
 function isSectionHeading(line: string): boolean {
     const trimmed = line.trim()
     if (!trimmed) return false
-    // Exact match in known set
     if (SECTION_HEADINGS.has(trimmed)) return true
-    // Short all-caps line (max 8 words) — these are typically section titles written in CAPS
     const words = trimmed.split(/\s+/)
     if (words.length <= 8 && trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed) && !trimmed.match(/^\d/)) return true
-    // Ends with a colon and is short
     if (trimmed.endsWith(':') && words.length <= 7) return true
     return false
 }
@@ -66,9 +62,48 @@ function isNumberedItem(line: string) {
 }
 
 function renderInline(text: string, invert?: boolean): React.ReactNode[] {
-    // Support **bold** and _italic_
-    const parts = text.split(/(\*\*.*?\*\*|_.*?_)/g)
+    // Match Markdown images ![alt](src), **bold**, _italic_
+    const parts = text.split(/(!\[.*?\]\(.*?\)\s*|<audio[\s\S]*?<\/audio>\s*|\*\*.*?\*\*|_.*?_)/g)
     return parts.map((part, i) => {
+        if (!part) return null
+
+        // Markdown Image
+        const imgMatch = part.match(/!\[(.*?)\]\((.*?)\)/)
+        if (imgMatch) {
+            const [, alt, src] = imgMatch
+            return (
+                <span key={i} className="block my-6">
+                    <img
+                        src={src}
+                        alt={alt || "Lesson Visual Infographic"}
+                        className="w-full h-auto rounded-2xl shadow-xl border border-slate-200/80 object-cover max-h-[480px]"
+                    />
+                </span>
+            )
+        }
+
+        // HTML Audio Tag
+        const audioMatch = part.match(/<audio[\s\S]*?src=["'](.*?)["'][\s\S]*?><\/audio>/)
+        if (audioMatch) {
+            const [, src] = audioMatch
+            return (
+                <div key={i} className="my-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-sm">
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <span className="text-[11px] font-black text-emerald-600 uppercase tracking-widest">Lesson Podcast Summary</span>
+                            <p className="text-xs font-bold text-slate-700">Listen to Audio Explanation</p>
+                        </div>
+                    </div>
+                    <audio controls src={src} className="w-full sm:w-72 h-10 accent-emerald-600" />
+                </div>
+            )
+        }
+
         if (part.startsWith("**") && part.endsWith("**")) {
             return <strong key={i} className={cn("font-semibold", invert ? "text-white" : "text-slate-800")}>{part.slice(2, -2)}</strong>
         }
@@ -91,7 +126,7 @@ export function RichText({ content, className, invert }: RichTextProps) {
     if (!content) return null
 
     // Check if content is HTML (from Tiptap editor)
-    const isHtml = /<[a-z][\s\S]*>/i.test(content)
+    const isHtml = /<[a-z][\s\S]*>/i.test(content) && !content.includes('<audio')
 
     if (isHtml) {
         const options: HTMLReactParserOptions = {
@@ -132,11 +167,9 @@ export function RichText({ content, className, invert }: RichTextProps) {
         )
     }
 
-    // ─── Legacy Plain-Text Parser ────────────────────────────────────────────
-    // Normalise CRLF → LF, split into individual lines
+    // ─── Markdown / Custom Text Parser ────────────────────────────────────────────
     const rawLines = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n")
 
-    // Build a list of "blocks" to render
     const blocks: React.ReactNode[] = []
     let i = 0
 
@@ -144,10 +177,48 @@ export function RichText({ content, className, invert }: RichTextProps) {
         const rawLine = rawLines[i]
         const line = rawLine.trim()
 
-        // Skip blank lines
         if (!line) { i++; continue }
 
-        // ── Markdown-style headings (## / ###)
+        // Standalone Image Tag ![alt](src)
+        const imgMatch = line.match(/^!\[(.*?)\]\((.*?)\)$/)
+        if (imgMatch) {
+            const [, alt, src] = imgMatch
+            blocks.push(
+                <div key={`img-${i}`} className="my-6">
+                    <img
+                        src={src}
+                        alt={alt || "Lesson Visual Infographic"}
+                        className="w-full h-auto rounded-2xl shadow-xl border border-slate-200/80 object-cover max-h-[500px]"
+                    />
+                </div>
+            )
+            i++; continue
+        }
+
+        // Standalone Audio Tag <audio ...></audio>
+        const audioMatch = line.match(/^<audio[\s\S]*?src=["'](.*?)["'][\s\S]*?><\/audio>$/)
+        if (audioMatch) {
+            const [, src] = audioMatch
+            blocks.push(
+                <div key={`audio-${i}`} className="my-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-sm">
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <span className="text-[11px] font-black text-emerald-700 uppercase tracking-widest">Audio Podcast Summary</span>
+                            <p className="text-xs font-bold text-slate-800">Listen to Audio Explanation</p>
+                        </div>
+                    </div>
+                    <audio controls src={src} className="w-full sm:w-72 h-10 accent-emerald-600" />
+                </div>
+            )
+            i++; continue
+        }
+
+        // Markdown-style headings (## / ###)
         const mdHeading = isMarkdownHeading(line)
         if (mdHeading) {
             if (mdHeading.level === 2) {
@@ -166,9 +237,8 @@ export function RichText({ content, className, invert }: RichTextProps) {
             i++; continue
         }
 
-        // ── Known / uppercase section headings
+        // Known section headings
         if (isSectionHeading(line)) {
-            // Peek: if next non-blank line looks like a sub-value (e.g. "60 minutes"), show inline
             const nextNonBlank = rawLines.slice(i + 1).find(l => l.trim() !== "")?.trim()
             const isSimpleValue = nextNonBlank &&
                 !isSectionHeading(nextNonBlank) &&
@@ -176,7 +246,6 @@ export function RichText({ content, className, invert }: RichTextProps) {
                 !isNumberedItem(nextNonBlank) &&
                 nextNonBlank.split(" ").length <= 6
 
-            // Special callout sections get a styled card
             const isCallout = ["Lesson Overview", "Reflection & Applied Thinking", "Scenario Exercise",
                 "Lesson Summary", "Key Takeaways", "Case Study"].includes(line)
 
@@ -195,9 +264,7 @@ export function RichText({ content, className, invert }: RichTextProps) {
                         <span className="text-slate-700 font-medium">{nextNonBlank}</span>
                     </div>
                 )
-                // Skip the value line we've already consumed
                 i += 2
-                // skip blank lines after
                 while (i < rawLines.length && !rawLines[i].trim()) i++
                 continue
             } else {
@@ -210,7 +277,7 @@ export function RichText({ content, className, invert }: RichTextProps) {
             i++; continue
         }
 
-        // ── Bullet list: collect consecutive bullet items
+        // Bullet list
         if (isBulletItem(line)) {
             const items: string[] = []
             while (i < rawLines.length && (isBulletItem(rawLines[i].trim()) || (!rawLines[i].trim() && items.length > 0 && i + 1 < rawLines.length && isBulletItem(rawLines[i + 1]?.trim())))) {
@@ -230,17 +297,15 @@ export function RichText({ content, className, invert }: RichTextProps) {
             continue
         }
 
-        // ── Numbered list: collect consecutive numbered items
+        // Numbered list
         if (isNumberedItem(line)) {
             const items: string[] = []
-            let num = 1
             while (i < rawLines.length) {
                 const cur = rawLines[i].trim()
                 if (isNumberedItem(cur)) {
                     items.push(cleanNumbered(cur))
                     i++
                 } else if (!cur && items.length > 0) {
-                    // allow one blank line within a list
                     i++
                 } else {
                     break
@@ -261,12 +326,12 @@ export function RichText({ content, className, invert }: RichTextProps) {
             continue
         }
 
-        // ── Default: paragraph — collect lines until a blank line or heading/list
+        // Paragraph
         const paraLines: string[] = []
         while (i < rawLines.length) {
             const cur = rawLines[i].trim()
             if (!cur) { i++; break }
-            if (isSectionHeading(cur) || isMarkdownHeading(cur) || isBulletItem(cur) || isNumberedItem(cur)) break
+            if (isSectionHeading(cur) || isMarkdownHeading(cur) || isBulletItem(cur) || isNumberedItem(cur) || cur.startsWith("![") || cur.startsWith("<audio")) break
             paraLines.push(cur)
             i++
         }

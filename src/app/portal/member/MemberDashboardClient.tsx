@@ -15,7 +15,8 @@ import {
     BookOpen,
     AlertCircle,
     ArrowRight,
-    Award
+    Award,
+    FileText
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -142,6 +143,11 @@ export default function MemberDashboardClient({ data }: MemberDashboardClientPro
                             <Button variant="outline" className="w-full justify-start border-[#D97706]/30 hover:bg-[#D97706]/10 text-[#B45309] font-bold" asChild>
                                 <Link href="/portal/member/certificates">
                                     <Award className="mr-2 h-4 w-4 text-[#D97706]" /> View / Download Certificates
+                                </Link>
+                            </Button>
+                            <Button variant="outline" className="w-full justify-start border-slate-300 hover:bg-slate-50 text-slate-800 font-bold" asChild>
+                                <Link href="/portal/student/transcript">
+                                    <FileText className="mr-2 h-4 w-4 text-emerald-600" /> View Academic Transcript
                                 </Link>
                             </Button>
                             <Button variant="outline" className="w-full justify-start" asChild>
