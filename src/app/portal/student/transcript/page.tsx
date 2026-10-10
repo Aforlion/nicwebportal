@@ -6,10 +6,10 @@ import { AlertCircle } from "lucide-react"
 export default async function StudentTranscriptPage({
     searchParams
 }: {
-    searchParams?: Promise<{ userId?: string }>
+    searchParams?: Promise<{ userId?: string; courseId?: string }>
 }) {
     const params = searchParams ? await searchParams : {}
-    const data = await getStudentTranscript(params?.userId)
+    const data = await getStudentTranscript(params?.userId, params?.courseId)
 
     if ('error' in data) {
         return (

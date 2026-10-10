@@ -115,12 +115,19 @@ export default async function MemberCertificatesPage() {
                                         <p className="text-xs font-semibold text-slate-700">National Institute of Caregivers (NIC Nigeria Registry Board)</p>
                                     </div>
                                 </CardContent>
-                                <CardFooter className="flex gap-3 pt-0">
-                                    <Button className="flex-grow bg-[#D97706] hover:bg-[#b45309] text-white font-bold" asChild>
+                                <CardFooter className="flex flex-wrap gap-2 pt-0">
+                                    <Button className="flex-1 bg-[#D97706] hover:bg-[#b45309] text-white font-bold text-xs" asChild>
                                         <Link href={`/certificates/${cert.certificate_number}`} target="_blank">
-                                            <Download className="mr-2 h-4 w-4" /> View & Download Certificate
+                                            <Download className="mr-1.5 h-3.5 w-3.5" /> Certificate
                                         </Link>
                                     </Button>
+                                    {cert.course_id && (
+                                        <Button variant="outline" className="text-xs font-semibold" asChild>
+                                            <Link href={`/portal/student/transcript?courseId=${cert.course_id}`}>
+                                                <FileText className="mr-1.5 h-3.5 w-3.5 text-primary" /> Transcript
+                                            </Link>
+                                        </Button>
+                                    )}
                                     <Button variant="outline" size="icon" asChild>
                                         <Link href={`/certificates/${cert.certificate_number}`} target="_blank" title="Public Verification Link">
                                             <ExternalLink className="h-4 w-4 text-primary" />

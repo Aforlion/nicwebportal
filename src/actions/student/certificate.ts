@@ -198,7 +198,7 @@ export async function getStudentCertificates() {
     return { certificates: data }
 }
 
-export async function getStudentTranscript(targetUserId?: string) {
+export async function getStudentTranscript(targetUserId?: string, targetCourseId?: string) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
@@ -233,7 +233,7 @@ export async function getStudentTranscript(targetUserId?: string) {
     // Fetch certificates
     const { data: certs } = await dbClient
         .from('certificates')
-        .select('certificate_number, course_level, issue_date')
+        .select('id, certificate_number, course_level, course_id, program_id, issue_date')
         .eq('user_id', userId)
 
     // Fetch enrollments with full modular hierarchy (modules & lessons)
@@ -241,6 +241,7 @@ export async function getStudentTranscript(targetUserId?: string) {
         .from('enrollments')
         .select(`
             id,
+            course_id,
             enrolled_at,
             completed_at,
             progress,
@@ -276,43 +277,57 @@ export async function getStudentTranscript(targetUserId?: string) {
     }
 
     // Format course modules cleanly
-    const enrollmentsWithModules = (enrollments || []).map(e => {
-        const c = e.courses as any;
-        if (!c) return e;
-        const rawMods = c.course_modules || [];
-        const sortedMods = rawMods
-            .map((cm: any) => {
-                if (!cm.modules) return null;
-                return {
-                    ...cm.modules,
-                    sort_order: cm.sort_order,
-                    lessons: (cm.modules.lessons || []).sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))
-                }
-            })
-            .filter((m: any) => !!m && !!m.title)
-            .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
+    const enrollmentsWithModules = (enrollments || [])
+        .filter(e => !!e.courses)
+        .map(e => {
+            const c = e.courses as any;
+            const rawMods = c?.course_modules || [];
+            const sortedMods = rawMods
+                .map((cm: any) => {
+                    if (!cm.modules) return null;
+                    return {
+                        ...cm.modules,
+                        sort_order: cm.sort_order,
+                        lessons: (cm.modules.lessons || []).sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))
+                    }
+                })
+                .filter((m: any) => !!m && !!m.title)
+                .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
 
-        return {
-            ...e,
-            course: {
-                ...c,
-                modules: sortedMods
+            return {
+                ...e,
+                course: {
+                    ...c,
+                    modules: sortedMods
+                }
             }
+        })
+
+    // Sort enrollments: target course first, then completed enrollments, then highest progress
+    enrollmentsWithModules.sort((a, b) => {
+        if (targetCourseId) {
+            if (a.course?.id === targetCourseId || a.id === targetCourseId) return -1;
+            if (b.course?.id === targetCourseId || b.id === targetCourseId) return 1;
         }
-    })
+        if (a.status === 'completed' && b.status !== 'completed') return -1;
+        if (b.status === 'completed' && a.status !== 'completed') return 1;
+        return (b.progress || 0) - (a.progress || 0);
+    });
 
     // Fetch all assessment submissions for these enrollments
-    const enrollmentIds = (enrollments || []).map(e => e.id)
+    const enrollmentIds = enrollmentsWithModules.map(e => e.id)
     let submissions: any[] = []
     if (enrollmentIds.length > 0) {
         const { data: subData, error: subError } = await dbClient
             .from('assessment_submissions')
             .select(`
+                id,
                 enrollment_id,
                 score,
                 status,
                 submitted_at,
                 assessment:assessments (
+                    id,
                     title,
                     type,
                     passing_score
@@ -331,6 +346,7 @@ export async function getStudentTranscript(targetUserId?: string) {
         enrollments: enrollmentsWithModules,
         submissions,
         certificates: certs || [],
+        selectedCourseId: targetCourseId || enrollmentsWithModules[0]?.course?.id || null,
         user: {
             full_name: profile?.full_name || "Caregiver Scholar",
             email: profile?.email || fallbackEmail,
