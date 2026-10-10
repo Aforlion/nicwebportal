@@ -136,10 +136,14 @@ export async function getCertificateByCode(code: string) {
                 email
             ),
             programs:program_id (
+                id,
                 title
             ),
             courses:course_id (
-                title
+                id,
+                title,
+                level,
+                duration_hours
             )
         `)
         .eq('certificate_number', code)

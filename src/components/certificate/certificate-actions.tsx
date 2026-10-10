@@ -28,11 +28,22 @@ export default function CertificateActions({ verificationUrl }: CertificateActio
             }
 
             const canvas = await html2canvas(certElement, {
-                scale: 3, // Crisp 3x DPI print resolution
+                scale: 2.5, // Crisp 2625x1855 300 DPI print resolution
                 useCORS: true,
                 allowTaint: true,
                 backgroundColor: "#FAF9F6",
                 logging: false,
+                windowWidth: 1050,
+                windowHeight: 742,
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.getElementById("printable-certificate")
+                    if (el) {
+                        el.style.transform = "none"
+                        el.style.position = "static"
+                        el.style.width = "1050px"
+                        el.style.height = "742px"
+                    }
+                }
             })
 
             const image = canvas.toDataURL("image/png")

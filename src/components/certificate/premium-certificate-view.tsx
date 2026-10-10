@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import QRCodeDisplay from "./qr-code-display"
 import { 
@@ -11,13 +11,12 @@ import {
   Hospital, 
   Calendar, 
   FileCheck, 
-  Hash, 
   Clock, 
   CheckCircle2,
   User as UserIcon,
   BookOpen
 } from "lucide-react"
-import { PremiumCertificateData, CertificateTheme, FacilityTypeKey } from "@/types/certificate"
+import { PremiumCertificateData, CertificateTheme, FacilityTypeKey, MemberTierKey } from "@/types/certificate"
 
 interface PremiumCertificateViewProps {
   data: PremiumCertificateData
@@ -121,7 +120,7 @@ function getCertificateTheme(
       name: 'NCNA License',
       badgeLabel: 'NATIONAL CAREGIVER LICENSE',
       titleHeader: 'NATIONAL CERTIFIED NURSING ASSISTANT',
-      subtitleHeader: 'OFFICIAL PROFESSIONAL CAREGIVING LICENSE',
+      subtitleHeader: 'OFFICIAL PROFESSIONAL CAREGIVING PRACTICE LICENSE',
       primaryColor: '#1c1a17',
       secondaryColor: '#a58219',
       accentGold: '#c5a029',
@@ -242,6 +241,25 @@ function getCertificateTheme(
 }
 
 export default function PremiumCertificateView({ data, className = '' }: PremiumCertificateViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+
+  useEffect(() => {
+    const updateScale = () => {
+      if (containerRef.current) {
+        const availableWidth = containerRef.current.clientWidth
+        if (availableWidth > 0 && availableWidth < 1050) {
+          setScale(availableWidth / 1050)
+        } else {
+          setScale(1)
+        }
+      }
+    }
+    updateScale()
+    window.addEventListener('resize', updateScale)
+    return () => window.removeEventListener('resize', updateScale)
+  }, [])
+
   const theme = getCertificateTheme(data.facilityTypeKey, data.category, data.memberTierKey, data.resultOrLevel)
 
   const displayTitle = data.titleOverride || theme.titleHeader
@@ -258,18 +276,19 @@ export default function PremiumCertificateView({ data, className = '' }: Premium
       durationDisplay = `12 Months (Valid until ${untilDateStr})`
     } else {
       const currentYear = new Date().getFullYear()
-      durationDisplay = `1 Year (${currentYear} - ${currentYear + 1})`
+      durationDisplay = `200 Credit Hours (120 Theory + 80 Clinical)`
     }
   }
 
-  // Pre-formatted body text string to prevent JSX line-break word fusing
+  const recipientClean = (data.recipientName || 'Caregiver Scholar').trim()
+
   const bodyText = data.category === 'facility_membership'
     ? "having completed all mandatory institutional registrations, satisfied NIC regulatory compliance, and fulfilled facility standards, is hereby admitted as an official certified member institution."
     : data.category === 'ncna_license'
     ? "having fulfilled all academic requirements, completed supervised clinical internship, and passed state licensing assessments, is hereby granted the official license of National Certified Nursing Assistant."
     : data.category === 'individual_membership'
     ? "having satisfied all professional membership qualifications, fulfilled institutional governance standards, and maintained good standing, is hereby recognized as an official member in good standing of the Institute."
-    : "having successfully completed the prescribed curriculum and satisfied all academic standards, is hereby awarded this official Certificate of Completion."
+    : "having successfully completed the prescribed curriculum, clinical training hours, and satisfied all academic standards, is hereby awarded this official Certificate of Completion."
 
   return (
     <>
@@ -293,11 +312,23 @@ export default function PremiumCertificateView({ data, className = '' }: Premium
           body * {
             visibility: hidden !important;
           }
-          #printable-certificate, #printable-certificate * {
+          #printable-certificate-wrapper, #printable-certificate-wrapper * {
             visibility: visible !important;
           }
-          #printable-certificate {
+          #printable-certificate-wrapper {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            transform: none !important;
             display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          #printable-certificate {
             position: absolute !important;
             top: 0 !important;
             left: 0 !important;
@@ -306,7 +337,7 @@ export default function PremiumCertificateView({ data, className = '' }: Premium
             max-width: none !important;
             max-height: none !important;
             margin: 0 !important;
-            padding: 2rem !important;
+            padding: 2.5rem !important;
             box-shadow: none !important;
             border: none !important;
             transform: none !important;
@@ -319,287 +350,332 @@ export default function PremiumCertificateView({ data, className = '' }: Premium
         }
       `}</style>
 
+      {/* Responsive Scaling Outer Shell */}
       <div 
-        id="printable-certificate"
-        className={`relative w-full max-w-[940px] aspect-[1.414] bg-[#FAF9F6] text-slate-800 shadow-2xl overflow-hidden flex flex-col justify-between p-6 sm:p-8 select-none ${className}`}
+        ref={containerRef}
+        id="printable-certificate-wrapper"
+        className={`w-full flex justify-center items-center overflow-visible ${className}`}
+        style={{
+          minHeight: `${Math.round(742 * scale)}px`,
+        }}
       >
-        {/* Outer Gold Border Frame */}
-        <div className="absolute inset-3 border-[3px] border-[#D97706] pointer-events-none z-20" />
-        <div className="absolute inset-[14px] border border-[#D97706]/40 pointer-events-none z-20" />
+        {/* Fixed Coordinate System Container (1050px x 742px) */}
+        <div 
+          style={{
+            width: "1050px",
+            height: `${Math.round(742 * scale)}px`,
+            position: "relative",
+          }}
+        >
+          <div 
+            id="printable-certificate"
+            style={{
+              width: "1050px",
+              height: "742px",
+              transform: scale < 1 ? `scale(${scale})` : undefined,
+              transformOrigin: "top left",
+            }}
+            className="absolute top-0 left-0 bg-[#FAF9F6] text-slate-800 shadow-2xl overflow-hidden flex flex-col justify-between p-8 select-none border border-slate-200"
+          >
+            {/* Outer Gold Border Frame */}
+            <div className="absolute inset-4 border-[3px] border-[#D97706] pointer-events-none z-20" />
+            <div className="absolute inset-[22px] border border-[#D97706]/40 pointer-events-none z-20" />
 
-        {/* Top Left Ribbon Accent */}
-        <div className="absolute top-0 left-0 w-32 h-32 pointer-events-none z-30">
-          <svg viewBox="0 0 100 100" className="w-full h-full text-slate-900">
-            <path d="M0,0 L100,0 L0,100 Z" fill="currentColor" />
-            <path d="M0,0 L68,0 L0,68 Z" fill="#0f172a" />
-            <path d="M0,68 L68,0 L74,0 L0,74 Z" fill="#d97706" />
-            <path d="M0,84 L84,0 L90,0 L0,90 Z" fill="#f59e0b" opacity="0.85" />
-          </svg>
-        </div>
+            {/* Top Left Ribbon Accent */}
+            <div className="absolute top-0 left-0 w-24 h-24 pointer-events-none z-30">
+              <svg viewBox="0 0 100 100" className="w-full h-full text-slate-900">
+                <path d="M0,0 L100,0 L0,100 Z" fill="currentColor" />
+                <path d="M0,0 L68,0 L0,68 Z" fill="#0f172a" />
+                <path d="M0,68 L68,0 L74,0 L0,74 Z" fill="#d97706" />
+                <path d="M0,84 L84,0 L90,0 L0,90 Z" fill="#f59e0b" opacity="0.85" />
+              </svg>
+            </div>
 
-        {/* Bottom Right Ribbon Accent */}
-        <div className="absolute bottom-0 right-0 w-32 h-32 pointer-events-none z-30 transform rotate-180">
-          <svg viewBox="0 0 100 100" className="w-full h-full text-slate-900">
-            <path d="M0,0 L100,0 L0,100 Z" fill="currentColor" />
-            <path d="M0,0 L68,0 L0,68 Z" fill="#0f172a" />
-            <path d="M0,68 L68,0 L74,0 L0,74 Z" fill="#d97706" />
-            <path d="M0,84 L84,0 L90,0 L0,90 Z" fill="#f59e0b" opacity="0.85" />
-          </svg>
-        </div>
+            {/* Bottom Right Ribbon Accent */}
+            <div className="absolute bottom-0 right-0 w-24 h-24 pointer-events-none z-30 transform rotate-180">
+              <svg viewBox="0 0 100 100" className="w-full h-full text-slate-900">
+                <path d="M0,0 L100,0 L0,100 Z" fill="currentColor" />
+                <path d="M0,0 L68,0 L0,68 Z" fill="#0f172a" />
+                <path d="M0,68 L68,0 L74,0 L0,74 Z" fill="#d97706" />
+                <path d="M0,84 L84,0 L90,0 L0,90 Z" fill="#f59e0b" opacity="0.85" />
+              </svg>
+            </div>
 
-        {/* Background Watermark Crest */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-[0.035] pointer-events-none z-0">
-          <Image 
-            src="/coat-of-arm.png" 
-            alt="Watermark Crest" 
-            width={380} 
-            height={380} 
-            className="object-contain"
-          />
-        </div>
-
-        {/* Top Right Certificate No Badge */}
-        <div className="absolute top-4 right-6 text-right z-30">
-          <p className="text-[8.5px] font-mono uppercase text-slate-500 tracking-wider">CERTIFICATE NO.</p>
-          <p className="text-xs font-mono font-bold text-slate-900 tracking-wider">{data.certificateNumber}</p>
-        </div>
-
-        {/* HEADER SECTION */}
-        <div className="relative z-10 w-full flex flex-col items-center pt-0.5">
-          {/* Logo & Institution Header */}
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="relative w-11 h-11 rounded-lg bg-white shadow-sm p-1 border border-[#D97706]/40 flex items-center justify-center flex-shrink-0">
+            {/* Background Watermark Crest */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.045] pointer-events-none z-0">
               <Image 
-                src="/logo.jpg" 
-                alt="NIC Logo" 
-                width={36} 
-                height={36} 
-                className="object-contain rounded"
+                src="/coat-of-arm.png" 
+                alt="Watermark Crest" 
+                width={420} 
+                height={420} 
+                className="object-contain"
+                priority
               />
             </div>
-            <div className="text-left">
-              <span className="block text-[11px] font-bold tracking-[0.22em] text-[#D97706] uppercase font-sans leading-none mb-0.5">
-                NATIONAL INSTITUTE OF CAREGIVERS
-              </span>
-              <span className="block text-[8.5px] font-semibold tracking-widest text-slate-500 uppercase leading-none">
-                NIC NIGERIA REGISTRY BOARD
-              </span>
-            </div>
-          </div>
 
-          {/* Gold Divider Line */}
-          <div className="flex items-center w-full max-w-xs my-1">
-            <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-[#D97706] to-transparent" />
-            <div className="w-1.5 h-1.5 rotate-45 bg-[#D97706] mx-1.5" />
-            <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-[#D97706] to-transparent" />
-          </div>
-
-          {/* Certificate Title */}
-          <h1 className="text-2xl sm:text-[28px] font-serif font-extrabold tracking-wider text-slate-900 uppercase my-0.5 leading-tight">
-            {displayTitle}
-          </h1>
-          <p className="text-[9.5px] font-semibold tracking-[0.2em] text-[#B45309] uppercase mb-1.5">
-            {displaySubtitle}
-          </p>
-
-          {/* Recognition Badge Pill */}
-          <div className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full border text-[8.5px] font-bold tracking-widest uppercase shadow-sm ${theme.emblemBadgeBg}`}>
-            {theme.id === 'agency' && <Building2 className="w-3 h-3 text-amber-400 flex-shrink-0" />}
-            {theme.id === 'care_home' && <ShieldCheck className="w-3 h-3 text-emerald-400 flex-shrink-0" />}
-            {theme.id === 'training_agency' && <GraduationCap className="w-3 h-3 text-rose-400 flex-shrink-0" />}
-            {theme.id === 'hospital' && <Hospital className="w-3 h-3 text-sky-400 flex-shrink-0" />}
-            {theme.id === 'ncna' && <Award className="w-3 h-3 text-amber-400 flex-shrink-0" />}
-            {theme.id === 'general' && <CheckCircle2 className="w-3 h-3 text-amber-400 flex-shrink-0" />}
-            <span>{theme.badgeLabel}</span>
-          </div>
-        </div>
-
-        {/* RECIPIENT & CREDENTIAL BODY */}
-        <div className="relative z-10 w-full max-w-2xl mx-auto my-0.5 text-center">
-          <p className="text-[11px] italic text-slate-600 font-serif mb-0.5">
-            This is to officially certify that
-          </p>
-
-          <div className="relative inline-block my-0.5 px-6 max-w-full">
-            <h2 className="text-2xl sm:text-[28px] font-serif font-bold text-slate-900 capitalize tracking-wide border-b-2 border-[#D97706] pb-0.5">
-              {data.recipientName}
-            </h2>
-          </div>
-
-          <p className="text-[10.5px] italic text-slate-600 font-serif mt-1 max-w-xl mx-auto leading-normal">
-            {bodyText}
-          </p>
-        </div>
-
-        {/* 2-COLUMN METADATA GRID (Matching Reference Guide Image 2) */}
-        <div className="relative z-10 w-full max-w-2xl mx-auto bg-slate-50/90 border border-slate-200/90 rounded-2xl p-3.5 px-6 shadow-sm my-1 grid grid-cols-2 gap-x-8 gap-y-2 text-left">
-          
-          {/* Column 1 */}
-          <div className="space-y-2 border-r border-slate-200/90 pr-4">
-            <div className="flex items-center gap-2.5">
-              <UserIcon className="w-4 h-4 text-[#D97706] flex-shrink-0" />
-              <div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
-                  STUDENT ID
-                </p>
-                <p className="text-xs font-bold text-slate-800 font-mono leading-tight">
-                  {data.studentIdOrRegNumber || 'NIC/MEM/2026/USVBR'}
-                </p>
-              </div>
+            {/* Top Right Certificate No Badge (Positioned with Ample Clearance) */}
+            <div className="absolute top-6 right-8 text-right z-30">
+              <p className="text-[9px] font-mono uppercase text-slate-500 font-bold tracking-widest leading-none mb-1">
+                CERTIFICATE NO.
+              </p>
+              <p className="text-xs font-mono font-black text-slate-900 tracking-wider bg-white/90 px-2.5 py-1 rounded border border-slate-300 shadow-xs">
+                {data.certificateNumber}
+              </p>
             </div>
 
-            <div className="flex items-center gap-2.5">
-              <BookOpen className="w-4 h-4 text-[#D97706] flex-shrink-0" />
-              <div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
-                  COURSE
-                </p>
-                <p className="text-xs font-bold text-slate-800 capitalize leading-tight line-clamp-1">
-                  {data.courseOrProgramName || 'National Certified Nursing Assistant (NCNA)'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <GraduationCap className="w-4 h-4 text-[#D97706] flex-shrink-0" />
-              <div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
-                  QUALIFICATION LEVEL
-                </p>
-                <p className="text-xs font-bold text-slate-800 capitalize leading-tight">
-                  {data.facilityType || theme.name}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <Calendar className="w-4 h-4 text-[#D97706] flex-shrink-0" />
-              <div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
-                  DATE ISSUED
-                </p>
-                <p className="text-xs font-bold text-slate-800 leading-tight">
-                  {formattedIssueDate}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Column 2 */}
-          <div className="space-y-2 pl-2">
-            <div className="flex items-center gap-2.5">
-              <FileCheck className="w-4 h-4 text-[#D97706] flex-shrink-0" />
-              <div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
-                  CERTIFICATE NUMBER
-                </p>
-                <p className="text-xs font-bold text-slate-800 font-mono leading-tight">
-                  {data.certificateNumber}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <Award className="w-4 h-4 text-[#D97706] flex-shrink-0" />
-              <div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
-                  RESULT / STATUS
-                </p>
-                <p className="text-xs font-bold text-emerald-700 uppercase leading-tight">
-                  PASS / VERIFIED
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <Clock className="w-4 h-4 text-[#D97706] flex-shrink-0" />
-              <div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
-                  LEARNING HOURS / DURATION
-                </p>
-                <p className="text-xs font-bold text-slate-800 leading-tight">
-                  {durationDisplay}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <ShieldCheck className="w-4 h-4 text-[#D97706] flex-shrink-0" />
-              <div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
-                  VERIFICATION
-                </p>
-                <p className="text-xs font-bold text-slate-800 leading-tight">
-                  Scan QR Code to Verify
-                </p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* FOOTER SECTION: SIGNATURE, SEAL & QR CODE (Exact Reference Image 2 Layout) */}
-        <div className="relative z-10 w-full pt-1">
-          
-          <div className="w-full flex items-end justify-between px-2 mb-1">
-            
-            {/* Bottom Left: QR Code & Attached Black Scan Badge */}
-            <div className="flex flex-col items-center">
-              <div className="p-1.5 bg-white rounded-lg border border-slate-300 shadow-md">
-                <QRCodeDisplay value={data.verificationUrl} size={62} />
-              </div>
-              <div className="w-full mt-1 bg-slate-900 text-white py-0.5 rounded text-[7.5px] font-bold tracking-widest uppercase text-center shadow-sm">
-                SCAN TO VERIFY
-              </div>
-            </div>
-
-            {/* Bottom Right: Authorized Signature & Official Gold Rosette Seal (Side-by-Side as in Image 2) */}
-            <div className="flex items-center gap-4">
-              
-              {/* Signature Block */}
-              <div className="flex flex-col items-start text-left">
-                <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">
-                  Authorized Signature
-                </p>
-
-                {/* Actual User Signature Image (Image 1) */}
-                <div className="h-10 flex items-center justify-start my-0.5">
-                  <img 
-                    src={data.signatorySignatureUrl || "/signature.png"} 
-                    alt="Authorized Signature" 
-                    className="h-10 w-auto object-contain select-none"
-                    onError={(e: any) => {
-                      // Fallback text signature if image fails
-                      e.target.style.display = 'none'
-                    }}
+            {/* HEADER SECTION */}
+            <div className="relative z-10 w-full flex flex-col items-center pt-1 px-32">
+              {/* Logo & Institution Header */}
+              <div className="flex items-center gap-3 mb-1">
+                <div className="relative w-12 h-12 rounded-lg bg-white shadow-sm p-1 border border-[#D97706]/50 flex items-center justify-center flex-shrink-0">
+                  <Image 
+                    src="/logo.jpg" 
+                    alt="NIC Logo" 
+                    width={40} 
+                    height={40} 
+                    className="object-contain rounded"
+                    priority
                   />
                 </div>
+                <div className="text-left">
+                  <span className="block text-[13px] font-black tracking-[0.24em] text-[#D97706] uppercase font-sans leading-tight">
+                    NATIONAL INSTITUTE OF CAREGIVERS
+                  </span>
+                  <span className="block text-[9px] font-bold tracking-[0.22em] text-slate-600 uppercase leading-tight mt-0.5">
+                    NIC NIGERIA REGISTRY BOARD
+                  </span>
+                </div>
+              </div>
 
-                <div className="w-40 border-b border-[#D97706]/80 mb-1" />
-                <p className="text-xs font-bold text-slate-900 leading-tight">
-                  {data.signatoryName || 'Olatunji Joel'}
+              {/* Gold Divider Line */}
+              <div className="flex items-center w-full max-w-sm my-1">
+                <div className="flex-1 h-[1.5px] bg-gradient-to-r from-transparent via-[#D97706] to-transparent" />
+                <div className="w-2 h-2 rotate-45 bg-[#D97706] mx-2" />
+                <div className="flex-1 h-[1.5px] bg-gradient-to-r from-transparent via-[#D97706] to-transparent" />
+              </div>
+
+              {/* Certificate Title */}
+              <h1 className="text-[26px] font-serif font-black tracking-wider text-slate-900 uppercase my-0.5 leading-tight text-center">
+                {displayTitle}
+              </h1>
+              <p className="text-[10px] font-bold tracking-[0.22em] text-[#B45309] uppercase mb-1.5 text-center">
+                {displaySubtitle}
+              </p>
+
+              {/* Recognition Badge Pill */}
+              <div className={`inline-flex items-center gap-2 px-3.5 py-1 rounded-full border text-[9px] font-bold tracking-widest uppercase shadow-sm ${theme.emblemBadgeBg}`}>
+                {theme.id === 'agency' && <Building2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
+                {theme.id === 'care_home' && <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />}
+                {theme.id === 'training_agency' && <GraduationCap className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />}
+                {theme.id === 'hospital' && <Hospital className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />}
+                {theme.id === 'ncna' && <Award className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
+                {theme.id === 'general' && <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
+                <span>{theme.badgeLabel}</span>
+              </div>
+            </div>
+
+            {/* RECIPIENT & CREDENTIAL BODY */}
+            <div className="relative z-10 w-full max-w-3xl mx-auto my-0.5 text-center px-4">
+              <p className="text-[12px] italic text-slate-600 font-serif mb-1">
+                This is to officially certify that
+              </p>
+
+              <div className="relative inline-block my-1 px-8 max-w-full">
+                <h2 className="text-[28px] font-serif font-bold text-slate-900 uppercase tracking-wider border-b-2 border-[#D97706] pb-1">
+                  {recipientClean}
+                </h2>
+              </div>
+
+              <p className="text-[11px] italic text-slate-600 font-serif mt-1 max-w-2xl mx-auto leading-relaxed">
+                {bodyText}
+              </p>
+            </div>
+
+            {/* 2-COLUMN METADATA GRID */}
+            <div className="relative z-10 w-full max-w-3xl mx-auto bg-slate-50/95 border border-slate-200 rounded-xl p-3 px-6 shadow-xs my-0.5 grid grid-cols-2 gap-x-8 gap-y-2 text-left">
+              
+              {/* Column 1 */}
+              <div className="space-y-1.5 border-r border-slate-200/90 pr-4">
+                <div className="flex items-center gap-2.5">
+                  <UserIcon className="w-3.5 h-3.5 text-[#D97706] flex-shrink-0" />
+                  <div>
+                    <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
+                      STUDENT / REGISTRATION ID
+                    </p>
+                    <p className="text-xs font-bold text-slate-800 font-mono leading-tight">
+                      {data.studentIdOrRegNumber || 'NIC/MEM/2026/USVBR'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <BookOpen className="w-3.5 h-3.5 text-[#D97706] flex-shrink-0" />
+                  <div>
+                    <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
+                      COURSE / PROGRAMME
+                    </p>
+                    <p className="text-xs font-bold text-slate-800 capitalize leading-tight line-clamp-1">
+                      {data.courseOrProgramName || 'Fundamentals of Professional Caregiving'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <GraduationCap className="w-3.5 h-3.5 text-[#D97706] flex-shrink-0" />
+                  <div>
+                    <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
+                      QUALIFICATION LEVEL
+                    </p>
+                    <p className="text-xs font-bold text-slate-800 capitalize leading-tight">
+                      {data.resultOrLevel || data.facilityType || theme.name}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <Calendar className="w-3.5 h-3.5 text-[#D97706] flex-shrink-0" />
+                  <div>
+                    <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
+                      DATE ISSUED
+                    </p>
+                    <p className="text-xs font-bold text-slate-800 leading-tight">
+                      {formattedIssueDate}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Column 2 */}
+              <div className="space-y-1.5 pl-2">
+                <div className="flex items-center gap-2.5">
+                  <FileCheck className="w-3.5 h-3.5 text-[#D97706] flex-shrink-0" />
+                  <div>
+                    <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
+                      CERTIFICATE NUMBER
+                    </p>
+                    <p className="text-xs font-bold text-slate-800 font-mono leading-tight">
+                      {data.certificateNumber}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <Award className="w-3.5 h-3.5 text-[#D97706] flex-shrink-0" />
+                  <div>
+                    <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
+                      RESULT / STATUS
+                    </p>
+                    <p className="text-xs font-bold text-emerald-700 uppercase leading-tight">
+                      PASS / VERIFIED
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-3.5 h-3.5 text-[#D97706] flex-shrink-0" />
+                  <div>
+                    <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
+                      LEARNING HOURS / DURATION
+                    </p>
+                    <p className="text-xs font-bold text-slate-800 leading-tight">
+                      {durationDisplay}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#D97706] flex-shrink-0" />
+                  <div>
+                    <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
+                      VERIFICATION STATUS
+                    </p>
+                    <p className="text-xs font-bold text-slate-800 leading-tight">
+                      Electronic Public Verification Active
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* FOOTER SECTION: SIGNATURE, SEAL & QR CODE */}
+            <div className="relative z-10 w-full pt-1 px-4">
+              
+              <div className="w-full flex items-end justify-between px-2 mb-1">
+                
+                {/* Bottom Left: QR Code */}
+                <div className="flex flex-col items-center">
+                  <div className="p-1.5 bg-white rounded-lg border border-slate-300 shadow-xs">
+                    <QRCodeDisplay value={data.verificationUrl} size={58} />
+                  </div>
+                  <div className="w-full mt-1 bg-slate-900 text-white py-0.5 rounded text-[7px] font-bold tracking-widest uppercase text-center shadow-xs">
+                    SCAN TO VERIFY
+                  </div>
+                </div>
+
+                {/* Bottom Center: Official Gold Embossed Rosette Seal */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="relative w-18 h-18 rounded-full bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 p-1 shadow-md flex items-center justify-center border-2 border-amber-200">
+                    <div className="w-full h-full rounded-full border border-dashed border-amber-100 flex flex-col items-center justify-center text-center p-1 bg-amber-600/35 backdrop-blur-xs">
+                      <Image 
+                        src="/coat-of-arm.png" 
+                        alt="NIC Seal" 
+                        width={28} 
+                        height={28} 
+                        className="object-contain filter brightness-110 drop-shadow-xs" 
+                      />
+                      <span className="text-[5.5px] font-black uppercase tracking-wider text-amber-100 leading-none mt-0.5">
+                        OFFICIAL SEAL
+                      </span>
+                      <span className="text-[5px] font-bold uppercase tracking-widest text-amber-200 leading-none">
+                        NIC NIGERIA
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Right: Authorized Signature */}
+                <div className="flex flex-col items-start text-left">
+                  <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">
+                    Authorized Signature
+                  </p>
+
+                  <div className="h-9 flex items-center justify-start my-0.5">
+                    <img 
+                      src={data.signatorySignatureUrl || "/signature.png"} 
+                      alt="Authorized Signature" 
+                      className="h-9 w-auto object-contain select-none"
+                      onError={(e: any) => {
+                        e.target.style.display = 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div className="w-44 border-b border-[#D97706]/80 mb-1" />
+                  <p className="text-xs font-bold text-slate-900 leading-tight">
+                    {data.signatoryName || 'Olatunji Joel'}
+                  </p>
+                  <p className="text-[8.5px] font-semibold text-slate-600 leading-tight">
+                    {data.signatoryTitle || 'Executive Director, Programmes'}
+                  </p>
+                </div>
+
+              </div>
+
+              {/* Bottom Center: Validity Disclaimer Banner */}
+              <div className="text-center w-full max-w-xl mx-auto mt-0.5 pt-1 border-t border-slate-200/80">
+                <p className="text-[8px] font-medium text-slate-500 leading-tight">
+                  This certificate is issued electronically and is valid without alteration under the NIC Nigeria Registry Board.
                 </p>
-                <p className="text-[8.5px] font-semibold text-slate-600 leading-tight">
-                  {data.signatoryTitle || 'Executive Director, Programmes'}
+                <p className="text-[8px] font-bold text-slate-700 mt-0.5">
+                  Verify authenticity at: <span className="underline font-mono text-[8px] text-[#B45309]">nicnigeria.org/verify</span>
                 </p>
               </div>
 
             </div>
 
           </div>
-
-          {/* Bottom Center: Validity Disclaimer Banner */}
-          <div className="text-center w-full max-w-xl mx-auto mt-1 pt-1.5 border-t border-slate-200/80">
-            <p className="text-[8.5px] font-medium text-slate-600 leading-tight">
-              This certificate is issued electronically and is valid without alteration.
-            </p>
-            <p className="text-[8.5px] font-bold text-slate-800 mt-0.5">
-              Verify authenticity at: <span className="underline font-mono text-[8.5px] text-[#B45309]">nicnigeria.org/verify</span>
-            </p>
-          </div>
-
         </div>
-
       </div>
     </>
   )

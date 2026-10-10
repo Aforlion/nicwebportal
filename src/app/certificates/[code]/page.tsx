@@ -58,9 +58,16 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
         ? 'individual_membership' 
         : 'course_completion'
 
+    const courseDuration = (cert.courses as any)?.duration_hours || 200
+    const durationDisplay = (isFacility || isIndividualMembership)
+        ? `12 Months (${issueYear} - ${issueYear + 1})`
+        : isNCNA
+        ? `Professional Practice License (${issueYear} - ${issueYear + 1})`
+        : `${courseDuration} Credit Hours (120 Theory + 80 Clinical)`
+
     const certData: PremiumCertificateData = {
         certificateNumber: cert.certificate_number,
-        recipientName: isFacility ? (cert.facilities?.name || recipientName) : recipientName,
+        recipientName: isFacility ? (cert.facilities?.name || recipientName) : recipientName.trim(),
         facilityTypeKey: typeKey,
         facilityType: cert.facility_type ? cert.facility_type.replace('_', ' ').toUpperCase() : undefined,
         memberTierKey: isIndividualMembership ? memberTier : undefined,
@@ -68,9 +75,9 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
         courseOrProgramName: courseTitle,
         resultOrLevel: cert.course_level || undefined,
         issueDate: issueDateStr,
-        duration: (isFacility || isIndividualMembership) ? `12 Months (${issueYear} - ${issueYear + 1})` : `Lifetime Credential (Issued ${issueYear})`,
+        duration: durationDisplay,
         verificationUrl,
-        studentIdOrRegNumber: cert.student_id || (cert.user_id ? `NIC-STU-${cert.user_id.substring(0, 5).toUpperCase()}` : `LIC-${code}`),
+        studentIdOrRegNumber: cert.student_id || (cert.user_id ? `NIC-STU-${cert.user_id.substring(0, 8).toUpperCase()}` : `LIC-${code}`),
         signatoryName: "Olatunji Joel",
         signatoryTitle: "Executive Director, Programmes",
         signatorySignatureUrl: "/signature.png",

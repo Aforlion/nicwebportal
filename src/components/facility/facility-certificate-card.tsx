@@ -55,11 +55,22 @@ export default function FacilityCertificateCard({
       }
 
       const canvas = await html2canvas(certElement, {
-        scale: 3, // High DPI capture for crisp print-quality export
+        scale: 2.5, // High DPI capture for crisp print-quality export
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#FAF9F6",
         logging: false,
+        windowWidth: 1050,
+        windowHeight: 742,
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.getElementById("printable-certificate")
+          if (el) {
+            el.style.transform = "none"
+            el.style.position = "static"
+            el.style.width = "1050px"
+            el.style.height = "742px"
+          }
+        }
       })
 
       const image = canvas.toDataURL("image/png")
