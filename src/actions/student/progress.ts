@@ -121,7 +121,8 @@ export async function markLessonComplete(courseId: string, lessonId: string) {
     if (!enrollment) return { error: "Not enrolled in this course" }
 
     // 2. Upsert Lesson Progress
-    const { error: progressError } = await supabase
+    const { supabaseAdmin } = await import("@/lib/supabase/admin")
+    const { error: progressError } = await supabaseAdmin
         .from('lesson_progress')
         .upsert({
             enrollment_id: enrollment.id,

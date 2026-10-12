@@ -110,7 +110,8 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
     }
 
     // 7. Update Lesson Progress to allow unblocked progression to the next lesson
-    await supabase
+    const { supabaseAdmin } = await import("@/lib/supabase/admin")
+    await supabaseAdmin
         .from('lesson_progress')
         .upsert({
             enrollment_id: enrollment.id,
@@ -122,6 +123,8 @@ export async function submitAssessment(courseId: string, lessonId: string, asses
 
     await updateCourseProgress(enrollment.id, user.id)
     revalidatePath(`/portal/student/courses/${courseId}`)
+    revalidatePath(`/portal/student/courses/${courseId}`, 'page')
+    revalidatePath('/portal/student')
 
     const isPassing = passed || aiPassed
     const finalScore = requiresManualReview ? aiScore : percentage

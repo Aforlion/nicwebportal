@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { getCourseContent } from "@/actions/get-course-content"
 import QuizPlayer from "@/components/student/quiz-player"
 import CourseCompletionCard from "@/components/student/course-completion-card"
@@ -46,8 +48,10 @@ export default async function LessonPlayerPage({
             // A lesson is considered provisionally complete to unlock the NEXT lesson if:
             // 1. Explicitly marked complete in lesson_progress
             // 2. OR has an assessment submission (passed, failed, or pending_review)
+            // 3. OR has no assessment at all (reading, introduction, or informational lesson)
             const subObj = l.assessments?.id ? submissionStatus[l.assessments.id] : null
-            const isProvisionallyCompleted = isCompletedStatus || !!subObj
+            const hasNoAssessment = !l.assessments?.id
+            const isProvisionallyCompleted = isCompletedStatus || !!subObj || hasNoAssessment
             
             itemStates.set(l.id, { isLocked: !previousItemCompleted })
             
@@ -103,7 +107,19 @@ export default async function LessonPlayerPage({
 
     const prevItem = allItems[currentIndex - 1]
     const nextItem = allItems[currentIndex + 1]
-    const isNextItemLocked = nextItem ? itemStates.get(nextItem.id)?.isLocked : false
+
+    // Check if the currently active lesson is completed, passed/pending, or reading-only
+    const activeSub = activeContent?.assessments?.id ? submissionStatus[activeContent.assessments.id] : null
+    const isActiveContentCompleted = activeContent ? (
+        !!progress[activeContent.id] ||
+        (activeSub && (activeSub.status === 'passed' || activeSub.status === 'pending_review')) ||
+        !activeContent.assessments?.id
+    ) : false
+
+    // If current item is completed/passed/pending or reading-only, nextItem cannot be locked
+    const isNextItemLocked = nextItem ? (
+        isActiveContentCompleted ? false : !!itemStates.get(nextItem.id)?.isLocked
+    ) : false
 
     const getHref = (item: any) => {
         if (!item) return '#'
@@ -378,10 +394,17 @@ export default async function LessonPlayerPage({
                                         <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4">Assessment</div>
                                         <h2 className="text-2xl font-black mb-8 text-secondary">Knowledge Check</h2>
                                         <QuizPlayer
+                                            key={activeContent.assessments.id || activeContent.id}
                                             courseId={course.id}
                                             lessonId={activeContent.id}
                                             assessment={activeContent.assessments}
                                             existingSubmission={submissionStatus[activeContent.assessments.id] || null}
+                                            nextHref={nextItem ? getHref(nextItem) : null}
+                                            nextTitle={nextItem?.type === 'lesson' 
+                                                ? sortedModules.flatMap((m: any) => m.lessons).find((l: any) => l.id === nextItem.id)?.title 
+                                                : nextItem?.type === 'module'
+                                                    ? `Next Module: ${sortedModules.find((m: any) => m.id === nextItem.id)?.title}`
+                                                    : 'Continue Learning'}
                                         />
                                     </div>
                                 )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
@@ -8,8 +8,9 @@ import Textarea from "@/components/ui/textarea"
 import { FileUpload } from "@/components/ui/file-upload"
 import { submitAssessment } from "@/actions/student/take-assessment"
 import { toast } from "sonner"
-import { Loader2, CheckCircle, XCircle, RefreshCw } from "lucide-react"
+import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 interface QuizPlayerProps {
     courseId: string
@@ -21,9 +22,11 @@ interface QuizPlayerProps {
         feedback?: string
         submitted_at?: string
     } | null
+    nextHref?: string | null
+    nextTitle?: string | null
 }
 
-export default function QuizPlayer({ courseId, lessonId, assessment, existingSubmission }: QuizPlayerProps) {
+export default function QuizPlayer({ courseId, lessonId, assessment, existingSubmission, nextHref, nextTitle }: QuizPlayerProps) {
     const router = useRouter()
     const [answers, setAnswers] = useState<any>({})
     const [result, setResult] = useState<any>(() => {
@@ -38,6 +41,23 @@ export default function QuizPlayer({ courseId, lessonId, assessment, existingSub
         }
     })
     const [isLoading, setIsLoading] = useState(false)
+
+    // Synchronize state when switching lessons or assessments to prevent stale state retention
+    useEffect(() => {
+        setAnswers({})
+        if (existingSubmission) {
+            const isPassed = existingSubmission.status === 'passed'
+            const isPending = existingSubmission.status === 'pending_review'
+            setResult({
+                passed: isPassed,
+                pending: isPending,
+                score: existingSubmission.score,
+                feedback: existingSubmission.feedback || (isPassed ? "Great job! You passed." : isPending ? "Submission pending review." : "Score below passing mark. Retake available anytime.")
+            })
+        } else {
+            setResult(null)
+        }
+    }, [assessment?.id, lessonId, existingSubmission?.status, existingSubmission?.submitted_at])
 
     if (!assessment || !assessment.questions || assessment.questions.length === 0) {
         return <div className="p-6 bg-muted rounded-lg text-center">No questions in this quiz.</div>
@@ -68,7 +88,7 @@ export default function QuizPlayer({ courseId, lessonId, assessment, existingSub
                     } else {
                         toast.success("Submission received. Your assessment is under review.")
                     }
-                    router.refresh() // To update progress sidebar
+                    router.refresh() // To update progress sidebar & parent page state
                 } else {
                     toast.error("You didn't reach the passing score. You can retake anytime!")
                 }
@@ -113,18 +133,40 @@ export default function QuizPlayer({ courseId, lessonId, assessment, existingSub
 
                 {result.passed ? (
                     <div className="space-y-4">
-                        <Button onClick={() => router.refresh()} size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md">
-                            Continue Learning
-                        </Button>
+                        {nextHref ? (
+                            <Button asChild size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all">
+                                <Link href={nextHref} className="flex items-center justify-center gap-2">
+                                    <span>Continue Learning{nextTitle ? `: ${nextTitle}` : ''}</span>
+                                    <ArrowRight className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                        ) : (
+                            <Button asChild size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all">
+                                <Link href={`/portal/student/courses/${courseId}`}>
+                                    Course Completed — View Overview
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                 ) : result.pending ? (
                     <div className="space-y-4">
                         <p className="text-sm bg-amber-100/80 text-amber-900 p-4 rounded-xl border border-amber-200 font-medium">
                             Your assessment has been submitted. Instructors or AI evaluators are reviewing your response. You may proceed with subsequent course lessons!
                         </p>
-                        <Button onClick={() => router.refresh()} size="lg" className="w-full font-bold rounded-xl">
-                            Continue Learning
-                        </Button>
+                        {nextHref ? (
+                            <Button asChild size="lg" className="w-full font-bold rounded-xl">
+                                <Link href={nextHref} className="flex items-center justify-center gap-2">
+                                    <span>Continue Learning{nextTitle ? `: ${nextTitle}` : ''}</span>
+                                    <ArrowRight className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                        ) : (
+                            <Button asChild size="lg" className="w-full font-bold rounded-xl">
+                                <Link href={`/portal/student/courses/${courseId}`}>
+                                    View Course Overview
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -135,9 +177,13 @@ export default function QuizPlayer({ courseId, lessonId, assessment, existingSub
                             <Button onClick={handleRetry} variant="default" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md px-8">
                                 <RefreshCw className="mr-2 h-4 w-4" /> Retake Assessment Now
                             </Button>
-                            <Button onClick={() => router.refresh()} variant="outline" size="lg" className="font-bold rounded-xl">
-                                Continue Study Path
-                            </Button>
+                            {nextHref && (
+                                <Button asChild variant="outline" size="lg" className="font-bold rounded-xl">
+                                    <Link href={nextHref}>
+                                        Continue Study Path
+                                    </Link>
+                                </Button>
+                            )}
                         </div>
                     </div>
                 )}
