@@ -17,15 +17,15 @@ export async function getFacilityCertificateDetails(targetFacilityId?: string) {
     let facility: any = null
 
     if (targetFacilityId) {
-      const { data } = await supabase
+      const { data } = await supabaseAdmin
         .from('facilities')
         .select('*')
         .eq('id', targetFacilityId)
-        .single()
+        .maybeSingle()
       facility = data
     } else {
       // Find facility belonging to owner user
-      const { data } = await supabase
+      const { data } = await supabaseAdmin
         .from('facilities')
         .select('*')
         .eq('owner_id', user.id)
@@ -42,7 +42,9 @@ export async function getFacilityCertificateDetails(targetFacilityId?: string) {
       .from('certificates')
       .select('*')
       .eq('user_id', facility.owner_id || user.id)
-      .eq('type', 'facility_membership')
+      .or('certificate_number.ilike.NIC-FAC-%,certificate_number.ilike.NIC-AGY-%,certificate_number.ilike.NIC-TRN-%,certificate_number.ilike.NIC-CLI-%,course_level.eq.Facility Membership')
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
 
     let certCode = existingCert?.certificate_number
@@ -59,11 +61,11 @@ export async function getFacilityCertificateDetails(targetFacilityId?: string) {
 
       certCode = `NIC-${prefix}-${year}-${rand}`
 
-      // Create record in `certificates` table (using admin client)
+      // Create record in `certificates` table (using admin client with valid columns)
       await supabaseAdmin.from('certificates').insert({
         user_id: facility.owner_id || user.id,
         certificate_number: certCode,
-        type: 'facility_membership',
+        course_level: 'Facility Membership',
         issue_date: facility.registered_at || facility.created_at || new Date().toISOString(),
       })
     }

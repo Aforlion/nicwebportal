@@ -57,9 +57,9 @@ export default async function MemberCertificatesPage() {
             <div className="grid gap-8 lg:grid-cols-2">
                 {certificates && certificates.length > 0 ? (
                     certificates.map((cert: any) => {
-                        const isNCNA = cert.type === 'ncna' || cert.certificate_number?.startsWith('NCNA')
-                        const isMemberCert = cert.type === 'individual_membership' || cert.certificate_number?.startsWith('NIC-MEM')
-                        const isFacilityCert = cert.type === 'facility_membership' || cert.certificate_number?.startsWith('NIC-FAC') || cert.certificate_number?.startsWith('NIC-AGY')
+                        const isNCNA = cert.type === 'ncna' || cert.certificate_number?.startsWith('NCNA') || cert.course_level === 'NCNA License'
+                        const isMemberCert = cert.type === 'individual_membership' || cert.certificate_number?.startsWith('NIC-MEM') || cert.course_level === 'Individual Membership'
+                        const isFacilityCert = cert.type === 'facility_membership' || cert.certificate_number?.startsWith('NIC-FAC') || cert.certificate_number?.startsWith('NIC-AGY') || cert.certificate_number?.startsWith('NIC-TRN') || cert.certificate_number?.startsWith('NIC-CLI') || cert.course_level === 'Facility Membership'
 
                         let title = (cert.programs as any)?.title || (cert.courses as any)?.title || cert.course_level
 

@@ -49,17 +49,30 @@ export default async function EnrollmentPage({ params }: { params: Promise<{ cou
     }
 
     // Check Eligibility
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, training_facility_id')
+        .eq('id', user.id)
+        .single()
+
     const { data: member } = await supabase
         .from('memberships')
         .select('category')
         .eq('user_id', user.id)
-        .single()
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
     const academicLevel = await getStudentLevel(supabase, user.id)
     const eligibility = isEligibleForCourse({
-        membershipCategory: member?.category || 'student',
+        membershipCategory: member?.category || profile?.role || 'student',
+        userRole: profile?.role || 'student',
+        isFacilityAdmin: profile?.role === 'facility_admin' || !!profile?.training_facility_id,
         academicLevel,
         courseLevel: course.level,
+        courseSlug: course.slug,
+        courseId: course.id,
+        courseTitle: course.title,
         userEmail: user.email
     })
 
@@ -171,16 +184,25 @@ export default async function EnrollmentPage({ params }: { params: Promise<{ cou
                         <CardFooter>
                             {!eligibility.eligible ? (
                                 <div className="w-full space-y-4">
-                                    <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg flex gap-3 text-orange-800">
-                                        <Lock className="h-5 w-5 shrink-0" />
+                                    <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg flex gap-3 text-orange-900">
+                                        <Lock className="h-5 w-5 shrink-0 text-orange-600 mt-0.5" />
                                         <div className="text-sm">
-                                            <p className="font-bold mb-1">Enrollment Locked</p>
-                                            <p>This course requires you to complete <strong>{eligibility.requiredLevel}</strong> first, or upgrade your membership level.</p>
+                                            <p className="font-bold mb-1">Enrollment Restricted</p>
+                                            <p className="leading-relaxed">
+                                                {eligibility.reason || `This course requires you to complete ${eligibility.requiredLevel} first, or upgrade your membership level.`}
+                                            </p>
                                         </div>
                                     </div>
-                                    <Button variant="outline" className="w-full" asChild>
-                                        <a href="/portal/student/courses">Back to My Courses</a>
-                                    </Button>
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <Button variant="outline" className="flex-1 font-semibold" asChild>
+                                            <a href="/portal/student/courses">Back to Course Catalog</a>
+                                        </Button>
+                                        {profile?.role === 'student' && !course.title.toLowerCase().includes('fundamentals') && (
+                                            <Button className="flex-1 bg-primary font-semibold" asChild>
+                                                <a href="/portal/student/enroll/d040764a-e8c3-46c4-975d-7802c91fa1d6">View Fundamentals Course</a>
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             ) : (
                                 <>

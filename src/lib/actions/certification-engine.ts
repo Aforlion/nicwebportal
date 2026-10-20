@@ -87,28 +87,22 @@ export async function evaluateNCNAEligibilityAction(userId: string) {
             // Check if already has NCNA certificate
             const { data: existingCert } = await adminClient
                 .from('certificates')
-                .select('id')
+                .select('id, certificate_number')
                 .eq('user_id', userId)
-                .eq('type', 'ncna')
+                .or('certificate_number.ilike.NCNA-%,course_level.eq.NCNA License')
                 .maybeSingle()
 
             if (!existingCert) {
                 const randomId = Math.floor(10000 + Math.random() * 90000)
                 const certificateNumber = `NCNA-2026-${randomId}`
-                const verificationUrl = `/verify/${certificateNumber}`
 
                 const { error: certError } = await adminClient
                     .from('certificates')
                     .insert({
                         certificate_number: certificateNumber,
                         user_id: userId,
-                        type: 'ncna',
-                        verification_url: verificationUrl,
-                        metadata: {
-                            issued_by: "National Institute of Caregivers (NIC Nigeria)",
-                            accreditation_authority: "NIC Nigeria Certification Authority",
-                            note: "Issued by the National Institute of Caregivers (NIC Nigeria) as the Certification Authority."
-                        }
+                        course_level: 'NCNA License',
+                        issue_date: new Date().toISOString()
                     })
 
                 if (certError) throw certError

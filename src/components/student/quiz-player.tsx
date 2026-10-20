@@ -107,6 +107,28 @@ export default function QuizPlayer({ courseId, lessonId, assessment, existingSub
         setAnswers({})
     }
 
+    const handleContinueLearning = (targetHref?: string | null) => {
+        // Reset local quiz result state so it doesn't linger into next lesson
+        setResult(null)
+        setAnswers({})
+
+        // Scroll content container to top
+        const container = document.getElementById('lesson-content-scroll-container')
+        if (container) {
+            container.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+        }
+        window.scrollTo({ top: 0, left: 0 })
+
+        const destination = targetHref || nextHref
+        if (destination && destination !== '#') {
+            router.push(destination)
+            router.refresh()
+        } else {
+            router.push(`/portal/student/courses/${courseId}`)
+            router.refresh()
+        }
+    }
+
     if (result) {
         const isFail = !result.passed && !result.pending;
         return (
@@ -134,17 +156,23 @@ export default function QuizPlayer({ courseId, lessonId, assessment, existingSub
                 {result.passed ? (
                     <div className="space-y-4">
                         {nextHref ? (
-                            <Button asChild size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all">
-                                <Link href={nextHref} className="flex items-center justify-center gap-2">
-                                    <span>Continue Learning{nextTitle ? `: ${nextTitle}` : ''}</span>
-                                    <ArrowRight className="h-4 w-4" />
-                                </Link>
+                            <Button
+                                type="button"
+                                size="lg"
+                                onClick={() => handleContinueLearning(nextHref)}
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <span>Continue Learning{nextTitle ? `: ${nextTitle}` : ''}</span>
+                                <ArrowRight className="h-4 w-4" />
                             </Button>
                         ) : (
-                            <Button asChild size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all">
-                                <Link href={`/portal/student/courses/${courseId}`}>
-                                    Course Completed — View Overview
-                                </Link>
+                            <Button
+                                type="button"
+                                size="lg"
+                                onClick={() => handleContinueLearning(`/portal/student/courses/${courseId}`)}
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                Course Completed — View Overview
                             </Button>
                         )}
                     </div>
@@ -154,17 +182,23 @@ export default function QuizPlayer({ courseId, lessonId, assessment, existingSub
                             Your assessment has been submitted. Instructors or AI evaluators are reviewing your response. You may proceed with subsequent course lessons!
                         </p>
                         {nextHref ? (
-                            <Button asChild size="lg" className="w-full font-bold rounded-xl">
-                                <Link href={nextHref} className="flex items-center justify-center gap-2">
-                                    <span>Continue Learning{nextTitle ? `: ${nextTitle}` : ''}</span>
-                                    <ArrowRight className="h-4 w-4" />
-                                </Link>
+                            <Button
+                                type="button"
+                                size="lg"
+                                onClick={() => handleContinueLearning(nextHref)}
+                                className="w-full font-bold rounded-xl cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <span>Continue Learning{nextTitle ? `: ${nextTitle}` : ''}</span>
+                                <ArrowRight className="h-4 w-4" />
                             </Button>
                         ) : (
-                            <Button asChild size="lg" className="w-full font-bold rounded-xl">
-                                <Link href={`/portal/student/courses/${courseId}`}>
-                                    View Course Overview
-                                </Link>
+                            <Button
+                                type="button"
+                                size="lg"
+                                onClick={() => handleContinueLearning(`/portal/student/courses/${courseId}`)}
+                                className="w-full font-bold rounded-xl cursor-pointer"
+                            >
+                                View Course Overview
                             </Button>
                         )}
                     </div>
@@ -174,14 +208,18 @@ export default function QuizPlayer({ courseId, lessonId, assessment, existingSub
                             Don't worry! You can retake this assessment as many times as needed to pass. Retaking does not affect your study progress.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                            <Button onClick={handleRetry} variant="default" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md px-8">
+                            <Button onClick={handleRetry} variant="default" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md px-8 cursor-pointer">
                                 <RefreshCw className="mr-2 h-4 w-4" /> Retake Assessment Now
                             </Button>
                             {nextHref && (
-                                <Button asChild variant="outline" size="lg" className="font-bold rounded-xl">
-                                    <Link href={nextHref}>
-                                        Continue Study Path
-                                    </Link>
+                                <Button
+                                    type="button"
+                                    onClick={() => handleContinueLearning(nextHref)}
+                                    variant="outline"
+                                    size="lg"
+                                    className="font-bold rounded-xl cursor-pointer"
+                                >
+                                    Continue Study Path
                                 </Button>
                             )}
                         </div>

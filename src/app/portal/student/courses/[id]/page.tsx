@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { getCourseContent } from "@/actions/get-course-content"
 import QuizPlayer from "@/components/student/quiz-player"
 import CourseCompletionCard from "@/components/student/course-completion-card"
+import LessonScrollReset from "@/components/student/lesson-scroll-reset"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, Circle, PlayCircle, ChevronLeft, BookOpen, Menu } from "lucide-react"
 import Link from "next/link"
@@ -60,6 +61,24 @@ export default async function LessonPlayerPage({
         })
     })
 
+    // Flatten all sorted lessons once for lookup and titles
+    const allLessons = sortedModules?.flatMap((m: any) => m.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order) || []) || []
+
+    const getItemTitle = (item: any, fallback: string = '') => {
+        if (!item) return fallback
+        if (item.type === 'lesson') {
+            return allLessons.find((l: any) => l.id === item.id)?.title || fallback
+        }
+        if (item.type === 'module') {
+            const found = sortedModules?.find((m: any) => m.id === item.id)
+            return found?.title ? `Next Module: ${found.title}` : fallback || 'Next Module'
+        }
+        if (item.type === 'course') {
+            return 'Course Overview'
+        }
+        return fallback
+    }
+
     // Determine active content
     let activeContent: any = null
     let activeType = type
@@ -67,10 +86,9 @@ export default async function LessonPlayerPage({
     if (type === 'course') {
         activeContent = course
     } else if (type === 'module' && moduleId) {
-        activeContent = sortedModules.find((m: any) => m.id === moduleId)
+        activeContent = sortedModules?.find((m: any) => m.id === moduleId)
     } else {
         // Default to first lesson if no lessonId or if explicit lesson type
-        const allLessons = sortedModules.flatMap((m: any) => m.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order) || [])
         activeContent = lessonId
             ? allLessons.find((l: any) => l.id === lessonId)
             : allLessons[0]
@@ -135,6 +153,7 @@ export default async function LessonPlayerPage({
             {/* Course Intro Link */}
             <Link
                 href={getHref({ id: course.id, type: 'course' })}
+                prefetch={false}
                 className={`w-full flex items-center gap-3 px-4 py-4 text-sm rounded-xl transition-all border
                     ${activeType === 'course' ? 'bg-primary/10 text-primary font-bold border-primary/20 shadow-sm' : 'hover:bg-muted text-secondary font-semibold border-transparent'}
                 `}
@@ -169,6 +188,7 @@ export default async function LessonPlayerPage({
                         ) : (
                             <Link
                                 href={getHref({ id: module.id, type: 'module' })}
+                                prefetch={false}
                                 className={`group w-full flex flex-col gap-1 p-3 rounded-xl transition-all border
                                     ${activeType === 'module' && activeContent?.id === module.id ? 'bg-emerald-50 border-emerald-100' : 'hover:bg-muted/50 border-transparent'}
                                 `}
@@ -212,6 +232,7 @@ export default async function LessonPlayerPage({
                                 <Link
                                     key={lesson.id}
                                     href={getHref({ id: lesson.id, type: 'lesson' })}
+                                    prefetch={false}
                                     className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-r-xl transition-all
                                         ${isActive ? 'bg-primary/5 text-primary font-bold border-l-4 border-primary -ml-[2px]' : 'hover:bg-muted/30 text-muted-foreground hover:text-secondary'}
                                     `}
@@ -269,7 +290,8 @@ export default async function LessonPlayerPage({
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 overflow-y-auto bg-background flex flex-col">
+            <div id="lesson-content-scroll-container" className="flex-1 overflow-y-auto bg-background flex flex-col">
+                <LessonScrollReset activeId={`${activeType}-${activeContent?.id || ''}`} />
                 {/* Mobile-only top bar with back link + progress and floating Sheet curriculum trigger */}
                 <div className="lg:hidden sticky top-0 z-10 bg-background border-b px-4 py-3 flex items-center gap-3">
                     <Link href="/portal/student" className="flex items-center text-sm text-muted-foreground hover:text-primary transition-colors shrink-0">
@@ -394,17 +416,13 @@ export default async function LessonPlayerPage({
                                         <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4">Assessment</div>
                                         <h2 className="text-2xl font-black mb-8 text-secondary">Knowledge Check</h2>
                                         <QuizPlayer
-                                            key={activeContent.assessments.id || activeContent.id}
+                                            key={`quiz-${activeContent.id}-${activeContent.assessments?.id || 'none'}`}
                                             courseId={course.id}
                                             lessonId={activeContent.id}
                                             assessment={activeContent.assessments}
-                                            existingSubmission={submissionStatus[activeContent.assessments.id] || null}
+                                            existingSubmission={activeContent.assessments?.id ? (submissionStatus[activeContent.assessments.id] || null) : null}
                                             nextHref={nextItem ? getHref(nextItem) : null}
-                                            nextTitle={nextItem?.type === 'lesson' 
-                                                ? sortedModules.flatMap((m: any) => m.lessons).find((l: any) => l.id === nextItem.id)?.title 
-                                                : nextItem?.type === 'module'
-                                                    ? `Next Module: ${sortedModules.find((m: any) => m.id === nextItem.id)?.title}`
-                                                    : 'Continue Learning'}
+                                            nextTitle={getItemTitle(nextItem, 'Continue Learning')}
                                         />
                                     </div>
                                 )}
@@ -442,7 +460,7 @@ export default async function LessonPlayerPage({
                             {activeType === 'course' && (
                                 <div className="mt-12">
                                     <Button asChild size="lg" className="rounded-full px-8 py-6 text-lg font-bold shadow-xl shadow-primary/20 transition-transform active:scale-95">
-                                        <Link href={getHref(allItems[1])}>Start Course</Link>
+                                        <Link href={getHref(allItems[1])} prefetch={false}>Start Course</Link>
                                     </Button>
                                 </div>
                             )}
@@ -464,16 +482,12 @@ export default async function LessonPlayerPage({
                     <div className="mt-20 pt-10 border-t-2 border-muted/20 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pb-28 sm:pb-10">
                         {prevItem ? (
                             <Button variant="ghost" asChild className="group text-secondary font-bold h-auto py-3 px-4 sm:px-6 rounded-xl sm:rounded-2xl">
-                                <Link href={getHref(prevItem)} className="flex items-center">
+                                <Link href={getHref(prevItem)} prefetch={false} className="flex items-center">
                                     <ChevronLeft className="h-5 w-5 mr-2 shrink-0 group-hover:-translate-x-1 transition-transform" />
                                     <div className="text-left min-w-0">
                                         <div className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none mb-1">Previous</div>
                                         <div className="line-clamp-1 max-w-[180px] sm:max-w-[220px]">
-                                            {prevItem.type === 'lesson' 
-                                                ? sortedModules.flatMap((m: any) => m.lessons).find((l: any) => l.id === prevItem.id)?.title 
-                                                : prevItem.type === 'module' 
-                                                    ? `Module: ${sortedModules.find((m: any) => m.id === prevItem.id)?.title}`
-                                                    : 'Course Overview'}
+                                            {getItemTitle(prevItem, 'Previous')}
                                         </div>
                                     </div>
                                 </Link>
@@ -487,11 +501,7 @@ export default async function LessonPlayerPage({
                                         <div className="text-left sm:text-right mr-3 min-w-0">
                                             <div className="text-[10px] uppercase tracking-widest leading-none mb-1">Next Up (Locked)</div>
                                             <div className="line-clamp-1 max-w-[180px] sm:max-w-[220px]">
-                                                {nextItem.type === 'lesson' 
-                                                    ? sortedModules.flatMap((m: any) => m.lessons).find((l: any) => l.id === nextItem.id)?.title 
-                                                    : nextItem.type === 'module'
-                                                        ? `Next Module: ${sortedModules.find((m: any) => m.id === nextItem.id)?.title}`
-                                                        : 'Complete Current Lesson'}
+                                                {getItemTitle(nextItem, 'Complete Current Lesson')}
                                             </div>
                                         </div>
                                         <div className="h-8 w-8 rounded-full bg-muted-foreground/10 flex items-center justify-center shrink-0">
@@ -503,15 +513,11 @@ export default async function LessonPlayerPage({
                                 </Button>
                             ) : (
                                 <Button asChild className="group bg-secondary hover:bg-secondary/90 text-white font-bold h-auto py-3.5 px-4 sm:px-6 rounded-xl sm:rounded-2xl shadow-lg transition-all active:scale-95">
-                                    <Link href={getHref(nextItem)} className="flex items-center justify-between sm:justify-end w-full sm:w-auto">
+                                    <Link href={getHref(nextItem)} prefetch={false} className="flex items-center justify-between sm:justify-end w-full sm:w-auto">
                                         <div className="text-left sm:text-right mr-3 min-w-0">
                                             <div className="text-[10px] text-white/60 uppercase tracking-widest leading-none mb-1">Next Up</div>
                                             <div className="line-clamp-1 max-w-[180px] sm:max-w-[220px]">
-                                                {nextItem.type === 'lesson' 
-                                                    ? sortedModules.flatMap((m: any) => m.lessons).find((l: any) => l.id === nextItem.id)?.title 
-                                                    : nextItem.type === 'module'
-                                                        ? `Next Module: ${sortedModules.find((m: any) => m.id === nextItem.id)?.title}`
-                                                        : 'Continue Learning'}
+                                                {getItemTitle(nextItem, 'Continue Learning')}
                                             </div>
                                         </div>
                                         <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors shrink-0">

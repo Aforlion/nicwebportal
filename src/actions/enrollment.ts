@@ -48,29 +48,40 @@ export async function verifyPaymentAndEnroll(reference: string, courseId: string
         // Check Eligibility
         const { data: course } = await supabase
             .from('courses')
-            .select('level')
+            .select('id, title, slug, level, price')
             .eq('id', courseId)
+            .single()
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, training_facility_id')
+            .eq('id', user.id)
             .single()
 
         const { data: member } = await supabase
             .from('memberships')
             .select('id, category')
             .eq('user_id', user.id)
-            .order('created_at', { ascending: true })
+            .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle()
 
         const academicLevel = await getStudentLevel(supabase, user.id)
         const eligibility = isEligibleForCourse({
-            membershipCategory: member?.category || 'student',
+            membershipCategory: member?.category || profile?.role || 'student',
+            userRole: profile?.role || 'student',
+            isFacilityAdmin: profile?.role === 'facility_admin' || !!profile?.training_facility_id,
             academicLevel,
             courseLevel: course?.level || 'Foundation',
+            courseSlug: course?.slug,
+            courseId: course?.id,
+            courseTitle: course?.title,
             userEmail: user.email
         })
 
         if (!eligibility.eligible) {
             return {
-                error: `Prerequisite Required: You must complete ${eligibility.requiredLevel} or upgrade your membership to enroll in this course.`
+                error: eligibility.reason || `Prerequisite Required: You must complete ${eligibility.requiredLevel} or upgrade your membership to enroll in this course.`
             }
         }
 
@@ -163,7 +174,7 @@ export async function enrollFreeCourse(courseId: string) {
     // Verify course is actually free and check level
     const { data: course } = await supabase
         .from('courses')
-        .select('price, level')
+        .select('id, title, slug, price, level')
         .eq('id', courseId)
         .single()
 
@@ -172,23 +183,36 @@ export async function enrollFreeCourse(courseId: string) {
     }
 
     // Check Eligibility
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, training_facility_id')
+        .eq('id', user.id)
+        .single()
+
     const { data: member } = await supabase
         .from('memberships')
         .select('category')
         .eq('user_id', user.id)
-        .single()
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
     const academicLevel = await getStudentLevel(supabase, user.id)
     const eligibility = isEligibleForCourse({
-        membershipCategory: member?.category || 'student',
+        membershipCategory: member?.category || profile?.role || 'student',
+        userRole: profile?.role || 'student',
+        isFacilityAdmin: profile?.role === 'facility_admin' || !!profile?.training_facility_id,
         academicLevel,
         courseLevel: course.level || 'Foundation',
+        courseSlug: course.slug,
+        courseId: course.id,
+        courseTitle: course.title,
         userEmail: user.email
     })
 
     if (!eligibility.eligible) {
         return {
-            error: `Prerequisite Required: You must complete ${eligibility.requiredLevel} or upgrade your membership to enroll in this course.`
+            error: eligibility.reason || `Prerequisite Required: You must complete ${eligibility.requiredLevel} or upgrade your membership to enroll in this course.`
         }
     }
 
@@ -281,7 +305,7 @@ export async function enrollFromWebhookAction(
     // 2. Find the user by email via profiles table (admin bypasses RLS)
     const { data: profile, error: profileError } = await adminClient
         .from('profiles')
-        .select('id, full_name')
+        .select('id, full_name, role, training_facility_id')
         .eq('email', customerEmail)
         .maybeSingle()
 
@@ -291,6 +315,43 @@ export async function enrollFromWebhookAction(
     }
 
     const userId = profile.id
+
+    // Check course and eligibility in webhook context
+    const { data: courseData } = await adminClient
+        .from('courses')
+        .select('id, title, slug, level')
+        .eq('id', courseId)
+        .maybeSingle()
+
+    const { data: member } = await adminClient
+        .from('memberships')
+        .select('id, category')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    const academicLevel = await getStudentLevel(adminClient as any, userId)
+    const eligibility = isEligibleForCourse({
+        membershipCategory: member?.category || profile.role || 'student',
+        userRole: profile.role || 'student',
+        isFacilityAdmin: profile.role === 'facility_admin' || !!profile.training_facility_id,
+        academicLevel,
+        courseLevel: courseData?.level || 'Foundation',
+        courseSlug: courseData?.slug,
+        courseId: courseData?.id,
+        courseTitle: courseData?.title,
+        userEmail: customerEmail
+    })
+
+    if (!eligibility.eligible) {
+        console.warn("[enrollFromWebhookAction] Blocked unauthorized enrollment attempt via webhook", {
+            customerEmail,
+            courseId,
+            reason: eligibility.reason
+        })
+        return { success: false, message: eligibility.reason || "User is not eligible for this course." }
+    }
 
     // 3. Idempotency guard — bail if already enrolled
     const { data: existing } = await adminClient
@@ -351,12 +412,6 @@ export async function enrollFromWebhookAction(
     }
 
     // 5. Send confirmation email (non-fatal if it fails)
-    const { data: courseData } = await adminClient
-        .from('courses')
-        .select('title')
-        .eq('id', courseId)
-        .maybeSingle()
-
     if (courseData) {
         try {
             await sendEnrollmentEmail(customerEmail, profile.full_name || "Student", courseData.title, courseId)

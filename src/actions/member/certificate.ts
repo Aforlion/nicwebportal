@@ -43,7 +43,9 @@ export async function getIndividualMemberCertificateDetails(targetUserId?: strin
       .from('certificates')
       .select('*')
       .eq('user_id', userId)
-      .eq('type', 'individual_membership')
+      .or('certificate_number.ilike.NIC-MEM-%,course_level.eq.Individual Membership')
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
 
     let certCode = existingCert?.certificate_number
@@ -56,7 +58,7 @@ export async function getIndividualMemberCertificateDetails(targetUserId?: strin
       await supabaseAdmin.from('certificates').insert({
         user_id: userId,
         certificate_number: certCode,
-        type: 'individual_membership',
+        course_level: 'Individual Membership',
         issue_date: membership?.created_at || profile.created_at || new Date().toISOString(),
       })
     }
