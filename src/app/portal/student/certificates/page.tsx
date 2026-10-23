@@ -33,7 +33,7 @@ export default async function StudentCertificatesPage() {
             <div className="grid gap-8 lg:grid-cols-2">
                 {certificates && certificates.length > 0 ? (
                     certificates.map((cert: any) => {
-                        const isNCNA = cert.type === 'ncna' || cert.certificate_number?.startsWith('NCNA')
+                        const isNCNA = cert.type === 'ncna' || cert.certificate_number?.startsWith('NCNA') || cert.course_level === 'NCNA License' || (cert.course_level && cert.course_level.includes('NCNA'))
                         const isMemberCert = cert.type === 'individual_membership' || cert.certificate_number?.startsWith('NIC-MEM')
                         const isFacilityCert = cert.type === 'facility_membership' || cert.certificate_number?.startsWith('NIC-FAC') || cert.certificate_number?.startsWith('NIC-AGY')
 

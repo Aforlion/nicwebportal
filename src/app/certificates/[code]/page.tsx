@@ -14,7 +14,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
         notFound()
     }
 
-    const isNCNA = cert.type === 'ncna' || (cert.certificate_number && cert.certificate_number.startsWith('NCNA')) || cert.course_level === 'NCNA License'
+    const isNCNA = cert.type === 'ncna' || (cert.certificate_number && cert.certificate_number.startsWith('NCNA')) || cert.course_level === 'NCNA License' || (cert.course_level && cert.course_level.includes('NCNA'))
     const isFacility = cert.type === 'facility_membership' || cert.facility_id || (cert.certificate_number && (cert.certificate_number.startsWith('NIC-FAC') || cert.certificate_number.startsWith('NIC-AGY') || cert.certificate_number.startsWith('NIC-TRN') || cert.certificate_number.startsWith('NIC-CLI'))) || cert.course_level === 'Facility Membership'
     const isIndividualMembership = cert.type === 'individual_membership' || (cert.certificate_number && cert.certificate_number.startsWith('NIC-MEM')) || cert.course_level === 'Individual Membership'
 

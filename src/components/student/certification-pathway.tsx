@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { CheckCircle2, Circle, Lock, ArrowRight, BookOpen, Calendar, Award } from "lucide-react"
+import { CheckCircle2, Lock, ArrowRight, BookOpen, Calendar, Award, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 
 interface CertificationPathwayProps {
@@ -8,23 +9,42 @@ interface CertificationPathwayProps {
   hasFundamental: boolean;
   hasSpecialized: boolean;
   hasInternship: boolean;
+  hasFundamentalCourse?: boolean;
+  hasSpecializedCourse?: boolean;
+  isLevel1Exempt?: boolean;
+  level1ExemptionReason?: string | null;
+  isLevel2Exempt?: boolean;
+  level2ExemptionReason?: string | null;
 }
 
 export function CertificationPathway({
   currentLevel,
   hasFundamental,
   hasSpecialized,
-  hasInternship
+  hasInternship,
+  hasFundamentalCourse = false,
+  hasSpecializedCourse = false,
+  isLevel1Exempt = false,
+  level1ExemptionReason,
+  isLevel2Exempt = false,
+  level2ExemptionReason
 }: CertificationPathwayProps) {
   
+  const isStep1ExemptApplied = isLevel1Exempt && !hasFundamentalCourse;
+  const isStep2ExemptApplied = isLevel2Exempt && !hasSpecializedCourse;
+
   const steps = [
     {
       id: 1,
       title: "Core Fundamentals",
-      description: "Pass the core caregiver fundamentals curriculum",
+      description: isStep1ExemptApplied 
+        ? "Exempt from Core Fundamentals based on professional Associate Member standing."
+        : "Pass the core caregiver fundamentals curriculum",
       isCompleted: hasFundamental,
       isCurrent: !hasFundamental,
       isLocked: false,
+      isExempt: isStep1ExemptApplied,
+      exemptionBadge: isStep1ExemptApplied ? "Exempt (Associate)" : null,
       btnText: "Enroll in Fundamentals",
       btnHref: "/portal/student/courses",
       icon: BookOpen
@@ -32,10 +52,14 @@ export function CertificationPathway({
     {
       id: 2,
       title: "Area of Specialisation",
-      description: "Complete your chosen specialized module",
+      description: isStep2ExemptApplied
+        ? "Satisfied via verified 6-month clinical experience & hospital internship."
+        : "Complete your chosen specialized module",
       isCompleted: hasSpecialized,
       isCurrent: hasFundamental && !hasSpecialized,
       isLocked: !hasFundamental,
+      isExempt: isStep2ExemptApplied,
+      exemptionBadge: isStep2ExemptApplied ? "Exempt (6+ Mos Experience)" : null,
       btnText: "Select Specialisation",
       btnHref: "/programs",
       icon: Award
@@ -43,10 +67,12 @@ export function CertificationPathway({
     {
       id: 3,
       title: "Clinical Internship",
-      description: "Complete practical hours at an accredited agency",
+      description: "Complete practical hours at an accredited hospital or care agency",
       isCompleted: hasInternship,
       isCurrent: hasFundamental && hasSpecialized && !hasInternship,
       isLocked: !hasSpecialized,
+      isExempt: false,
+      exemptionBadge: null,
       btnText: "Apply for Internship",
       btnHref: "/portal/student/internship",
       icon: Calendar
@@ -61,7 +87,7 @@ export function CertificationPathway({
         <div className="flex justify-between items-center">
           <div>
             <CardTitle className="text-base font-bold text-secondary">Certification Journey</CardTitle>
-            <CardDescription className="text-xs">Your path to the Nursing Assistant Certificate</CardDescription>
+            <CardDescription className="text-xs">Your path to the National Certified Nursing Assistant (NCNA) License</CardDescription>
           </div>
           <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
             {overallProgress}/3 Completed
@@ -87,7 +113,13 @@ export function CertificationPathway({
                   {/* Status Indicator */}
                   <div className="mt-0.5 shrink-0">
                     {step.isCompleted ? (
-                      <CheckCircle2 className="h-7 w-7 text-green-500 bg-white" />
+                      step.isExempt ? (
+                        <div className="h-7 w-7 rounded-full bg-amber-50 border border-amber-300 flex items-center justify-center text-amber-700">
+                          <ShieldCheck className="h-4 w-4" />
+                        </div>
+                      ) : (
+                        <CheckCircle2 className="h-7 w-7 text-green-500 bg-white" />
+                      )
                     ) : step.isCurrent ? (
                       <div className="h-7 w-7 rounded-full border-2 border-primary bg-primary/10 flex items-center justify-center animate-pulse">
                         <div className="h-2 w-2 rounded-full bg-primary" />
@@ -101,12 +133,17 @@ export function CertificationPathway({
 
                   {/* Content */}
                   <div className="flex-grow space-y-1">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center flex-wrap gap-2">
                       <span className={`text-sm font-bold ${
-                        step.isCompleted ? 'text-secondary line-through opacity-70' : step.isCurrent ? 'text-primary' : 'text-muted-foreground'
+                        step.isCompleted ? 'text-secondary opacity-80' : step.isCurrent ? 'text-primary' : 'text-muted-foreground'
                       }`}>
                         Step {step.id}: {step.title}
                       </span>
+                      {step.exemptionBadge && (
+                        <Badge variant="outline" className="text-[10px] py-0 px-2 font-medium bg-amber-50 text-amber-800 border-amber-200">
+                          {step.exemptionBadge}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground leading-snug">{step.description}</p>
                     
@@ -130,4 +167,5 @@ export function CertificationPathway({
     </Card>
   )
 }
+
 

@@ -52,7 +52,24 @@ async function RecommendedCourses() {
 }
 
 export default async function StudentDashboard() {
-    const { enrollments, recent, events, tip, cpdCredits, currentLevel, profileComplete, hasFundamental, hasSpecialized, hasInternship } = await getStudentDashboardData()
+    const { 
+        enrollments, 
+        recent, 
+        events, 
+        tip, 
+        cpdCredits, 
+        currentLevel, 
+        profileComplete, 
+        hasFundamental, 
+        hasSpecialized, 
+        hasInternship,
+        hasFundamentalCourse,
+        hasSpecializedCourse,
+        isLevel1Exempt,
+        isLevel2Exempt,
+        level1ExemptionReason,
+        level2ExemptionReason
+    } = await getStudentDashboardData()
 
     return (
         <ErrorBoundary>
@@ -259,6 +276,12 @@ export default async function StudentDashboard() {
                             hasFundamental={hasFundamental || false}
                             hasSpecialized={hasSpecialized || false}
                             hasInternship={hasInternship || false}
+                            hasFundamentalCourse={hasFundamentalCourse || false}
+                            hasSpecializedCourse={hasSpecializedCourse || false}
+                            isLevel1Exempt={isLevel1Exempt || false}
+                            level1ExemptionReason={level1ExemptionReason}
+                            isLevel2Exempt={isLevel2Exempt || false}
+                            level2ExemptionReason={level2ExemptionReason}
                         />
 
                         <h2 className="text-xl font-bold text-secondary">Upcoming</h2>

@@ -19,6 +19,7 @@ function LoginForm() {
     const searchParams = useSearchParams()
     const redirect = searchParams.get('redirect') || '/portal/member'
     const expired = searchParams.get('expired')
+    const supabase = createClient()
 
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")

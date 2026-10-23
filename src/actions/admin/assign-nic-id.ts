@@ -39,6 +39,8 @@ export async function assignNicIdAction(targetId: string) {
       .eq('id', targetUserId)
       .maybeSingle()
 
+    const isStudent = fullProfile?.role === 'student'
+
     // 2. Fetch or create membership
     const { data: existingMembership } = await supabaseAdmin
       .from('memberships')

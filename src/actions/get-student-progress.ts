@@ -16,7 +16,9 @@ export async function getStudentDashboardData() {
             avatar_url,
             memberships (
                 address,
-                photo_url
+                photo_url,
+                category,
+                years_of_experience
             )
         `)
         .eq('id', user.id)
@@ -119,22 +121,56 @@ export async function getStudentDashboardData() {
     const currentLevel = await getStudentLevel(supabase, user.id, enrollments)
 
     // Calculate progression statuses
-    const hasFundamental = enrollments.some((e: any) => {
+    const hasFundamentalCourse = enrollments.some((e: any) => {
         const course = Array.isArray(e.course) ? e.course[0] : e.course;
-        return e.status === 'completed' && course?.level === 'Foundation';
+        const level = (course?.level || '').toLowerCase();
+        const title = (course?.title || '').toLowerCase();
+        return (e.status === 'completed' || (e.progress != null && e.progress >= 100)) && (
+            level.includes('foundation') || level.includes('level 1') || title.includes('fundamental')
+        );
     });
 
-    const hasSpecialized = enrollments.some((e: any) => {
+    const hasSpecializedCourse = enrollments.some((e: any) => {
         const course = Array.isArray(e.course) ? e.course[0] : e.course;
-        return e.status === 'completed' && (course?.level === 'Specialized' || course?.level === 'Intermediate' || course?.level === 'Advanced');
+        const level = (course?.level || '').toLowerCase();
+        const title = (course?.title || '').toLowerCase();
+        return (e.status === 'completed' || (e.progress != null && e.progress >= 100)) && (
+            level.includes('level 2') || level.includes('specializ') || level.includes('specialty') || level.includes('advanced') || level.includes('level 3') || level.includes('level 4') || title.includes('geriatric') || title.includes('palliative')
+        );
     });
 
     const { data: internships } = await supabase
         .from('internships')
-        .select('status')
+        .select('status, start_date, end_date')
         .eq('user_id', user.id)
-        .eq('status', 'approved')
+        .eq('status', 'approved');
     const hasInternship = (internships || []).length > 0;
+
+    let hasExtendedClinicalInternship = false;
+    if (internships) {
+        for (const intern of internships) {
+            if (intern.start_date && intern.end_date) {
+                const start = new Date(intern.start_date);
+                const end = new Date(intern.end_date);
+                const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+                if (diffDays >= 170) {
+                    hasExtendedClinicalInternship = true;
+                }
+            }
+        }
+    }
+
+    // Regulatory Exemption Rules
+    // Rule 1: Associate members bypass Level 1 Fundamentals
+    const memberCategory = (membership?.category || '').toLowerCase();
+    const isLevel1Exempt = memberCategory.includes('associate');
+
+    // Rule 2: Evidence of experience of at least 6 months (extended internship or verified experience) bypasses Level 2
+    const hasSixMonthsExperience = (membership?.years_of_experience != null && membership.years_of_experience >= 1);
+    const isLevel2Exempt = hasExtendedClinicalInternship || hasSixMonthsExperience;
+
+    const hasFundamental = hasFundamentalCourse || isLevel1Exempt;
+    const hasSpecialized = hasSpecializedCourse || isLevel2Exempt;
 
     return {
         enrollments,
@@ -146,7 +182,13 @@ export async function getStudentDashboardData() {
         profileComplete,
         hasFundamental,
         hasSpecialized,
-        hasInternship
+        hasInternship,
+        hasFundamentalCourse,
+        hasSpecializedCourse,
+        isLevel1Exempt,
+        isLevel2Exempt,
+        level1ExemptionReason: isLevel1Exempt && !hasFundamentalCourse ? "Associate Member Exemption (Bypasses Fundamentals)" : null,
+        level2ExemptionReason: isLevel2Exempt && !hasSpecializedCourse ? "Clinical Experience Exemption (6+ Months Verified Experience)" : null
     }
 }
 
