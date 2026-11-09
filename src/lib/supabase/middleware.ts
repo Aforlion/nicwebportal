@@ -118,7 +118,11 @@ export async function updateSession(request: NextRequest) {
         request.nextUrl.pathname.startsWith('/reset-password') ||
         request.nextUrl.pathname.startsWith('/auth/callback')
 
-    const isPublicApiRoute = request.nextUrl.pathname.startsWith('/api/webhooks')
+    const isPublicApiRoute =
+        request.nextUrl.pathname.startsWith('/api/webhooks') ||
+        request.nextUrl.pathname.startsWith('/api/cron') ||
+        request.nextUrl.pathname.startsWith('/api/v1/verify') ||
+        request.nextUrl.pathname.startsWith('/api/whatsapp')
 
     if (
         request.nextUrl.pathname.startsWith('/_next') ||
