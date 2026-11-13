@@ -46,6 +46,7 @@ import {
 } from "lucide-react"
 import { sendFacilityStatusAction, sendInspectionScheduledAction } from "@/lib/actions/registration"
 import { assignFacilityIdAction } from "@/actions/admin/assign-facility-id"
+import { getAdminFacilitiesAction } from "@/actions/admin/get-facilities"
 import { FacilityDetailsSheet } from "@/components/admin/facility-details-sheet"
 import { toast } from "sonner"
 
@@ -128,7 +129,18 @@ export default function AdminFacilitiesPage() {
     const fetchFacilities = async () => {
         setLoading(true)
         try {
-            let query = supabase.from('facilities').select('*').order('created_at', { ascending: false })
+            // Priority: Call protected Server Action with Service Role execution
+            const res = await getAdminFacilitiesAction(statusFilter)
+            if (res && res.facilities) {
+                setFacilities(res.facilities)
+                if (res.stats) {
+                    setStats(res.stats)
+                }
+                return
+            }
+
+            // Fallback: Browser client with registered_at ordering
+            let query = supabase.from('facilities').select('*').order('registered_at', { ascending: false })
 
             if (statusFilter !== 'all') {
                 query = query.eq('status', statusFilter)
@@ -150,9 +162,9 @@ export default function AdminFacilitiesPage() {
                 })
                 setStats(s)
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error fetching facilities:", err)
-            toast.error("Failed to load facilities")
+            toast.error(err.message || "Failed to load facilities")
         } finally {
             setLoading(false)
         }
