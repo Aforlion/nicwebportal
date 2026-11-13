@@ -12,10 +12,29 @@ export async function assignFacilityIdAction(facilityId: string) {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
-    // Generate Facility ID: NIC-FAC-YEAR-RANDOM
+    // Fetch facility first to select the correct prefix based on institutional category
+    const { data: facility, error: fetchError } = await supabase
+      .from('facilities')
+      .select('facility_type, registration_number')
+      .eq('id', facilityId)
+      .single()
+
+    if (fetchError || !facility) {
+      return { success: false, error: 'Facility not found' }
+    }
+
+    // Determine category-specific prefix
+    let prefix = 'FAC'
+    if (facility.facility_type === 'training_agency') {
+      prefix = 'TRN'
+    } else if (facility.facility_type === 'agency') {
+      prefix = 'AGY'
+    }
+
+    // Generate Standardized ID: NIC/[FAC|TRN|AGY]/YEAR/RANDOM
     const year = new Date().getFullYear()
     const random = Math.random().toString(36).substring(2, 7).toUpperCase()
-    const registration_number = `NIC/FAC/${year}/${random}`
+    const registration_number = `NIC/${prefix}/${year}/${random}`
 
     // Update facilities table
     const { error } = await supabase

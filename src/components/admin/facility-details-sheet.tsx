@@ -154,6 +154,12 @@ export function FacilityDetailsSheet({ facilityId, isOpen, onClose }: FacilityDe
     return (
         <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <SheetContent className="sm:max-w-xl p-0 flex flex-col gap-0 border-l border-slate-100">
+                <SheetTitle className="sr-only">
+                    {facility?.name ?? "Facility Details"}
+                </SheetTitle>
+                <SheetDescription className="sr-only">
+                    Institutional profile, curriculum review, inspection history, and documents.
+                </SheetDescription>
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-full text-slate-400">
                         <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />

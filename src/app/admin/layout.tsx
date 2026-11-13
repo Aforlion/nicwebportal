@@ -11,10 +11,10 @@ export default function AdminLayout({
         <div className="flex min-h-screen bg-slate-50/50 text-foreground">
             <AutoLogout timeoutMinutes={15} />
             <AdminSidebar />
-            <div className="flex-1 md:pl-64 flex flex-col min-h-screen transition-all duration-300">
+            <div className="flex-1 md:pl-64 flex flex-col min-h-screen min-w-0 max-w-full overflow-x-hidden transition-all duration-300">
                 <AdminHeader />
-                <main className="flex-1 p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="container mx-auto max-w-7xl space-y-8">
+                <main className="flex-1 p-4 md:p-8 min-w-0 max-w-full overflow-x-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="w-full max-w-7xl mx-auto space-y-8 min-w-0">
                         {children}
                     </div>
                 </main>
