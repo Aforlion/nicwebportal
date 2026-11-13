@@ -23,9 +23,10 @@ export default function ForgotPasswordPage() {
         setError("")
 
         try {
+            const cleanEmail = email.trim().toLowerCase()
             let res: { success: boolean; error?: string } = { success: false }
             try {
-                res = await requestPasswordResetAction(email)
+                res = await requestPasswordResetAction(cleanEmail)
             } catch (actionErr: any) {
                 const errString = String(actionErr?.message || actionErr || "")
                 if (
@@ -35,7 +36,7 @@ export default function ForgotPasswordPage() {
                 ) {
                     console.warn("Stale deployment action hash detected. Executing browser client password reset fallback...")
                     const supabase = createClient()
-                    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email, {
+                    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
                         redirectTo: `${window.location.origin}/reset-password`,
                     })
                     if (resetErr) throw resetErr

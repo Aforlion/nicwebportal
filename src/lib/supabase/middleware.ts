@@ -115,6 +115,7 @@ export async function updateSession(request: NextRequest) {
     // 1. Skip static assets, public webhooks, and public auth pages to avoid session conflicts
     const isPublicAuthPage =
         request.nextUrl.pathname.startsWith('/login') ||
+        request.nextUrl.pathname.startsWith('/forgot-password') ||
         request.nextUrl.pathname.startsWith('/reset-password') ||
         request.nextUrl.pathname.startsWith('/auth/callback')
 

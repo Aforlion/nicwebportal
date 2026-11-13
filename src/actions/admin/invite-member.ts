@@ -42,13 +42,14 @@ export async function inviteMemberAction(profileId: string) {
             email_confirm: true 
         })
 
-        const baseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://nicnigeria.org')
+        const rawBaseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://www.nicnigeria.org')
+        const baseUrl = rawBaseUrl.replace(/\/$/, '').replace('https://nicnigeria.org', 'https://www.nicnigeria.org')
         
         const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
             type: 'recovery',
             email: profile.email,
             options: {
-                redirectTo: `${baseUrl}/auth/callback?next=/reset-password`
+                redirectTo: `${baseUrl}/reset-password`
             }
         })
 
@@ -57,13 +58,18 @@ export async function inviteMemberAction(profileId: string) {
             return { success: false, error: `Auth link error: ${linkError.message}` }
         }
 
+        const hashedToken = linkData?.properties?.hashed_token
+        const setupUrl = hashedToken
+            ? `${baseUrl}/reset-password?token_hash=${encodeURIComponent(hashedToken)}&type=recovery`
+            : (linkData?.properties?.action_link || `${baseUrl}/login`)
+
         // 3. Send the orientation email with the generated link
         await sendEmail({
             to: profile.email,
             subject: 'Action Required: Set Up Your NIC Member Portal Account',
             template: React.createElement(NICWelcomeEmail, {
                 fullName: profile.full_name,
-                loginUrl: linkData?.properties?.action_link || `${baseUrl}/login`,
+                loginUrl: setupUrl,
                 temporaryPassword: tempPassword,
                 mode: 'invitation'
             })

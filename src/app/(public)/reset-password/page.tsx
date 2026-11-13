@@ -2,7 +2,9 @@
 
 import { Suspense, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import Image from "next/image"
+import type { EmailOtpType } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -25,44 +27,89 @@ function ResetPasswordForm() {
 
     useEffect(() => {
         let timeoutId: NodeJS.Timeout
+        let resolved = false
+
+        const markVerified = () => {
+            resolved = true
+            clearTimeout(timeoutId)
+            setVerifying(false)
+            setError("")
+        }
+
+        const markFailed = (message: string) => {
+            resolved = true
+            clearTimeout(timeoutId)
+            setError(message)
+            setVerifying(false)
+        }
 
         async function verifySession() {
             try {
                 console.log("[ResetPassword] Step 1: Initializing verifySession")
 
-                // A. PKCE flow: exchange ?code= from URL (fallback if /auth/callback was bypassed)
                 const urlParams = new URLSearchParams(window.location.search)
-                const code = urlParams.get('code')
-                if (code) {
-                    console.log("[ResetPassword] Step 1a: PKCE code found in URL, exchanging for session")
-                    const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-                    if (exchangeError) {
-                        console.error("[ResetPassword] Step 1a: Code exchange failed:", exchangeError)
-                    } else if (exchangeData.session) {
-                        console.log("[ResetPassword] Step 1a: Session established via PKCE code exchange")
-                        // Remove the code from the URL to prevent re-use
+                const hash = window.location.hash
+                const hashParams = hash && hash.startsWith('#') ? new URLSearchParams(hash.substring(1)) : null
+
+                // Surface explicit auth redirect errors immediately (e.g. expired legacy link)
+                const redirectError = urlParams.get('error_description') || hashParams?.get('error_description')
+                if (redirectError) {
+                    console.warn("[ResetPassword] Auth redirect returned error:", redirectError)
+                    markFailed("Your reset link has expired or is invalid. Please request a new password reset link.")
+                    return
+                }
+
+                // A. Scanner-safe token_hash flow (generated via admin.generateLink)
+                const tokenHash = urlParams.get('token_hash')
+                const otpType = (urlParams.get('type') as EmailOtpType | null) || 'recovery'
+                if (tokenHash) {
+                    console.log("[ResetPassword] Step 1a: token_hash found in URL, verifying OTP")
+                    const { data: otpData, error: otpError } = await supabase.auth.verifyOtp({
+                        token_hash: tokenHash,
+                        type: otpType,
+                    })
+                    if (otpError) {
+                        console.error("[ResetPassword] Step 1a: verifyOtp failed:", otpError)
+                        markFailed("Your reset link has expired or was already used. Please request a new password reset link.")
+                        return
+                    }
+                    if (otpData.session) {
+                        console.log("[ResetPassword] Step 1a: Session established via token_hash")
                         window.history.replaceState({}, '', window.location.pathname)
-                        setVerifying(false)
+                        markVerified()
                         return
                     }
                 }
 
-                // B. Check current session (set by /auth/callback server route)
+                // B. PKCE flow: exchange ?code= from URL (fallback if /auth/callback was bypassed)
+                const code = urlParams.get('code')
+                if (code) {
+                    console.log("[ResetPassword] Step 1b: PKCE code found in URL, exchanging for session")
+                    const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+                    if (exchangeError) {
+                        console.error("[ResetPassword] Step 1b: Code exchange failed:", exchangeError)
+                    } else if (exchangeData.session) {
+                        console.log("[ResetPassword] Step 1b: Session established via PKCE code exchange")
+                        window.history.replaceState({}, '', window.location.pathname)
+                        markVerified()
+                        return
+                    }
+                }
+
+                // C. Check current session (set by /auth/callback server route)
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession()
                 
                 if (session) {
-                    console.log("[ResetPassword] Step 1b: Session detected via getSession")
-                    setVerifying(false)
+                    console.log("[ResetPassword] Step 1c: Session detected via getSession")
+                    markVerified()
                     return
                 }
 
-                // C. Fallback: Manual hash parsing (Implicit Grant / legacy links)
-                const hash = window.location.hash
-                if (hash && hash.includes('access_token=')) {
-                    console.log("[ResetPassword] Step 1c: Access token found in hash, attempting manual setSession")
-                    const params = new URLSearchParams(hash.substring(1))
-                    const access_token = params.get('access_token')
-                    const refresh_token = params.get('refresh_token')
+                // D. Fallback: Manual hash parsing (Implicit Grant / legacy links)
+                if (hashParams && hashParams.get('access_token')) {
+                    console.log("[ResetPassword] Step 1d: Access token found in hash, attempting manual setSession")
+                    const access_token = hashParams.get('access_token')
+                    const refresh_token = hashParams.get('refresh_token')
 
                     if (access_token) {
                         const { data: setSessionData, error: setSessionError } = await supabase.auth.setSession({
@@ -74,9 +121,8 @@ function ResetPasswordForm() {
                             console.error("[ResetPassword] Step 1d: Manual setSession failed:", setSessionError)
                         } else if (setSessionData.session) {
                             console.log("[ResetPassword] Step 1e: Session established via manual setSession")
-                            // Scrub access tokens from URL hash immediately to prevent leakage
-                            window.history.replaceState(null, "", window.location.pathname + window.location.search)
-                            setVerifying(false)
+                            window.history.replaceState(null, "", window.location.pathname)
+                            markVerified()
                             return
                         }
                     }
@@ -90,28 +136,24 @@ function ResetPasswordForm() {
             }
         }
 
-        // C. Listen for auth state changes
+        // E. Listen for auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
             console.log(`[ResetPassword] Step 1h: Auth event triggered: ${event}`)
             if (session) {
                 console.log("[ResetPassword] Step 1i: Session confirmed via listener")
-                setVerifying(false)
-                setError("") 
+                markVerified()
             }
         })
 
-        verifySession()
-
-        // D. Safety timeout: if no session found after 3 seconds, show error
+        // F. Safety timeout (10s for slower mobile networks)
         timeoutId = setTimeout(() => {
-            setVerifying(prev => {
-                if (prev) {
-                    console.warn("[ResetPassword] Step 1j: Verification timed out, no session found")
-                    setError("Auth session missing! Your link may have expired or is invalid. Please request a new password reset link.")
-                }
-                return false
-            })
-        }, 3000)
+            if (!resolved) {
+                console.warn("[ResetPassword] Step 1j: Verification timed out, no session found")
+                markFailed("Auth session missing! Your link may have expired or is invalid. Please request a new password reset link.")
+            }
+        }, 10000)
+
+        verifySession()
 
         return () => {
             subscription.unsubscribe()
@@ -204,9 +246,17 @@ function ResetPasswordForm() {
                 ) : (
                     <form onSubmit={handleReset} className="space-y-4">
                         {error && (
-                            <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 flex items-start gap-2">
-                                <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-                                <p className="text-sm text-destructive">{error}</p>
+                            <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 space-y-2">
+                                <div className="flex items-start gap-2">
+                                    <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                                    <p className="text-sm text-destructive">{error}</p>
+                                </div>
+                                <Link
+                                    href="/forgot-password"
+                                    className="inline-block text-xs font-semibold text-primary hover:underline pl-7"
+                                >
+                                    Request a new reset link →
+                                </Link>
                             </div>
                         )}
 

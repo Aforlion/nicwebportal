@@ -91,7 +91,8 @@ export async function assignNicIdAction(targetId: string) {
       console.warn('Auth confirm warning:', authErr)
     }
 
-    const baseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://nicnigeria.org')
+    const rawBaseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://www.nicnigeria.org')
+    const baseUrl = rawBaseUrl.replace(/\/$/, '').replace('https://nicnigeria.org', 'https://www.nicnigeria.org')
     
     let actionLink = `${baseUrl}/login`
     try {
@@ -99,10 +100,12 @@ export async function assignNicIdAction(targetId: string) {
         type: 'recovery',
         email: profile.email,
         options: {
-          redirectTo: `${baseUrl}/auth/callback?next=/reset-password`
+          redirectTo: `${baseUrl}/reset-password`
         }
       })
-      if (linkData?.properties?.action_link) {
+      if (linkData?.properties?.hashed_token) {
+        actionLink = `${baseUrl}/reset-password?token_hash=${encodeURIComponent(linkData.properties.hashed_token)}&type=recovery`
+      } else if (linkData?.properties?.action_link) {
         actionLink = linkData.properties.action_link
       }
     } catch (linkErr) {

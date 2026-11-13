@@ -124,8 +124,13 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
 
     const [inviting, setInviting] = useState(false)
     async function handleInvite() {
+        const targetProfileId = data?.user_id || data?.profile?.id
+        if (!targetProfileId) {
+            toast.error("Cannot invite member: profile ID missing")
+            return
+        }
         setInviting(true)
-        const result = await inviteMemberAction(membershipId!)
+        const result = await inviteMemberAction(targetProfileId)
         if (result.success) {
             toast.success("Account setup invitation sent successfully!")
         } else {

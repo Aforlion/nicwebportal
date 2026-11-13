@@ -150,7 +150,8 @@ export async function admitMemberAction(profileId: string) {
     }
 
     // 4. Send admission email & trigger account setup (Consolidated & Reliable)
-    const baseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://nicnigeria.org')
+    const rawBaseUrl = env.NEXT_PUBLIC_APP_URL || (env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://www.nicnigeria.org')
+    const baseUrl = rawBaseUrl.replace(/\/$/, '').replace('https://nicnigeria.org', 'https://www.nicnigeria.org')
 
     // Generate the recovery/setup link using Admin API
     const supabaseAdmin = createAdminClient(
@@ -175,6 +176,10 @@ export async function admitMemberAction(profileId: string) {
       }
     })
 
+    const resetUrl = linkData?.properties?.hashed_token
+      ? `${baseUrl}/reset-password?token_hash=${encodeURIComponent(linkData.properties.hashed_token)}&type=recovery`
+      : linkData?.properties?.action_link
+
     // Send the consolidated confirmation email
     if (isFacilityAdmin) {
       const { data: facility } = await supabase
@@ -192,7 +197,7 @@ export async function admitMemberAction(profileId: string) {
           fullName: profile.full_name,
           coursesUrl: `${baseUrl}/portal/student/courses`,
           loginUrl: `${baseUrl}/login`,
-          resetUrl: linkData?.properties?.action_link,
+          resetUrl,
           temporaryPassword: tempPassword
         })
       })

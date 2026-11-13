@@ -57,7 +57,10 @@ export const NICPasswordResetEmail = ({
 
                 <Hr style={hr} />
                 <Text style={footer}>
-                    If you're having trouble clicking the button, please copy and paste the link below into your browser or contact our support team.
+                    If you're having trouble clicking the button, please copy and paste the link below into your browser or contact our support team:
+                </Text>
+                <Text style={{ ...footer, wordBreak: 'break-all' as const }}>
+                    <Link href={resetUrl} style={link}>{resetUrl}</Link>
                 </Text>
                 <Text style={footer}>
                     For your security, never share this link with anyone.
