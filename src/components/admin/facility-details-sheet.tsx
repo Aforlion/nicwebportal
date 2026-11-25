@@ -125,6 +125,15 @@ export function FacilityDetailsSheet({ facilityId, isOpen, onClose }: FacilityDe
         const result = await verifyDocumentAction(docId, status)
         if (result.success) {
             toast.success(`Document marked as ${status}`)
+            setData((prev: any) => {
+                if (!prev || !prev.documents) return prev
+                return {
+                    ...prev,
+                    documents: prev.documents.map((d: any) => 
+                        d.id === docId ? { ...d, status } : d
+                    )
+                }
+            })
             await loadDetails()
         } else {
             toast.error(result.error || "Failed to update document")
@@ -153,7 +162,7 @@ export function FacilityDetailsSheet({ facilityId, isOpen, onClose }: FacilityDe
 
     return (
         <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <SheetContent className="sm:max-w-xl p-0 flex flex-col gap-0 border-l border-slate-100">
+            <SheetContent className="sm:max-w-xl w-full p-0 flex flex-col h-full overflow-hidden border-l border-slate-100">
                 <SheetTitle className="sr-only">
                     {facility?.name ?? "Facility Details"}
                 </SheetTitle>
@@ -168,7 +177,7 @@ export function FacilityDetailsSheet({ facilityId, isOpen, onClose }: FacilityDe
                 ) : facility ? (
                     <>
                         {/* Header Section */}
-                        <div className="p-6 pb-4 bg-slate-50/50 border-b border-slate-100">
+                        <div className="p-6 pb-4 bg-slate-50/50 border-b border-slate-100 shrink-0">
                             <div className="flex items-start justify-between mb-4 mt-4">
                                 <div className="flex items-center gap-4">
                                     <div className="h-16 w-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-primary">
@@ -208,8 +217,8 @@ export function FacilityDetailsSheet({ facilityId, isOpen, onClose }: FacilityDe
                             </div>
                         </div>
 
-                        <Tabs defaultValue="overview" className="flex-1 flex flex-col">
-                            <div className="px-6 bg-white border-b border-slate-100 sticky top-0 z-10">
+                        <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                            <div className="px-6 bg-white border-b border-slate-100 shrink-0">
                                 <TabsList className="bg-transparent border-none p-0 h-12 gap-6 w-full justify-start">
                                     <TabsTrigger value="overview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none h-full px-0 text-slate-500 font-bold text-xs uppercase tracking-wider">
                                         Overview
@@ -223,7 +232,7 @@ export function FacilityDetailsSheet({ facilityId, isOpen, onClose }: FacilityDe
                                 </TabsList>
                             </div>
 
-                            <ScrollArea className="flex-1">
+                            <ScrollArea className="flex-1 min-h-0 h-full">
                                 {/* Overview Tab */}
                                 <TabsContent value="overview" className="m-0 p-6 space-y-8">
                                     <div className="space-y-6">
@@ -455,7 +464,7 @@ export function FacilityDetailsSheet({ facilityId, isOpen, onClose }: FacilityDe
                             </ScrollArea>
 
                             {/* Sticky Footer */}
-                            <div className="p-6 bg-white border-t border-slate-100 mt-auto">
+                            <div className="p-4 sm:p-5 bg-white border-t border-slate-100 shrink-0">
                                 <div className="grid grid-cols-2 gap-3">
                                     <Button variant="outline" className="text-slate-600 font-bold border-slate-200" onClick={onClose}>
                                         Close Details

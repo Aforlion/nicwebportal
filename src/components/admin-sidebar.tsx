@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils"
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase"
+import { getAdminNotificationsAction } from "@/actions/admin/get-notifications"
 
 export const adminNavItems = [
     { title: "Overview", href: "/admin", icon: LayoutDashboard },
@@ -58,9 +59,10 @@ interface AdminSidebarProps {
 export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
     const pathname = usePathname()
     const [role, setRole] = useState<string | null>(null)
+    const [pendingCount, setPendingCount] = useState<number>(0)
 
     useEffect(() => {
-        async function fetchRole() {
+        async function fetchRoleAndNotifications() {
             try {
                 const supabase = createClient()
                 const { data: { user } } = await supabase.auth.getUser()
@@ -74,11 +76,15 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
                         setRole(profile.role)
                     }
                 }
+                const notifRes = await getAdminNotificationsAction()
+                if (notifRes.data?.totalPending) {
+                    setPendingCount(notifRes.data.totalPending)
+                }
             } catch (err) {
-                console.error("Failed to load user role in sidebar:", err)
+                console.error("Failed to load user role/notifications in sidebar:", err)
             }
         }
-        fetchRole()
+        fetchRoleAndNotifications()
     }, [])
 
     const navItems = role === 'super_admin' 
@@ -113,6 +119,11 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
                                     )}
                                     <item.icon className={cn("h-5 w-5 transition-transform group-hover:scale-110", isActive ? "text-amber-500" : "")} />
                                     <span className={cn("font-medium", isActive ? "translate-x-1" : "")}>{item.title}</span>
+                                    {item.href === "/admin/action-center" && pendingCount > 0 && (
+                                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white shadow-sm">
+                                            {pendingCount}
+                                        </span>
+                                    )}
                                 </Link>
                             </li>
                         )

@@ -5,6 +5,7 @@ import { Bell, Search, Menu, ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { AdminNotificationsDropdown } from "@/components/admin-notifications-dropdown"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -90,10 +91,7 @@ export function AdminHeader() {
                 </nav>
             </div>
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="relative text-slate-500 hover:text-primary">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive border-2 border-white" />
-                </Button>
+                <AdminNotificationsDropdown />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-9 w-9 rounded-full border border-slate-200">

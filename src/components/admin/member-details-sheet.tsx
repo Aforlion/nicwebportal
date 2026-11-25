@@ -158,6 +158,15 @@ export function MemberDetailsSheet({ membershipId, onClose, onStatusUpdate }: Me
         const result = await verifyDocumentAction(docId, status)
         if (result.success) {
             toast.success(`Document marked as ${status}`)
+            setData((prev: any) => {
+                if (!prev || !prev.documents) return prev
+                return {
+                    ...prev,
+                    documents: prev.documents.map((d: any) => 
+                        d.id === docId ? { ...d, status } : d
+                    )
+                }
+            })
             await loadDetails()
             if (onStatusUpdate) onStatusUpdate()
         } else {
